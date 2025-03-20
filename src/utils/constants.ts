@@ -1,3 +1,4 @@
+import { Transaction } from './types';
 
 // Konstanta harga dalam Rupiah
 export const PRICES = {
