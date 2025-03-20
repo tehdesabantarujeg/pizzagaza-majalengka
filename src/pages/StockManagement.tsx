@@ -3,33 +3,17 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import StockCard from '@/components/StockCard';
-import BoxStockCard from '@/components/BoxStockCard';
-import { FadeInStagger } from '@/components/animations/FadeIn';
+import { Plus } from 'lucide-react';
 import { PizzaStock, BoxStock } from '@/utils/types';
-import { PIZZA_FLAVORS, PIZZA_SIZES, PRICES, formatCurrency } from '@/utils/constants';
-import { Plus, ShoppingBag, Package } from 'lucide-react';
+import { PRICES } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { fetchStockItems, addStockItem, fetchBoxStock, addBoxStock, setupSupabaseTables } from '@/utils/supabase';
+import PizzaStockForm from '@/components/stock/PizzaStockForm';
+import BoxStockForm from '@/components/stock/BoxStockForm';
+import PizzaStockList from '@/components/stock/PizzaStockList';
+import BoxStockList from '@/components/stock/BoxStockList';
 
 const StockManagement = () => {
   const { toast } = useToast();
@@ -41,7 +25,7 @@ const StockManagement = () => {
   
   const [newPizzaStock, setNewPizzaStock] = useState({
     size: 'Small' as 'Small' | 'Medium',
-    flavor: PIZZA_FLAVORS[0],
+    flavor: 'Original',
     quantity: 1,
     costPrice: PRICES.COST_SMALL_PIZZA
   });
@@ -119,7 +103,7 @@ const StockManagement = () => {
       // Reset form
       setNewPizzaStock({
         size: 'Small',
-        flavor: PIZZA_FLAVORS[0],
+        flavor: 'Original',
         quantity: 1,
         costPrice: PRICES.COST_SMALL_PIZZA
       });
@@ -182,93 +166,12 @@ const StockManagement = () => {
                 Tambah Stok Pizza
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handlePizzaSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Tambah Stok Pizza Baru</DialogTitle>
-                  <DialogDescription>
-                    Masukkan detail stok pizza yang akan ditambahkan
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="size" className="text-right">
-                      Ukuran
-                    </Label>
-                    <Select 
-                      value={newPizzaStock.size} 
-                      onValueChange={handlePizzaSizeChange}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Pilih ukuran" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PIZZA_SIZES.map((size) => (
-                          <SelectItem key={size} value={size}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="flavor" className="text-right">
-                      Rasa
-                    </Label>
-                    <Select 
-                      value={newPizzaStock.flavor} 
-                      onValueChange={(value) => setNewPizzaStock({ ...newPizzaStock, flavor: value })}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Pilih rasa" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PIZZA_FLAVORS.map((flavor) => (
-                          <SelectItem key={flavor} value={flavor}>
-                            {flavor}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="quantity" className="text-right">
-                      Jumlah
-                    </Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      min={1}
-                      value={newPizzaStock.quantity}
-                      onChange={(e) => setNewPizzaStock({ ...newPizzaStock, quantity: parseInt(e.target.value) || 1 })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="costPrice" className="text-right">
-                      Harga Modal
-                    </Label>
-                    <div className="col-span-3 flex items-center gap-2">
-                      <Input
-                        id="costPrice"
-                        value={newPizzaStock.costPrice}
-                        readOnly
-                        className="bg-muted"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {formatCurrency(newPizzaStock.costPrice)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Tambah Stok</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
+            <PizzaStockForm
+              newPizzaStock={newPizzaStock}
+              setNewPizzaStock={setNewPizzaStock}
+              handlePizzaSubmit={handlePizzaSubmit}
+              handlePizzaSizeChange={handlePizzaSizeChange}
+            />
           </Dialog>
         ) : (
           <Dialog open={openBox} onOpenChange={setOpenBox}>
@@ -278,72 +181,12 @@ const StockManagement = () => {
                 Tambah Stok Dus
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleBoxSubmit}>
-                <DialogHeader>
-                  <DialogTitle>Tambah Stok Dus Baru</DialogTitle>
-                  <DialogDescription>
-                    Masukkan detail stok dus yang akan ditambahkan
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="boxSize" className="text-right">
-                      Ukuran
-                    </Label>
-                    <Select 
-                      value={newBoxStock.size} 
-                      onValueChange={handleBoxSizeChange}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Pilih ukuran" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {PIZZA_SIZES.map((size) => (
-                          <SelectItem key={size} value={size}>
-                            {size}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="boxQuantity" className="text-right">
-                      Jumlah
-                    </Label>
-                    <Input
-                      id="boxQuantity"
-                      type="number"
-                      min={1}
-                      value={newBoxStock.quantity}
-                      onChange={(e) => setNewBoxStock({ ...newBoxStock, quantity: parseInt(e.target.value) || 1 })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="boxCostPrice" className="text-right">
-                      Harga Modal
-                    </Label>
-                    <div className="col-span-3 flex items-center gap-2">
-                      <Input
-                        id="boxCostPrice"
-                        value={newBoxStock.costPrice}
-                        readOnly
-                        className="bg-muted"
-                      />
-                      <span className="text-sm text-muted-foreground">
-                        {formatCurrency(newBoxStock.costPrice)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">Tambah Stok</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
+            <BoxStockForm
+              newBoxStock={newBoxStock}
+              setNewBoxStock={setNewBoxStock}
+              handleBoxSubmit={handleBoxSubmit}
+              handleBoxSizeChange={handleBoxSizeChange}
+            />
           </Dialog>
         )}
       </Header>
@@ -356,51 +199,11 @@ const StockManagement = () => {
           </TabsList>
           
           <TabsContent value="pizza" className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <FadeInStagger staggerDelay={50}>
-                {stockItems.length > 0 ? (
-                  stockItems.map((stock) => (
-                    <StockCard key={stock.id} stock={stock} />
-                  ))
-                ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                    <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">Tidak ada stok pizza</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-4">
-                      Tambahkan stok pizza pertama Anda untuk memulai
-                    </p>
-                    <Button onClick={() => setOpenPizza(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Tambah Stok Pizza
-                    </Button>
-                  </div>
-                )}
-              </FadeInStagger>
-            </div>
+            <PizzaStockList stockItems={stockItems} setOpenPizza={setOpenPizza} />
           </TabsContent>
           
           <TabsContent value="box" className="mt-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              <FadeInStagger staggerDelay={50}>
-                {boxItems.length > 0 ? (
-                  boxItems.map((box) => (
-                    <BoxStockCard key={box.id} stock={box} />
-                  ))
-                ) : (
-                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                    <Package className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium">Tidak ada stok dus</h3>
-                    <p className="text-sm text-muted-foreground mt-1 mb-4">
-                      Tambahkan stok dus pertama Anda untuk memulai
-                    </p>
-                    <Button onClick={() => setOpenBox(true)}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Tambah Stok Dus
-                    </Button>
-                  </div>
-                )}
-              </FadeInStagger>
-            </div>
+            <BoxStockList boxItems={boxItems} setOpenBox={setOpenBox} />
           </TabsContent>
         </Tabs>
       </div>

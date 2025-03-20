@@ -1,79 +1,114 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 
-// Initialize the Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Initialize the Supabase client with fallback values to prevent errors
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-url.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Konfigurasi tabel Supabase
 export const setupSupabaseTables = async () => {
-  // Konfigurasi tabel pizza_stock
-  const { error: stockError } = await supabase.rpc('create_table_if_not_exists', {
-    table_name: 'pizza_stock',
-    columns: `
-      id uuid primary key default uuid_generate_v4(),
-      size text not null,
-      flavor text not null,
-      quantity integer not null,
-      purchase_date timestamp with time zone default now(),
-      cost_price integer not null,
-      updated_at timestamp with time zone default now()
-    `
-  });
+  console.log('Mencoba membuat tabel jika belum ada...');
   
-  if (stockError) console.error('Error creating pizza_stock table:', stockError);
-
-  // Konfigurasi tabel box_stock
-  const { error: boxStockError } = await supabase.rpc('create_table_if_not_exists', {
-    table_name: 'box_stock',
-    columns: `
-      id uuid primary key default uuid_generate_v4(),
-      size text not null,
-      quantity integer not null,
-      purchase_date timestamp with time zone default now(),
-      cost_price integer not null,
-      updated_at timestamp with time zone default now()
-    `
-  });
-  
-  if (boxStockError) console.error('Error creating box_stock table:', boxStockError);
-
-  // Konfigurasi tabel transactions
-  const { error: transactionError } = await supabase.rpc('create_table_if_not_exists', {
-    table_name: 'transactions',
-    columns: `
-      id uuid primary key default uuid_generate_v4(),
-      date timestamp with time zone default now(),
-      pizza_id uuid references pizza_stock(id),
-      size text not null,
-      flavor text not null,
-      quantity integer not null,
-      state text not null,
-      include_box boolean default false,
-      selling_price integer not null,
-      total_price integer not null,
-      customer_name text,
-      notes text
-    `
-  });
-  
-  if (transactionError) console.error('Error creating transactions table:', transactionError);
-
-  // Konfigurasi tabel customers
-  const { error: customerError } = await supabase.rpc('create_table_if_not_exists', {
-    table_name: 'customers',
-    columns: `
-      id uuid primary key default uuid_generate_v4(),
-      name text not null unique,
-      purchases integer default 0,
-      last_purchase timestamp with time zone default now()
-    `
-  });
-  
-  if (customerError) console.error('Error creating customers table:', customerError);
+  try {
+    // Membuat tabel pizza_stock
+    const { error: stockError } = await supabase
+      .from('pizza_stock')
+      .select('count')
+      .limit(1)
+      .maybeSingle();
+    
+    if (stockError && stockError.code === '42P01') {
+      console.log('Membuat tabel pizza_stock...');
+      await supabase.rpc('create_table', {
+        name: 'pizza_stock',
+        definition: `
+          id uuid primary key default uuid_generate_v4(),
+          size text not null,
+          flavor text not null,
+          quantity integer not null,
+          purchase_date timestamp with time zone default now(),
+          cost_price integer not null,
+          updated_at timestamp with time zone default now()
+        `
+      });
+    }
+    
+    // Membuat tabel box_stock
+    const { error: boxStockError } = await supabase
+      .from('box_stock')
+      .select('count')
+      .limit(1)
+      .maybeSingle();
+    
+    if (boxStockError && boxStockError.code === '42P01') {
+      console.log('Membuat tabel box_stock...');
+      await supabase.rpc('create_table', {
+        name: 'box_stock',
+        definition: `
+          id uuid primary key default uuid_generate_v4(),
+          size text not null,
+          quantity integer not null,
+          purchase_date timestamp with time zone default now(),
+          cost_price integer not null,
+          updated_at timestamp with time zone default now()
+        `
+      });
+    }
+    
+    // Membuat tabel transactions
+    const { error: transactionError } = await supabase
+      .from('transactions')
+      .select('count')
+      .limit(1)
+      .maybeSingle();
+    
+    if (transactionError && transactionError.code === '42P01') {
+      console.log('Membuat tabel transactions...');
+      await supabase.rpc('create_table', {
+        name: 'transactions',
+        definition: `
+          id uuid primary key default uuid_generate_v4(),
+          date timestamp with time zone default now(),
+          pizza_id uuid,
+          size text not null,
+          flavor text not null,
+          quantity integer not null,
+          state text not null,
+          include_box boolean default false,
+          selling_price integer not null,
+          total_price integer not null,
+          customer_name text,
+          notes text
+        `
+      });
+    }
+    
+    // Membuat tabel customers
+    const { error: customerError } = await supabase
+      .from('customers')
+      .select('count')
+      .limit(1)
+      .maybeSingle();
+    
+    if (customerError && customerError.code === '42P01') {
+      console.log('Membuat tabel customers...');
+      await supabase.rpc('create_table', {
+        name: 'customers',
+        definition: `
+          id uuid primary key default uuid_generate_v4(),
+          name text not null unique,
+          purchases integer default 0,
+          last_purchase timestamp with time zone default now()
+        `
+      });
+    }
+    
+    console.log('Pembuatan tabel selesai.');
+  } catch (error) {
+    console.error('Error saat pembuatan tabel:', error);
+  }
 };
 
 // API Pizza Stock
