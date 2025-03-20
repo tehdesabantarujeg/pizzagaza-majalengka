@@ -1,11 +1,12 @@
+
 import { Transaction } from './types';
 
 // Konstanta harga dalam Rupiah
 export const PRICES = {
   // Harga modal
   COST_SMALL_PIZZA: 16000,
-  COST_SMALL_BOX: 750,
   COST_MEDIUM_PIZZA: 24000,
+  COST_SMALL_BOX: 750,
   COST_MEDIUM_BOX: 1000,
   
   // Harga jual
@@ -86,6 +87,13 @@ export const USERS = [
   }
 ];
 
+// Alamat toko
+export const STORE_INFO = {
+  name: 'Pizza Gaza Majalengka',
+  address: 'Jl. Pemuda No. 34 Majalengka',
+  instagram: ['@pizza.gaza.majalengka', '@tehdesa.majalengka']
+};
+
 // Fungsi untuk memprint nota
 export const printReceipt = (transaction: Transaction) => {
   const receiptWindow = window.open('', '_blank');
@@ -141,13 +149,13 @@ export const printReceipt = (transaction: Transaction) => {
       </head>
       <body>
         <div class="header">
-          <h1>KASIR PIZZA</h1>
-          <div>Nota Penjualan</div>
+          <h1>${STORE_INFO.name.toUpperCase()}</h1>
+          <div>${STORE_INFO.address}</div>
           <div>${formatDate(transaction.date)}</div>
         </div>
         
         <div class="info">
-          <div><span>Customer:</span> <span>${transaction.customerName || 'Umum'}</span></div>
+          <div><span>Pelanggan:</span> <span>${transaction.customerName || 'Umum'}</span></div>
           <div><span>Pizza:</span> <span>${transaction.flavor}</span></div>
           <div><span>Ukuran:</span> <span>${transaction.size}</span></div>
           <div><span>Kondisi:</span> <span>${transaction.state}</span></div>
@@ -162,9 +170,11 @@ export const printReceipt = (transaction: Transaction) => {
         
         <div class="footer">
           <p>Terima kasih telah berbelanja!</p>
+          <p>Follow kami di Instagram:</p>
+          <p>${STORE_INFO.instagram.join(' dan ')}</p>
         </div>
         
-        <button onclick="window.print(); window.close();" style="margin-top: 20px; padding: 10px;">Print Nota</button>
+        <button onclick="window.print(); window.close();" style="margin-top: 20px; padding: 10px;">Cetak Nota</button>
       </body>
     </html>
   `;
@@ -173,3 +183,4 @@ export const printReceipt = (transaction: Transaction) => {
   receiptWindow.document.write(receiptContent);
   receiptWindow.document.close();
 };
+

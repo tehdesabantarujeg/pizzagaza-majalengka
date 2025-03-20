@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { FadeInStagger } from '@/components/animations/FadeIn';
 import TransactionCard from '@/components/TransactionCard';
-import CustomerSelector from '@/components/CustomerSelector';
-import { Transaction, PizzaStock } from '@/utils/types';
+import { Transaction, PizzaStock, BoxStock } from '@/utils/types';
 import { 
   PIZZA_FLAVORS, 
   PIZZA_SIZES, 
@@ -34,76 +33,26 @@ import {
   formatCurrency,
   printReceipt
 } from '@/utils/constants';
-import { Plus, AlertCircle, ShoppingCart, Package, Printer } from 'lucide-react';
+import { Plus, AlertCircle, ShoppingCart, Package, Printer, Save } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-
-// Data stok dan transaksi contoh
-const mockStockData: PizzaStock[] = [
-  {
-    id: '1',
-    size: 'Small',
-    flavor: 'Keju',
-    quantity: 15,
-    purchaseDate: new Date().toISOString(),
-    costPrice: PRICES.COST_SMALL_PIZZA + PRICES.COST_SMALL_BOX,
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '2',
-    size: 'Medium',
-    flavor: 'Pepperoni',
-    quantity: 8,
-    purchaseDate: new Date().toISOString(),
-    costPrice: PRICES.COST_MEDIUM_PIZZA + PRICES.COST_MEDIUM_BOX,
-    updatedAt: new Date().toISOString()
-  },
-  {
-    id: '3',
-    size: 'Small',
-    flavor: 'Daging Sapi',
-    quantity: 12,
-    purchaseDate: new Date().toISOString(),
-    costPrice: PRICES.COST_SMALL_PIZZA + PRICES.COST_SMALL_BOX,
-    updatedAt: new Date().toISOString()
-  },
-];
-
-const mockTransactions: Transaction[] = [
-  {
-    id: '1',
-    date: new Date().toISOString(),
-    pizzaId: '1',
-    size: 'Small',
-    flavor: 'Keju',
-    quantity: 2,
-    state: 'Matang',
-    includeBox: true,
-    sellingPrice: PRICES.SELLING_SMALL_COOKED,
-    totalPrice: (PRICES.SELLING_SMALL_COOKED * 2) + (PRICES.SELLING_SMALL_BOX * 2),
-    customerName: 'John Doe'
-  },
-  {
-    id: '2',
-    date: new Date(Date.now() - 3600000).toISOString(), // 1 jam yang lalu
-    pizzaId: '2',
-    size: 'Medium',
-    flavor: 'Pepperoni',
-    quantity: 1,
-    state: 'Mentah',
-    includeBox: false,
-    sellingPrice: PRICES.SELLING_MEDIUM_RAW,
-    totalPrice: PRICES.SELLING_MEDIUM_RAW,
-    customerName: 'Jane Smith'
-  },
-];
+import { 
+  fetchStockItems, 
+  updateStockItem, 
+  fetchBoxStock, 
+  updateBoxStock, 
+  addTransaction, 
+  fetchTransactions 
+} from '@/utils/supabase';
 
 const Sales = () => {
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
-  const [stockItems, setStockItems] = useState<PizzaStock[]>(mockStockData);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [stockItems, setStockItems] = useState<PizzaStock[]>([]);
+  const [boxItems, setBoxItems] = useState<BoxStock[]>([]);
   const [open, setOpen] = useState(false);
+  
   const [newSale, setNewSale] = useState({
     size: 'Small' as 'Small' | 'Medium',
     flavor: PIZZA_FLAVORS[0],
@@ -113,9 +62,27 @@ const Sales = () => {
     customerName: '',
     notes: ''
   });
+  
   const [sellingPrice, setSellingPrice] = useState(PRICES.SELLING_SMALL_RAW);
   const [totalPrice, setTotalPrice] = useState(PRICES.SELLING_SMALL_RAW);
   const [error, setError] = useState('');
+
+  // Ambil data stok dan transaksi saat komponen dimuat
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    const [pizzaStock, boxStock, transactionData] = await Promise.all([
+      fetchStockItems(),
+      fetchBoxStock(),
+      fetchTransactions()
+    ]);
+    
+    setStockItems(pizzaStock);
+    setBoxItems(boxStock);
+    setTransactions(transactionData);
+  };
 
   // Hitung harga jual berdasarkan ukuran dan kondisi
   const calculateSellingPrice = (size: 'Small' | 'Medium', state: 'Mentah' | 'Matang') => {
@@ -159,13 +126,8 @@ const Sales = () => {
     setNewSale({ ...newSale, state: value as 'Mentah' | 'Matang' });
   };
 
-  // Handle perubahan nama pelanggan
-  const handleCustomerChange = (value: string) => {
-    setNewSale({ ...newSale, customerName: value });
-  };
-
-  // Periksa apakah stok tersedia
-  const isStockAvailable = () => {
+  // Periksa apakah stok pizza tersedia
+  const isPizzaStockAvailable = () => {
     const stockItem = stockItems.find(
       item => item.size === newSale.size && item.flavor === newSale.flavor
     );
@@ -180,42 +142,77 @@ const Sales = () => {
       return false;
     }
     
-    setError('');
-    return true;
+    return stockItem;
   };
 
-  // Handle pengiriman formulir
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Periksa apakah stok dus tersedia jika diperlukan
+  const isBoxStockAvailable = () => {
+    if (!newSale.includeBox) return true;
     
-    // Validasi stok
-    if (!isStockAvailable()) {
-      return;
+    const boxStock = boxItems.find(
+      item => item.size === newSale.size
+    );
+    
+    if (!boxStock) {
+      setError(`Tidak ada stok dus ukuran ${newSale.size}`);
+      return false;
     }
     
-    // Temukan item stok dan perbarui jumlah
-    const updatedStock = stockItems.map(item => {
-      if (item.size === newSale.size && item.flavor === newSale.flavor) {
-        return {
-          ...item,
-          quantity: item.quantity - newSale.quantity,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return item;
-    });
+    if (boxStock.quantity < newSale.quantity) {
+      setError(`Hanya tersisa ${boxStock.quantity} dus ${newSale.size} dalam stok`);
+      return false;
+    }
+    
+    return boxStock;
+  };
+
+  // Memvalidasi stok yang tersedia
+  const validateStock = () => {
+    setError('');
+    const pizzaStock = isPizzaStockAvailable();
+    const boxStock = isBoxStockAvailable();
+    
+    if (!pizzaStock || (newSale.includeBox && !boxStock)) {
+      return false;
+    }
+    
+    return { pizzaStock, boxStock };
+  };
+
+  // Proses penjualan
+  const processSale = async (withPrinting = false) => {
+    // Validasi stok
+    const stockResult = validateStock();
+    if (!stockResult) return false;
+    
+    const { pizzaStock, boxStock } = stockResult as { 
+      pizzaStock: PizzaStock, 
+      boxStock: BoxStock | true 
+    };
+    
+    // Perbarui stok pizza
+    const updatedPizzaStock = {
+      ...pizzaStock,
+      quantity: pizzaStock.quantity - newSale.quantity
+    };
+    
+    // Perbarui stok dus jika termasuk
+    let updatedBoxStock;
+    if (newSale.includeBox && boxStock !== true) {
+      updatedBoxStock = {
+        ...boxStock as BoxStock,
+        quantity: (boxStock as BoxStock).quantity - newSale.quantity
+      };
+    }
     
     // Buat transaksi baru
     const boxPrice = calculateBoxPrice(newSale.size, newSale.includeBox);
     const basePrice = calculateSellingPrice(newSale.size, newSale.state);
     const totalPrice = (basePrice * newSale.quantity) + (boxPrice * newSale.quantity);
     
-    const newTransaction: Transaction = {
-      id: String(Date.now()),
+    const newTransaction: Omit<Transaction, 'id'> = {
       date: new Date().toISOString(),
-      pizzaId: stockItems.find(
-        item => item.size === newSale.size && item.flavor === newSale.flavor
-      )?.id || '',
+      pizzaId: pizzaStock.id,
       size: newSale.size,
       flavor: newSale.flavor,
       quantity: newSale.quantity,
@@ -227,32 +224,79 @@ const Sales = () => {
       notes: newSale.notes || undefined
     };
     
-    // Perbarui state
-    setStockItems(updatedStock);
-    setTransactions([newTransaction, ...transactions]);
+    try {
+      // Simpan perubahan ke database
+      await updateStockItem(updatedPizzaStock);
+      
+      if (newSale.includeBox && updatedBoxStock) {
+        await updateBoxStock(updatedBoxStock);
+      }
+      
+      const savedTransaction = await addTransaction(newTransaction);
+      
+      if (savedTransaction) {
+        // Perbarui state lokal
+        setStockItems(stockItems.map(item => 
+          item.id === pizzaStock.id ? updatedPizzaStock : item
+        ));
+        
+        if (newSale.includeBox && updatedBoxStock) {
+          setBoxItems(boxItems.map(item => 
+            item.id === (boxStock as BoxStock).id ? updatedBoxStock : item
+          ));
+        }
+        
+        setTransactions([savedTransaction, ...transactions]);
+        
+        // Tampilkan toast sukses
+        toast({
+          title: "Penjualan berhasil dicatat",
+          description: `${newSale.quantity} pizza ${newSale.flavor} ${newSale.size} terjual dengan harga ${formatCurrency(totalPrice)}`,
+        });
+        
+        // Cetak nota jika diminta
+        if (withPrinting) {
+          printReceipt(savedTransaction);
+        }
+        
+        // Tutup dialog
+        setOpen(false);
+        
+        // Reset formulir
+        setNewSale({
+          size: 'Small',
+          flavor: PIZZA_FLAVORS[0],
+          quantity: 1,
+          state: 'Mentah',
+          includeBox: false,
+          customerName: '',
+          notes: ''
+        });
+        
+        return true;
+      }
+    } catch (error) {
+      console.error("Error saat memproses penjualan:", error);
+      toast({
+        title: "Terjadi kesalahan",
+        description: "Gagal memproses penjualan",
+        variant: "destructive"
+      });
+    }
     
-    // Tampilkan toast sukses
-    toast({
-      title: "Penjualan berhasil dicatat",
-      description: `${newSale.quantity} pizza ${newSale.flavor} ${newSale.size} terjual dengan harga ${formatCurrency(totalPrice)}`,
-    });
-    
-    // Cetak nota
-    printReceipt(newTransaction);
-    
-    // Tutup dialog
-    setOpen(false);
-    
-    // Reset formulir
-    setNewSale({
-      size: 'Small',
-      flavor: PIZZA_FLAVORS[0],
-      quantity: 1,
-      state: 'Mentah',
-      includeBox: false,
-      customerName: '',
-      notes: ''
-    });
+    return false;
+  };
+
+  // Handle simpan saja
+  const handleSaveOnly = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await processSale(false);
+  };
+
+  // Handle simpan dan cetak
+  const handleSavePrint = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await processSale(true);
   };
 
   return (
@@ -269,7 +313,7 @@ const Sales = () => {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
-            <form onSubmit={handleSubmit}>
+            <form>
               <DialogHeader>
                 <DialogTitle>Catat Penjualan Baru</DialogTitle>
                 <DialogDescription>
@@ -379,12 +423,13 @@ const Sales = () => {
                   <Label htmlFor="customerName" className="text-right">
                     Pelanggan
                   </Label>
-                  <div className="col-span-3">
-                    <CustomerSelector
-                      selectedCustomer={newSale.customerName}
-                      onSelect={handleCustomerChange}
-                    />
-                  </div>
+                  <Input
+                    id="customerName"
+                    value={newSale.customerName}
+                    onChange={(e) => setNewSale({ ...newSale, customerName: e.target.value })}
+                    placeholder="Nama pelanggan (opsional)"
+                    className="col-span-3"
+                  />
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -423,10 +468,14 @@ const Sales = () => {
                 </div>
               </div>
               
-              <DialogFooter>
-                <Button type="submit" onClick={() => isStockAvailable()}>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={handleSaveOnly}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Simpan Saja
+                </Button>
+                <Button onClick={handleSavePrint} type="submit">
                   <Printer className="mr-2 h-4 w-4" />
-                  Catat & Cetak Nota
+                  Simpan & Cetak Nota
                 </Button>
               </DialogFooter>
             </form>

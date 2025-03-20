@@ -16,7 +16,15 @@ export interface PizzaStock {
   purchaseDate: string;
   costPrice: number;
   updatedAt: string;
-  includeBox?: boolean; // Menambahkan opsi dus
+}
+
+export interface BoxStock {
+  id: string;
+  size: 'Small' | 'Medium';
+  quantity: number;
+  purchaseDate: string;
+  costPrice: number;
+  updatedAt: string;
 }
 
 export interface Transaction {

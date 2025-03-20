@@ -1,18 +1,17 @@
 
 import React from 'react';
-import { PizzaStock } from '@/utils/types';
+import { BoxStock } from '@/utils/types';
 import { formatCurrency, formatDateShort } from '@/utils/constants';
-import PizzaVariantBadge from './PizzaVariantBadge';
 import { cn } from '@/utils/animations';
-import { ShoppingBag } from 'lucide-react';
+import { Package } from 'lucide-react';
 
-interface StockCardProps {
-  stock: PizzaStock;
+interface BoxStockCardProps {
+  stock: BoxStock;
   className?: string;
   onClick?: () => void;
 }
 
-const StockCard: React.FC<StockCardProps> = ({ stock, className, onClick }) => {
+const BoxStockCard: React.FC<BoxStockCardProps> = ({ stock, className, onClick }) => {
   return (
     <div 
       className={cn(
@@ -25,11 +24,13 @@ const StockCard: React.FC<StockCardProps> = ({ stock, className, onClick }) => {
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-full bg-secondary">
-            <ShoppingBag className="h-4 w-4 text-primary" />
+            <Package className="h-4 w-4 text-primary" />
           </div>
-          <h3 className="font-medium text-base">Pizza {stock.flavor}</h3>
+          <h3 className="font-medium text-base">Dus {stock.size}</h3>
         </div>
-        <PizzaVariantBadge size={stock.size} flavor={stock.flavor} />
+        <div className="px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100">
+          {stock.size}
+        </div>
       </div>
       
       <div className="grid grid-cols-2 gap-2 text-sm mt-4">
@@ -54,4 +55,4 @@ const StockCard: React.FC<StockCardProps> = ({ stock, className, onClick }) => {
   );
 };
 
-export default StockCard;
+export default BoxStockCard;

@@ -20,7 +20,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
   return (
     <div 
       className={cn(
-        "p-4 rounded-xl bg-white border border-border transition-all duration-200 hover:shadow-glass-hover",
+        "p-4 rounded-xl bg-white border border-border transition-all duration-200 hover:shadow-glass-hover dark:bg-gray-800 dark:border-gray-700",
         onClick && "cursor-pointer hover:scale-[1.01] active:scale-[0.99]",
         className
       )}
