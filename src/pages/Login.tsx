@@ -40,7 +40,7 @@ const Login = () => {
       if (success) {
         toast({
           title: "Login Berhasil",
-          description: "Selamat datang di Aplikasi Kasir Pizza!",
+          description: "Selamat datang di Aplikasi Kasir Pizza Gaza Majalengka!",
         });
         navigate('/');
       } else {

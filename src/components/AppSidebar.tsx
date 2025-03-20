@@ -34,7 +34,7 @@ const AppSidebar = () => {
       <SidebarHeader className="py-4">
         <div className="flex items-center justify-center">
           <Pizza className="h-8 w-8 text-pizza-red" />
-          <span className="ml-2 text-lg font-semibold">Kasir Pizza</span>
+          <span className="ml-2 text-lg font-semibold">Pizza Gaza Majalengka</span>
         </div>
       </SidebarHeader>
       
