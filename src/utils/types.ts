@@ -5,7 +5,7 @@ export interface Pizza {
   flavor: string;
   quantity: number;
   purchaseDate?: string;
-  costPrice?: number; // in Rupiah
+  costPrice?: number; // dalam Rupiah
 }
 
 export interface PizzaStock {
@@ -25,7 +25,8 @@ export interface Transaction {
   size: 'Small' | 'Medium';
   flavor: string;
   quantity: number;
-  state: 'Raw' | 'Cooked'; // Mentah or Matang
+  state: 'Mentah' | 'Matang'; // Mengubah dari Raw/Cooked ke Mentah/Matang
+  includeBox: boolean; // Menambahkan opsi dus
   sellingPrice: number;
   totalPrice: number;
   customerName?: string;
@@ -35,7 +36,7 @@ export interface Transaction {
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'cashier';
+  role: 'admin' | 'kasir';
   name: string;
 }
 

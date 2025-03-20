@@ -41,20 +41,20 @@ const Navbar: React.FC = () => {
       <div className="flex items-center">
         <NavLink to="/" className="flex items-center gap-2 mr-8">
           <Pizza className="h-6 w-6 text-pizza-red" />
-          <span className="font-semibold text-lg">Pizza Cashier</span>
+          <span className="font-semibold text-lg">Kasir Pizza</span>
         </NavLink>
         
         <nav className="hidden md:flex items-center gap-1">
-          <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Home" />
-          <NavItem to="/stock" icon={<ShoppingBag className="h-4 w-4" />} label="Stock" />
-          <NavItem to="/sales" icon={<ShoppingCart className="h-4 w-4" />} label="Sales" />
-          <NavItem to="/reports" icon={<BarChart2 className="h-4 w-4" />} label="Reports" />
+          <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Beranda" />
+          <NavItem to="/stock" icon={<ShoppingBag className="h-4 w-4" />} label="Stok" />
+          <NavItem to="/sales" icon={<ShoppingCart className="h-4 w-4" />} label="Penjualan" />
+          <NavItem to="/reports" icon={<BarChart2 className="h-4 w-4" />} label="Laporan" />
         </nav>
       </div>
       
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Role:</span>
+          <span className="text-sm text-muted-foreground">Peran:</span>
           <span className="text-sm font-medium bg-secondary px-2 py-1 rounded">Admin</span>
         </div>
         

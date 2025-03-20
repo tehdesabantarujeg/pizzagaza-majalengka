@@ -4,7 +4,7 @@ import { Transaction } from '@/utils/types';
 import { formatCurrency, formatDateShort } from '@/utils/constants';
 import PizzaVariantBadge from './PizzaVariantBadge';
 import { cn } from '@/utils/animations';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Package } from 'lucide-react';
 
 interface TransactionCardProps {
   transaction: Transaction;
@@ -40,16 +40,23 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
             </p>
           </div>
         </div>
-        <PizzaVariantBadge 
-          size={transaction.size} 
-          flavor={transaction.flavor} 
-          state={transaction.state}
-        />
+        <div className="flex items-center gap-2">
+          {transaction.includeBox && (
+            <div className="p-1 rounded-full bg-orange-100">
+              <Package className="h-3 w-3 text-orange-600" />
+            </div>
+          )}
+          <PizzaVariantBadge 
+            size={transaction.size} 
+            flavor={transaction.flavor} 
+            state={transaction.state}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm mt-4">
         <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs">Price Per Item</span>
+          <span className="text-muted-foreground text-xs">Harga Per Item</span>
           <span className="font-medium">{formatCurrency(transaction.sellingPrice)}</span>
         </div>
         <div className="flex flex-col">
@@ -58,13 +65,13 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
         </div>
         {transaction.customerName && (
           <div className="flex flex-col col-span-2">
-            <span className="text-muted-foreground text-xs">Customer</span>
+            <span className="text-muted-foreground text-xs">Pelanggan</span>
             <span className="font-medium">{transaction.customerName}</span>
           </div>
         )}
         {transaction.notes && (
           <div className="flex flex-col col-span-2">
-            <span className="text-muted-foreground text-xs">Notes</span>
+            <span className="text-muted-foreground text-xs">Catatan</span>
             <span className="font-medium">{transaction.notes}</span>
           </div>
         )}

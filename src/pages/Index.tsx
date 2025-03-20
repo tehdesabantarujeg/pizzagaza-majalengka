@@ -15,11 +15,11 @@ const Index = () => {
       <div className="container px-4 md:px-6 py-8 max-w-6xl">
         <FadeIn className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Pizza Stock &amp; Sales Management System
+            Sistem Manajemen Stok & Penjualan Pizza
           </h1>
           <p className="text-muted-foreground md:text-lg">
-            Manage your pizza inventory and sales transactions with this intuitive system.
-            Easily track stock levels, process sales, and visualize your business performance.
+            Kelola inventaris pizza dan transaksi penjualan dengan sistem yang intuitif ini.
+            Pantau tingkat stok, proses penjualan, dan visualisasikan kinerja bisnis Anda dengan mudah.
           </p>
         </FadeIn>
 
@@ -32,24 +32,24 @@ const Index = () => {
               <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
                 <ShoppingBag className="h-6 w-6 text-blue-600" />
               </div>
-              <CardTitle>Stock Management</CardTitle>
+              <CardTitle>Manajemen Stok</CardTitle>
               <CardDescription>
-                Add and manage your pizza inventory
+                Tambah dan kelola inventaris pizza Anda
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Add new stock purchases</span>
+                  <span>Tambahkan pembelian stok baru</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>View current stock levels</span>
+                  <span>Lihat tingkat stok saat ini</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Track purchase history</span>
+                  <span>Pantau riwayat pembelian</span>
                 </li>
               </ul>
             </CardContent>
@@ -58,7 +58,7 @@ const Index = () => {
                 onClick={() => navigate('/stock')}
                 className="w-full"
               >
-                Manage Stock
+                Kelola Stok
               </Button>
             </CardFooter>
           </Card>
@@ -68,24 +68,24 @@ const Index = () => {
               <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-2">
                 <ShoppingCart className="h-6 w-6 text-green-600" />
               </div>
-              <CardTitle>Sales Processing</CardTitle>
+              <CardTitle>Proses Penjualan</CardTitle>
               <CardDescription>
-                Process and record pizza sales
+                Proses dan catat penjualan pizza
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Record new sales transactions</span>
+                  <span>Catat transaksi penjualan baru</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Automatically update stock</span>
+                  <span>Perbarui stok secara otomatis</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>View sales history</span>
+                  <span>Lihat riwayat penjualan</span>
                 </li>
               </ul>
             </CardContent>
@@ -94,7 +94,7 @@ const Index = () => {
                 onClick={() => navigate('/sales')}
                 className="w-full"
               >
-                Process Sales
+                Proses Penjualan
               </Button>
             </CardFooter>
           </Card>
@@ -104,24 +104,24 @@ const Index = () => {
               <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-2">
                 <BarChart2 className="h-6 w-6 text-purple-600" />
               </div>
-              <CardTitle>Reports &amp; Analytics</CardTitle>
+              <CardTitle>Laporan & Analisis</CardTitle>
               <CardDescription>
-                Visualize your business performance
+                Visualisasikan kinerja bisnis Anda
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0 pb-2">
               <ul className="space-y-2 text-sm">
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>View sales analytics</span>
+                  <span>Lihat analisis penjualan</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Track best-selling flavors</span>
+                  <span>Lacak rasa terlaris</span>
                 </li>
                 <li className="flex items-center">
                   <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Monitor revenue and profit</span>
+                  <span>Pantau pendapatan dan keuntungan</span>
                 </li>
               </ul>
             </CardContent>
@@ -130,7 +130,7 @@ const Index = () => {
                 onClick={() => navigate('/reports')}
                 className="w-full"
               >
-                View Reports
+                Lihat Laporan
               </Button>
             </CardFooter>
           </Card>
@@ -143,14 +143,14 @@ const Index = () => {
                 <CircleDollarSign className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-lg font-medium">Connect with Supabase</h3>
+                <h3 className="text-lg font-medium">Hubungkan dengan Supabase</h3>
                 <p className="text-sm text-muted-foreground">
-                  Enable authentication, database storage, and real-time updates
+                  Aktifkan otentikasi, penyimpanan database, dan pembaruan real-time
                 </p>
               </div>
             </div>
             <Button variant="outline" className="w-full md:w-auto">
-              Setup Integration
+              Siapkan Integrasi
             </Button>
           </div>
         </FadeIn>
