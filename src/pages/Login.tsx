@@ -71,9 +71,9 @@ const Login = () => {
             <div className="flex justify-center mb-2">
               <Pizza className="h-10 w-10 text-pizza-red" />
             </div>
-            <CardTitle className="text-2xl">Kasir Pizza</CardTitle>
+            <CardTitle className="text-2xl">Pizza Gaza Majalengka</CardTitle>
             <CardDescription>
-              Masukkan kredensial Anda untuk login
+              Masukkan nama dan kata sandi untuk login
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -114,10 +114,6 @@ const Login = () => {
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground">
-            <div>
-              <p>Admin: username <strong>Admin</strong>, password <strong>zenasava</strong></p>
-              <p>Kasir: username <strong>Kasir</strong>, password <strong>tehdesa</strong></p>
-            </div>
           </CardFooter>
         </Card>
       </FadeIn>
