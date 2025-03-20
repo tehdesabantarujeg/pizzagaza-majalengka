@@ -16,6 +16,7 @@ export interface PizzaStock {
   purchaseDate: string;
   costPrice: number;
   updatedAt: string;
+  includeBox?: boolean; // Menambahkan opsi dus
 }
 
 export interface Transaction {
@@ -25,7 +26,7 @@ export interface Transaction {
   size: 'Small' | 'Medium';
   flavor: string;
   quantity: number;
-  state: 'Mentah' | 'Matang'; // Mengubah dari Raw/Cooked ke Mentah/Matang
+  state: 'Mentah' | 'Matang'; 
   includeBox: boolean; // Menambahkan opsi dus
   sellingPrice: number;
   totalPrice: number;
@@ -38,6 +39,15 @@ export interface User {
   email: string;
   role: 'admin' | 'kasir';
   name: string;
+  username: string;
+  password: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  purchases: number;
+  lastPurchase: string;
 }
 
 export interface ReportData {

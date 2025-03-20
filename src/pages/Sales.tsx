@@ -24,15 +24,17 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { FadeInStagger } from '@/components/animations/FadeIn';
 import TransactionCard from '@/components/TransactionCard';
+import CustomerSelector from '@/components/CustomerSelector';
 import { Transaction, PizzaStock } from '@/utils/types';
 import { 
   PIZZA_FLAVORS, 
   PIZZA_SIZES, 
   PIZZA_STATES, 
   PRICES, 
-  formatCurrency 
+  formatCurrency,
+  printReceipt
 } from '@/utils/constants';
-import { Plus, AlertCircle, ShoppingCart, Package } from 'lucide-react';
+import { Plus, AlertCircle, ShoppingCart, Package, Printer } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -79,7 +81,7 @@ const mockTransactions: Transaction[] = [
     state: 'Matang',
     includeBox: true,
     sellingPrice: PRICES.SELLING_SMALL_COOKED,
-    totalPrice: (PRICES.SELLING_SMALL_COOKED * 2) + (PRICES.COST_SMALL_BOX * 2),
+    totalPrice: (PRICES.SELLING_SMALL_COOKED * 2) + (PRICES.SELLING_SMALL_BOX * 2),
     customerName: 'John Doe'
   },
   {
@@ -127,7 +129,7 @@ const Sales = () => {
   // Hitung harga dus berdasarkan ukuran
   const calculateBoxPrice = (size: 'Small' | 'Medium', includeBox: boolean) => {
     if (!includeBox) return 0;
-    return size === 'Small' ? PRICES.COST_SMALL_BOX : PRICES.COST_MEDIUM_BOX;
+    return size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX;
   };
 
   // Perbarui harga saat ukuran, kondisi, atau jumlah berubah
@@ -155,6 +157,11 @@ const Sales = () => {
   // Handle perubahan kondisi
   const handleStateChange = (value: string) => {
     setNewSale({ ...newSale, state: value as 'Mentah' | 'Matang' });
+  };
+
+  // Handle perubahan nama pelanggan
+  const handleCustomerChange = (value: string) => {
+    setNewSale({ ...newSale, customerName: value });
   };
 
   // Periksa apakah stok tersedia
@@ -223,13 +230,18 @@ const Sales = () => {
     // Perbarui state
     setStockItems(updatedStock);
     setTransactions([newTransaction, ...transactions]);
-    setOpen(false);
     
     // Tampilkan toast sukses
     toast({
       title: "Penjualan berhasil dicatat",
       description: `${newSale.quantity} pizza ${newSale.flavor} ${newSale.size} terjual dengan harga ${formatCurrency(totalPrice)}`,
     });
+    
+    // Cetak nota
+    printReceipt(newTransaction);
+    
+    // Tutup dialog
+    setOpen(false);
     
     // Reset formulir
     setNewSale({
@@ -357,7 +369,7 @@ const Sales = () => {
                     />
                     <span className="text-sm">
                       {newSale.includeBox 
-                        ? `Termasuk dus (${formatCurrency(newSale.size === 'Small' ? PRICES.COST_SMALL_BOX : PRICES.COST_MEDIUM_BOX)})` 
+                        ? `Termasuk dus (${formatCurrency(newSale.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX)})` 
                         : 'Tanpa dus'}
                     </span>
                   </div>
@@ -367,13 +379,12 @@ const Sales = () => {
                   <Label htmlFor="customerName" className="text-right">
                     Pelanggan
                   </Label>
-                  <Input
-                    id="customerName"
-                    value={newSale.customerName}
-                    onChange={(e) => setNewSale({ ...newSale, customerName: e.target.value })}
-                    placeholder="Opsional"
-                    className="col-span-3"
-                  />
+                  <div className="col-span-3">
+                    <CustomerSelector
+                      selectedCustomer={newSale.customerName}
+                      onSelect={handleCustomerChange}
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -401,7 +412,7 @@ const Sales = () => {
                     {newSale.includeBox && (
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Harga Dus:</span>
-                        <span>{formatCurrency(newSale.size === 'Small' ? PRICES.COST_SMALL_BOX : PRICES.COST_MEDIUM_BOX)} / pcs</span>
+                        <span>{formatCurrency(newSale.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX)} / pcs</span>
                       </div>
                     )}
                     <div className="flex justify-between font-medium">
@@ -414,7 +425,8 @@ const Sales = () => {
               
               <DialogFooter>
                 <Button type="submit" onClick={() => isStockAvailable()}>
-                  Catat Penjualan
+                  <Printer className="mr-2 h-4 w-4" />
+                  Catat & Cetak Nota
                 </Button>
               </DialogFooter>
             </form>

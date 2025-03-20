@@ -1,7 +1,8 @@
 
 import React from 'react';
-import Navbar from './Navbar';
 import { cn } from '@/utils/animations';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import AppSidebar from './AppSidebar';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,12 +11,14 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <main className={cn("flex-1", className)}>
-        {children}
-      </main>
-    </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar />
+        <SidebarInset className={cn("", className)}>
+          {children}
+        </SidebarInset>
+      </div>
+    </SidebarProvider>
   );
 };
 
