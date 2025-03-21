@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -89,7 +90,9 @@ const Reports = () => {
         setStateData(stateDistribution);
         
         const stockData = await fetchStockSummary();
-        setStockSummary(processStockSummary(stockData));
+        // Fixed: Ensuring the processed stock summary is an array
+        const processedStockData = processStockSummary(stockData);
+        setStockSummary(processedStockData);
       } catch (error) {
         console.error('Error fetching report data:', error);
       } finally {
@@ -508,5 +511,32 @@ const Reports = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {stock
+                      {stockSummary.map((item, index) => {
+                        const smallQty = item.sizes.Small || 0;
+                        const mediumQty = item.sizes.Medium || 0;
+                        const total = smallQty + mediumQty;
+                        
+                        return (
+                          <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
+                            <td className="p-3 font-medium">{item.flavor}</td>
+                            <td className="text-center p-3">{smallQty}</td>
+                            <td className="text-center p-3">{mediumQty}</td>
+                            <td className="text-center p-3 font-medium">{total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="h-40 flex items-center justify-center">Tidak ada data stok ditemukan</div>
+              )}
+            </CardContent>
+          </Card>
+        </FadeIn>
+      </div>
+    </Layout>
+  );
+};
 
+export default Reports;
