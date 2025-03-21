@@ -1,115 +1,7 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
-
-// Initialize the Supabase client with fallback values to prevent errors
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-url.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Konfigurasi tabel Supabase
-export const setupSupabaseTables = async () => {
-  console.log('Mencoba membuat tabel jika belum ada...');
-  
-  try {
-    // Membuat tabel pizza_stock
-    const { error: stockError } = await supabase
-      .from('pizza_stock')
-      .select('count')
-      .limit(1)
-      .maybeSingle();
-    
-    if (stockError && stockError.code === '42P01') {
-      console.log('Membuat tabel pizza_stock...');
-      await supabase.rpc('create_table', {
-        name: 'pizza_stock',
-        definition: `
-          id uuid primary key default uuid_generate_v4(),
-          size text not null,
-          flavor text not null,
-          quantity integer not null,
-          purchase_date timestamp with time zone default now(),
-          cost_price integer not null,
-          updated_at timestamp with time zone default now()
-        `
-      });
-    }
-    
-    // Membuat tabel box_stock
-    const { error: boxStockError } = await supabase
-      .from('box_stock')
-      .select('count')
-      .limit(1)
-      .maybeSingle();
-    
-    if (boxStockError && boxStockError.code === '42P01') {
-      console.log('Membuat tabel box_stock...');
-      await supabase.rpc('create_table', {
-        name: 'box_stock',
-        definition: `
-          id uuid primary key default uuid_generate_v4(),
-          size text not null,
-          quantity integer not null,
-          purchase_date timestamp with time zone default now(),
-          cost_price integer not null,
-          updated_at timestamp with time zone default now()
-        `
-      });
-    }
-    
-    // Membuat tabel transactions
-    const { error: transactionError } = await supabase
-      .from('transactions')
-      .select('count')
-      .limit(1)
-      .maybeSingle();
-    
-    if (transactionError && transactionError.code === '42P01') {
-      console.log('Membuat tabel transactions...');
-      await supabase.rpc('create_table', {
-        name: 'transactions',
-        definition: `
-          id uuid primary key default uuid_generate_v4(),
-          date timestamp with time zone default now(),
-          pizza_id uuid,
-          size text not null,
-          flavor text not null,
-          quantity integer not null,
-          state text not null,
-          include_box boolean default false,
-          selling_price integer not null,
-          total_price integer not null,
-          customer_name text,
-          notes text
-        `
-      });
-    }
-    
-    // Membuat tabel customers
-    const { error: customerError } = await supabase
-      .from('customers')
-      .select('count')
-      .limit(1)
-      .maybeSingle();
-    
-    if (customerError && customerError.code === '42P01') {
-      console.log('Membuat tabel customers...');
-      await supabase.rpc('create_table', {
-        name: 'customers',
-        definition: `
-          id uuid primary key default uuid_generate_v4(),
-          name text not null unique,
-          purchases integer default 0,
-          last_purchase timestamp with time zone default now()
-        `
-      });
-    }
-    
-    console.log('Pembuatan tabel selesai.');
-  } catch (error) {
-    console.error('Error saat pembuatan tabel:', error);
-  }
-};
+import { supabase } from '@/integrations/supabase/client';
 
 // API Pizza Stock
 export const fetchStockItems = async (): Promise<PizzaStock[]> => {
@@ -293,7 +185,7 @@ export const updateCustomer = async (customer: Customer): Promise<boolean> => {
 export const fetchSalesReportData = async (startDate: string, endDate: string): Promise<any> => {
   const { data, error } = await supabase
     .from('transactions')
-    .select('date, selling_price, total_price, quantity')
+    .select('date, selling_price, total_price, quantity, flavor, size, state, include_box')
     .gte('date', startDate)
     .lte('date', endDate)
     .order('date', { ascending: true });
@@ -304,4 +196,31 @@ export const fetchSalesReportData = async (startDate: string, endDate: string): 
   }
   
   return data || [];
+};
+
+export const fetchStockSummary = async (): Promise<any> => {
+  const { data, error } = await supabase
+    .from('pizza_stock')
+    .select('flavor, size, quantity');
+    
+  if (error) {
+    console.error('Error fetching stock summary:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+export const fetchDashboardData = async (): Promise<any> => {
+  const [transactions, stockItems, customers] = await Promise.all([
+    fetchTransactions(),
+    fetchStockItems(),
+    fetchCustomers()
+  ]);
+  
+  return {
+    transactions,
+    stockItems,
+    customers
+  };
 };

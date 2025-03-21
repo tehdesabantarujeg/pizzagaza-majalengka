@@ -9,7 +9,129 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      box_stock: {
+        Row: {
+          cost_price: number
+          id: string
+          purchase_date: string | null
+          quantity: number
+          size: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost_price: number
+          id?: string
+          purchase_date?: string | null
+          quantity: number
+          size: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost_price?: number
+          id?: string
+          purchase_date?: string | null
+          quantity?: number
+          size?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      customers: {
+        Row: {
+          id: string
+          last_purchase: string | null
+          name: string
+          purchases: number | null
+        }
+        Insert: {
+          id?: string
+          last_purchase?: string | null
+          name: string
+          purchases?: number | null
+        }
+        Update: {
+          id?: string
+          last_purchase?: string | null
+          name?: string
+          purchases?: number | null
+        }
+        Relationships: []
+      }
+      pizza_stock: {
+        Row: {
+          cost_price: number
+          flavor: string
+          id: string
+          purchase_date: string | null
+          quantity: number
+          size: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost_price: number
+          flavor: string
+          id?: string
+          purchase_date?: string | null
+          quantity: number
+          size: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost_price?: number
+          flavor?: string
+          id?: string
+          purchase_date?: string | null
+          quantity?: number
+          size?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          customer_name: string | null
+          date: string | null
+          flavor: string
+          id: string
+          include_box: boolean | null
+          notes: string | null
+          pizza_id: string | null
+          quantity: number
+          selling_price: number
+          size: string
+          state: string
+          total_price: number
+        }
+        Insert: {
+          customer_name?: string | null
+          date?: string | null
+          flavor: string
+          id?: string
+          include_box?: boolean | null
+          notes?: string | null
+          pizza_id?: string | null
+          quantity: number
+          selling_price: number
+          size: string
+          state: string
+          total_price: number
+        }
+        Update: {
+          customer_name?: string | null
+          date?: string | null
+          flavor?: string
+          id?: string
+          include_box?: boolean | null
+          notes?: string | null
+          pizza_id?: string | null
+          quantity?: number
+          selling_price?: number
+          size?: string
+          state?: string
+          total_price?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
