@@ -46,7 +46,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts }) => {
                   width={120}
                   tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
                 />
-                <Tooltip />
+                <Tooltip formatter={(value) => [`Rp${value.toLocaleString('id-ID')}`, 'Pendapatan']} />
                 <Bar dataKey="revenue" name="Pendapatan" fill="#0088FE" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>

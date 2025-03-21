@@ -1,4 +1,3 @@
-
 import { Transaction } from './types';
 
 // Konstanta harga dalam Rupiah
@@ -117,17 +116,44 @@ export const STORE_INFO = {
 };
 
 // Fungsi untuk memprint nota
-export const printReceipt = (transaction: Transaction) => {
+export const printReceipt = (transaction: Transaction | Transaction[]): void => {
   const receiptWindow = window.open('', '_blank');
   if (!receiptWindow) return;
   
-  const boxPrice = transaction.includeBox 
-    ? (transaction.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX) 
-    : 0;
+  // Handle both single transaction and array of transactions
+  const transactions = Array.isArray(transaction) ? transaction : [transaction];
+  if (transactions.length === 0) return;
   
-  const boxDisplay = transaction.includeBox
-    ? `${transaction.quantity}x${formatCurrency(boxPrice)} = ${formatCurrency(boxPrice * transaction.quantity)}`
-    : 'Tidak';
+  // Get customer name and date from the first transaction
+  const firstTransaction = transactions[0];
+  const customerName = firstTransaction.customerName || 'Umum';
+  const date = firstTransaction.date;
+  
+  // Calculate total
+  const overallTotal = transactions.reduce((sum, t) => sum + t.totalPrice, 0);
+  
+  // Generate items list
+  const itemsList = transactions.map(t => {
+    const boxPrice = t.includeBox 
+      ? (t.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX) 
+      : 0;
+    
+    const boxDisplay = t.includeBox
+      ? `${t.quantity}x${formatCurrency(boxPrice)} = ${formatCurrency(boxPrice * t.quantity)}`
+      : 'Tidak';
+      
+    return `
+      <div class="item">
+        <div><span>Pizza:</span> <span>${t.flavor}</span></div>
+        <div><span>Ukuran:</span> <span>${t.size}</span></div>
+        <div><span>Kondisi:</span> <span>${t.state}</span></div>
+        <div><span>Jumlah:</span> <span>${t.quantity}</span></div>
+        <div><span>Dus:</span> <span>${boxDisplay}</span></div>
+        <div><span>Harga Satuan:</span> <span>${formatCurrency(t.sellingPrice)}</span></div>
+        <div class="item-total"><span>Subtotal:</span> <span>${formatCurrency(t.totalPrice)}</span></div>
+      </div>
+    `;
+  }).join('<div class="item-separator"></div>');
 
   const receiptContent = `
     <html>
@@ -159,10 +185,23 @@ export const printReceipt = (transaction: Transaction) => {
           .info {
             margin-bottom: 15px;
           }
+          .customer {
+            margin-bottom: 10px;
+          }
           .info div {
             display: flex;
             justify-content: space-between;
             margin-bottom: 5px;
+          }
+          .item {
+            margin-bottom: 10px;
+          }
+          .item-separator {
+            border-top: 1px dotted #ccc;
+            margin: 10px 0;
+          }
+          .item-total {
+            font-weight: bold;
           }
           .total {
             font-weight: bold;
@@ -186,21 +225,19 @@ export const printReceipt = (transaction: Transaction) => {
         <div class="header">
           <h1>${STORE_INFO.name.toUpperCase()}</h1>
           <div>${STORE_INFO.address}</div>
-          <div class="date-time">${formatReceiptDate(transaction.date)}</div>
+          <div class="date-time">${formatReceiptDate(date)}</div>
+        </div>
+        
+        <div class="customer">
+          <div><span>Pelanggan:</span> <span>${customerName}</span></div>
         </div>
         
         <div class="info">
-          <div><span>Pelanggan:</span> <span>${transaction.customerName || 'Umum'}</span></div>
-          <div><span>Pizza:</span> <span>${transaction.flavor}</span></div>
-          <div><span>Ukuran:</span> <span>${transaction.size}</span></div>
-          <div><span>Kondisi:</span> <span>${transaction.state}</span></div>
-          <div><span>Jumlah:</span> <span>${transaction.quantity}</span></div>
-          <div><span>Dus:</span> <span>${boxDisplay}</span></div>
-          <div><span>Harga Satuan:</span> <span>${formatCurrency(transaction.sellingPrice)}</span></div>
+          ${itemsList}
         </div>
         
         <div class="total">
-          <div><span>Total:</span> <span>${formatCurrency(transaction.totalPrice)}</span></div>
+          <div><span>Total:</span> <span>${formatCurrency(overallTotal)}</span></div>
         </div>
         
         <div class="footer">

@@ -116,7 +116,7 @@ export const useSaleManagement = () => {
     
     try {
       // Create transactions for each item (or single item)
-      const transactions: Transaction[] = [];
+      const savedTransactions: Transaction[] = [];
       const stockUpdatesPromises = [];
       
       for (const { item, pizzaStock, boxStock } of stockUpdates as any[]) {
@@ -155,7 +155,7 @@ export const useSaleManagement = () => {
         
         const savedTransaction = await addNewTransaction(transaction);
         if (savedTransaction) {
-          transactions.push(savedTransaction);
+          savedTransactions.push(savedTransaction);
         }
       }
       
@@ -173,10 +173,9 @@ export const useSaleManagement = () => {
       });
       
       // Print receipt if requested
-      if (withPrinting && transactions.length > 0) {
-        // For now, print first transaction only
-        // In the future, you could create a combined receipt
-        printReceipt(transactions[0]);
+      if (withPrinting && savedTransactions.length > 0) {
+        // Print all transactions as one receipt
+        printReceipt(savedTransactions);
       }
       
       // Close dialog and reset form
