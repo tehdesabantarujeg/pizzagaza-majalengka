@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -355,4 +354,29 @@ export const fetchDashboardData = async (): Promise<any> => {
     stockItems,
     customers
   };
+};
+
+// Add the new functions to update cost price for pizza and box stock
+export const updatePizzaStockCostPrice = async (id: string, costPrice: number): Promise<void> => {
+  const { error } = await supabase
+    .from('pizza_stock')
+    .update({ cost_price: costPrice })
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error updating pizza stock cost price:', error);
+    throw error;
+  }
+};
+
+export const updateBoxStockCostPrice = async (id: string, costPrice: number): Promise<void> => {
+  const { error } = await supabase
+    .from('box_stock')
+    .update({ cost_price: costPrice })
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error updating box stock cost price:', error);
+    throw error;
+  }
 };

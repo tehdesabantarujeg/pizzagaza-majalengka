@@ -52,6 +52,15 @@ const AppSidebar = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Penjualan">
+                  <NavLink to="/sales">
+                    <ShoppingCart className="h-5 w-5" />
+                    <span>Penjualan</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
               {user?.role === 'admin' && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Manajemen Stok">
@@ -62,15 +71,6 @@ const AppSidebar = () => {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Penjualan">
-                  <NavLink to="/sales">
-                    <ShoppingCart className="h-5 w-5" />
-                    <span>Penjualan</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               
               {user?.role === 'admin' && (
                 <SidebarMenuItem>

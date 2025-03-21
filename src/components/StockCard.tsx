@@ -1,56 +1,67 @@
 
 import React from 'react';
-import { PizzaStock } from '@/utils/types';
-import { formatCurrency, formatDateShort } from '@/utils/constants';
-import PizzaVariantBadge from './PizzaVariantBadge';
-import { cn } from '@/utils/animations';
-import { ShoppingBag } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { FormatDatum, formatCurrency } from '@/utils/constants';
+import EditableCostPrice from '@/components/stock/EditableCostPrice';
+import { updatePizzaStockCostPrice } from '@/utils/supabase';
 
 interface StockCardProps {
-  stock: PizzaStock;
-  className?: string;
-  onClick?: () => void;
+  id: string;
+  flavor: string;
+  size: string;
+  quantity: number;
+  costPrice: number;
+  purchaseDate: string;
+  updated?: string;
 }
 
-const StockCard: React.FC<StockCardProps> = ({ stock, className, onClick }) => {
+const StockCard: React.FC<StockCardProps> = ({
+  id,
+  flavor,
+  size,
+  quantity,
+  costPrice,
+  purchaseDate,
+  updated
+}) => {
+  const handleUpdateCostPrice = async (newPrice: number) => {
+    await updatePizzaStockCostPrice(id, newPrice);
+  };
+
   return (
-    <div 
-      className={cn(
-        "p-4 rounded-xl bg-white border border-border transition-all duration-200 hover:shadow-glass-hover dark:bg-gray-800 dark:border-gray-700",
-        onClick && "cursor-pointer hover:scale-[1.01] active:scale-[0.99]",
-        className
-      )}
-      onClick={onClick}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-full bg-secondary">
-            <ShoppingBag className="h-4 w-4 text-primary" />
-          </div>
-          <h3 className="font-medium text-base">Pizza {stock.flavor}</h3>
-        </div>
-        <PizzaVariantBadge size={stock.size} flavor={stock.flavor} />
-      </div>
+    <Card className="relative shadow-sm">
+      <Badge 
+        variant={quantity > 0 ? "default" : "destructive"}
+        className="absolute top-2 right-2"
+      >
+        Stok: {quantity}
+      </Badge>
       
-      <div className="grid grid-cols-2 gap-2 text-sm mt-4">
-        <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs">Jumlah</span>
-          <span className="font-medium">{stock.quantity} pcs</span>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl">{flavor}</CardTitle>
+        <CardDescription>Ukuran: {size}</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-2 pt-0">
+        <div className="text-sm">
+          <span className="font-medium">Harga Modal:</span>{' '}
+          <EditableCostPrice 
+            initialValue={costPrice} 
+            onUpdate={handleUpdateCostPrice}
+          />
         </div>
-        <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs">Harga Modal</span>
-          <span className="font-medium">{formatCurrency(stock.costPrice)}</span>
+        <div className="text-sm">
+          <span className="font-medium">Tanggal Pembelian:</span>{' '}
+          {FormatDatum(purchaseDate)}
         </div>
-        <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs">Tanggal Pembelian</span>
-          <span className="font-medium">{formatDateShort(stock.purchaseDate)}</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-muted-foreground text-xs">Terakhir Diperbarui</span>
-          <span className="font-medium">{formatDateShort(stock.updatedAt)}</span>
-        </div>
-      </div>
-    </div>
+        {updated && (
+          <div className="text-sm text-muted-foreground">
+            Terakhir diperbarui: {FormatDatum(updated)}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

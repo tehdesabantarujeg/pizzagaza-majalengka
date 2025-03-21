@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { FadeIn, FadeInStagger } from '@/components/animations/FadeIn';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Layers, ShoppingBag, ShoppingCart, BarChart2, CircleDollarSign } from 'lucide-react';
+import { ChevronRight, Layers, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -135,25 +135,6 @@ const Index = () => {
             </CardFooter>
           </Card>
         </FadeInStagger>
-
-        <FadeIn delay={600} className="mt-16 p-6 rounded-xl bg-secondary border">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                <CircleDollarSign className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium">Hubungkan dengan Supabase</h3>
-                <p className="text-sm text-muted-foreground">
-                  Aktifkan otentikasi, penyimpanan database, dan pembaruan real-time
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full md:w-auto">
-              Siapkan Integrasi
-            </Button>
-          </div>
-        </FadeIn>
       </div>
     </Layout>
   );
