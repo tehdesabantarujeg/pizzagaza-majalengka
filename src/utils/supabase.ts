@@ -2,6 +2,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
+import { formatCurrency } from './constants';
+
+// Function to setup tables (placeholder since tables are already created in Supabase)
+export const setupSupabaseTables = async (): Promise<void> => {
+  // Tables are already created via SQL migrations
+  return Promise.resolve();
+};
 
 // API Pizza Stock
 export const fetchStockItems = async (): Promise<PizzaStock[]> => {
@@ -15,18 +22,32 @@ export const fetchStockItems = async (): Promise<PizzaStock[]> => {
     return [];
   }
   
-  return data || [];
+  // Map database columns to our TypeScript model
+  return (data || []).map(item => ({
+    id: item.id,
+    size: item.size as 'Small' | 'Medium',
+    flavor: item.flavor,
+    quantity: item.quantity,
+    purchaseDate: item.purchase_date || new Date().toISOString(),
+    costPrice: item.cost_price,
+    updatedAt: item.updated_at || new Date().toISOString()
+  }));
 };
 
 export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt'>): Promise<PizzaStock | null> => {
+  // Convert our model to database columns
+  const dbItem = {
+    size: stockItem.size,
+    flavor: stockItem.flavor,
+    quantity: stockItem.quantity,
+    purchase_date: stockItem.purchaseDate,
+    cost_price: stockItem.costPrice,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabase
     .from('pizza_stock')
-    .insert([
-      { 
-        ...stockItem, 
-        updated_at: new Date().toISOString() 
-      }
-    ])
+    .insert([dbItem])
     .select()
     .single();
     
@@ -35,16 +56,32 @@ export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt
     return null;
   }
   
-  return data;
+  // Map back from database to our model
+  return {
+    id: data.id,
+    size: data.size as 'Small' | 'Medium',
+    flavor: data.flavor,
+    quantity: data.quantity,
+    purchaseDate: data.purchase_date || new Date().toISOString(),
+    costPrice: data.cost_price,
+    updatedAt: data.updated_at || new Date().toISOString()
+  };
 };
 
 export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
+  // Convert our model to database columns
+  const dbItem = {
+    size: stockItem.size,
+    flavor: stockItem.flavor,
+    quantity: stockItem.quantity,
+    purchase_date: stockItem.purchaseDate,
+    cost_price: stockItem.costPrice,
+    updated_at: new Date().toISOString()
+  };
+
   const { error } = await supabase
     .from('pizza_stock')
-    .update({ 
-      ...stockItem, 
-      updated_at: new Date().toISOString() 
-    })
+    .update(dbItem)
     .eq('id', stockItem.id);
     
   if (error) {
@@ -67,18 +104,30 @@ export const fetchBoxStock = async (): Promise<BoxStock[]> => {
     return [];
   }
   
-  return data || [];
+  // Map database columns to our TypeScript model
+  return (data || []).map(item => ({
+    id: item.id,
+    size: item.size as 'Small' | 'Medium',
+    quantity: item.quantity,
+    purchaseDate: item.purchase_date || new Date().toISOString(),
+    costPrice: item.cost_price,
+    updatedAt: item.updated_at || new Date().toISOString()
+  }));
 };
 
 export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>): Promise<BoxStock | null> => {
+  // Convert our model to database columns
+  const dbItem = {
+    size: boxStock.size,
+    quantity: boxStock.quantity,
+    purchase_date: boxStock.purchaseDate,
+    cost_price: boxStock.costPrice,
+    updated_at: new Date().toISOString()
+  };
+
   const { data, error } = await supabase
     .from('box_stock')
-    .insert([
-      { 
-        ...boxStock, 
-        updated_at: new Date().toISOString() 
-      }
-    ])
+    .insert([dbItem])
     .select()
     .single();
     
@@ -87,16 +136,30 @@ export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>):
     return null;
   }
   
-  return data;
+  // Map back from database to our model
+  return {
+    id: data.id,
+    size: data.size as 'Small' | 'Medium',
+    quantity: data.quantity,
+    purchaseDate: data.purchase_date || new Date().toISOString(),
+    costPrice: data.cost_price,
+    updatedAt: data.updated_at || new Date().toISOString()
+  };
 };
 
 export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
+  // Convert our model to database columns
+  const dbItem = {
+    size: boxStock.size,
+    quantity: boxStock.quantity,
+    purchase_date: boxStock.purchaseDate,
+    cost_price: boxStock.costPrice,
+    updated_at: new Date().toISOString()
+  };
+
   const { error } = await supabase
     .from('box_stock')
-    .update({ 
-      ...boxStock, 
-      updated_at: new Date().toISOString() 
-    })
+    .update(dbItem)
     .eq('id', boxStock.id);
     
   if (error) {
@@ -119,13 +182,42 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
     return [];
   }
   
-  return data || [];
+  // Map database columns to our TypeScript model
+  return (data || []).map(item => ({
+    id: item.id,
+    date: item.date || new Date().toISOString(),
+    pizzaId: item.pizza_id || '',
+    size: item.size as 'Small' | 'Medium',
+    flavor: item.flavor,
+    quantity: item.quantity,
+    state: item.state as 'Mentah' | 'Matang',
+    includeBox: item.include_box || false,
+    sellingPrice: item.selling_price,
+    totalPrice: item.total_price,
+    customerName: item.customer_name,
+    notes: item.notes
+  }));
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
+  // Convert our model to database columns
+  const dbItem = {
+    date: transaction.date,
+    pizza_id: transaction.pizzaId,
+    size: transaction.size,
+    flavor: transaction.flavor,
+    quantity: transaction.quantity,
+    state: transaction.state,
+    include_box: transaction.includeBox,
+    selling_price: transaction.sellingPrice,
+    total_price: transaction.totalPrice,
+    customer_name: transaction.customerName,
+    notes: transaction.notes
+  };
+
   const { data, error } = await supabase
     .from('transactions')
-    .insert([transaction])
+    .insert([dbItem])
     .select()
     .single();
     
@@ -134,7 +226,21 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     return null;
   }
   
-  return data;
+  // Map back from database to our model
+  return {
+    id: data.id,
+    date: data.date || new Date().toISOString(),
+    pizzaId: data.pizza_id || '',
+    size: data.size as 'Small' | 'Medium',
+    flavor: data.flavor,
+    quantity: data.quantity,
+    state: data.state as 'Mentah' | 'Matang',
+    includeBox: data.include_box || false,
+    sellingPrice: data.selling_price,
+    totalPrice: data.total_price,
+    customerName: data.customer_name,
+    notes: data.notes
+  };
 };
 
 // API Pelanggan
@@ -149,13 +255,26 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
     return [];
   }
   
-  return data || [];
+  // Map database columns to our TypeScript model
+  return (data || []).map(item => ({
+    id: item.id,
+    name: item.name,
+    purchases: item.purchases || 0,
+    lastPurchase: item.last_purchase || new Date().toISOString()
+  }));
 };
 
 export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer | null> => {
+  // Convert our model to database columns
+  const dbItem = {
+    name: customer.name,
+    purchases: customer.purchases,
+    last_purchase: customer.lastPurchase
+  };
+
   const { data, error } = await supabase
     .from('customers')
-    .insert([customer])
+    .insert([dbItem])
     .select()
     .single();
     
@@ -164,13 +283,26 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Custo
     return null;
   }
   
-  return data;
+  // Map back from database to our model
+  return {
+    id: data.id,
+    name: data.name,
+    purchases: data.purchases || 0,
+    lastPurchase: data.last_purchase || new Date().toISOString()
+  };
 };
 
 export const updateCustomer = async (customer: Customer): Promise<boolean> => {
+  // Convert our model to database columns
+  const dbItem = {
+    name: customer.name,
+    purchases: customer.purchases,
+    last_purchase: customer.lastPurchase
+  };
+
   const { error } = await supabase
     .from('customers')
-    .update(customer)
+    .update(dbItem)
     .eq('id', customer.id);
     
   if (error) {
@@ -198,7 +330,7 @@ export const fetchSalesReportData = async (startDate: string, endDate: string): 
   return data || [];
 };
 
-export const fetchStockSummary = async (): Promise<any> => {
+export const fetchStockSummary = async (): Promise<any[]> => {
   const { data, error } = await supabase
     .from('pizza_stock')
     .select('flavor, size, quantity');

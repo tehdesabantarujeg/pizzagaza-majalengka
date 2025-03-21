@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -25,7 +24,6 @@ import { fetchSalesReportData, fetchStockSummary } from '@/utils/supabase';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
 
-// Custom tooltip for charts
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -66,16 +64,15 @@ const Reports = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Set date range based on period
         const endDate = new Date();
         let startDate = new Date();
         
         if (period === 'daily') {
-          startDate.setDate(startDate.getDate() - 7); // last 7 days
+          startDate.setDate(startDate.getDate() - 7);
         } else if (period === 'weekly') {
-          startDate.setMonth(startDate.getMonth() - 1); // last month
+          startDate.setMonth(startDate.getMonth() - 1);
         } else {
-          startDate.setMonth(startDate.getMonth() - 6); // last 6 months
+          startDate.setMonth(startDate.getMonth() - 6);
         }
         
         const salesData = await fetchSalesReportData(
@@ -83,17 +80,14 @@ const Reports = () => {
           endDate.toISOString()
         );
         
-        // Process sales data
         const processedSalesData = processReportData(salesData, period);
         setSalesData(processedSalesData);
         
-        // Process distribution data
         const { flavorDistribution, sizeDistribution, stateDistribution } = processDistributionData(salesData);
         setFlavorData(flavorDistribution);
         setSizeData(sizeDistribution);
         setStateData(stateDistribution);
         
-        // Fetch stock summary
         const stockData = await fetchStockSummary();
         setStockSummary(processStockSummary(stockData));
       } catch (error) {
@@ -106,7 +100,6 @@ const Reports = () => {
     fetchData();
   }, [period]);
   
-  // Process report data based on period
   const processReportData = (data: any[], period: string) => {
     if (!data || data.length === 0) return [];
     
@@ -129,7 +122,6 @@ const Reports = () => {
       }
       
       groupedData[dateKey].sales += item.total_price;
-      // Assume profit is 30% of selling price
       groupedData[dateKey].profit += item.total_price * 0.3;
     });
     
@@ -140,7 +132,6 @@ const Reports = () => {
     }));
   };
   
-  // Process distribution data
   const processDistributionData = (data: any[]) => {
     if (!data || data.length === 0) {
       return {
@@ -150,26 +141,21 @@ const Reports = () => {
       };
     }
     
-    // Flavor distribution
     const flavorCounts: { [key: string]: number } = {};
     const sizeCounts: { [key: string]: number } = {};
     const stateCounts: { [key: string]: number } = {};
     
     data.forEach((item) => {
-      // Count flavors
       if (!flavorCounts[item.flavor]) flavorCounts[item.flavor] = 0;
       flavorCounts[item.flavor] += item.quantity;
       
-      // Count sizes
       if (!sizeCounts[item.size]) sizeCounts[item.size] = 0;
       sizeCounts[item.size] += item.quantity;
       
-      // Count states (Mentah/Matang)
       if (!stateCounts[item.state]) stateCounts[item.state] = 0;
       stateCounts[item.state] += item.quantity;
     });
     
-    // Convert to percentage
     const totalFlavors = Object.values(flavorCounts).reduce((sum, count) => sum + count, 0);
     const totalSizes = Object.values(sizeCounts).reduce((sum, count) => sum + count, 0);
     const totalStates = Object.values(stateCounts).reduce((sum, count) => sum + count, 0);
@@ -192,8 +178,7 @@ const Reports = () => {
     return { flavorDistribution, sizeDistribution, stateDistribution };
   };
   
-  // Process stock summary
-  const processStockSummary = (data: any[]) => {
+  const processStockSummary = (data: any[]): any[] => {
     if (!data || data.length === 0) return [];
     
     const stockSummary: { [key: string]: { [key: string]: number } } = {};
@@ -206,10 +191,12 @@ const Reports = () => {
       stockSummary[item.flavor][item.size] += item.quantity;
     });
     
-    return stockSummary;
+    return Object.entries(stockSummary).map(([flavor, sizes]) => ({
+      flavor,
+      sizes
+    }));
   };
   
-  // Calculate summary data
   const totalSales = salesData.reduce((sum, item) => sum + item.sales, 0);
   const totalProfit = salesData.reduce((sum, item) => sum + item.profit, 0);
   const averageSales = salesData.length > 0 ? totalSales / salesData.length : 0;
@@ -509,7 +496,7 @@ const Reports = () => {
             <CardContent>
               {isLoading ? (
                 <div className="h-40 flex items-center justify-center">Memuat data...</div>
-              ) : Object.keys(stockSummary).length > 0 ? (
+              ) : stockSummary.length > 0 ? (
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full">
                     <thead>
@@ -521,46 +508,5 @@ const Reports = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {Object.entries(stockSummary).map(([flavor, sizes], index) => {
-                        const smallQty = sizes.Small || 0;
-                        const mediumQty = sizes.Medium || 0;
-                        const total = smallQty + mediumQty;
-                        
-                        return (
-                          <tr key={index} className="border-t">
-                            <td className="p-3">{flavor}</td>
-                            <td className="p-3 text-center">{smallQty}</td>
-                            <td className="p-3 text-center">{mediumQty}</td>
-                            <td className="p-3 text-center font-medium">{total}</td>
-                          </tr>
-                        );
-                      })}
-                      <tr className="border-t bg-muted/50">
-                        <td className="p-3 font-medium">Total</td>
-                        <td className="p-3 text-center font-medium">
-                          {Object.values(stockSummary).reduce((sum, sizes) => sum + (sizes.Small || 0), 0)}
-                        </td>
-                        <td className="p-3 text-center font-medium">
-                          {Object.values(stockSummary).reduce((sum, sizes) => sum + (sizes.Medium || 0), 0)}
-                        </td>
-                        <td className="p-3 text-center font-medium">
-                          {Object.values(stockSummary).reduce((sum, sizes) => sum + (sizes.Small || 0) + (sizes.Medium || 0), 0)}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-12 text-center text-muted-foreground">
-                  Tidak ada data stok yang tersedia
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </FadeIn>
-      </div>
-    </Layout>
-  );
-};
+                      {stock
 
-export default Reports;

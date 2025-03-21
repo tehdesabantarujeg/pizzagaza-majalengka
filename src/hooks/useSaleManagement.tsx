@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { PizzaStock, BoxStock, Transaction } from '@/utils/types';
-import { PRICES } from '@/utils/constants';
+import { PRICES, formatCurrency, printReceipt } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { 
   fetchStockItems, 
@@ -12,7 +11,6 @@ import {
   fetchTransactions,
   setupSupabaseTables
 } from '@/utils/supabase';
-import { printReceipt } from '@/utils/constants';
 
 export const useSaleManagement = () => {
   const { toast } = useToast();
