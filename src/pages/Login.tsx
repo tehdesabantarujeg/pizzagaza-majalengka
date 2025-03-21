@@ -114,7 +114,7 @@ const Login = () => {
             </form>
           </CardContent>
           <CardFooter className="flex justify-center text-sm text-muted-foreground pt-2 flex-col">
-            <p className="text-center">© 2025 Pizza Gaza Majalengka. Powered by Andries Kurniawan.</p>
+            <p className="text-center">© 2025 Pizza Gaza Majalengka. Powered by Andries-K</p>
           </CardFooter>
         </Card>
       </FadeIn>

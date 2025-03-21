@@ -21,14 +21,21 @@ export const PRICES = {
 
 // Rasa pizza
 export const PIZZA_FLAVORS = [
-  'Keju',
+  'Beef',
+  'Blackpepper Sausage',
+  'Cheese',
+  'Chicken Paprika',
+  'Japannese Curry',
+  'Mentai',
   'Pepperoni',
-  'Daging Sapi',
-  'Jamur',
-  'Ayam',
-  'Sayuran',
-  'Supreme',
-  'Hawaiian'
+  'Salmon Nori',
+  'Tuna',
+  'Crunky Kiwi',
+  'Crunky Mango',
+  'Crunky Peach',
+  'Cinnamon Almond',
+  'Caramel Dates',
+  'Mulberry Puree'
 ];
 
 // Ukuran pizza
