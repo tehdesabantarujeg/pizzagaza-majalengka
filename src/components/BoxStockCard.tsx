@@ -21,15 +21,8 @@ interface BoxStockCardProps {
 const BoxStockCard: React.FC<BoxStockCardProps | { stock: BoxStock }> = (props) => {
   // Handle both prop formats
   const stockProps = 'stock' in props ? props.stock : props;
-  const { id, size, quantity, costPrice, purchaseDate } = 'stock' in props ? 
-    { 
-      id: props.stock.id, 
-      size: props.stock.size, 
-      quantity: props.stock.quantity, 
-      costPrice: props.stock.costPrice, 
-      purchaseDate: props.stock.purchaseDate,
-      updated: props.stock.updatedAt 
-    } : props;
+  const { id, size, quantity, costPrice, purchaseDate } = stockProps;
+  const updated = 'stock' in props ? props.stock.updatedAt : props.updated;
 
   const handleUpdateCostPrice = async (newPrice: number) => {
     await updateBoxStockCostPrice(id, newPrice);
@@ -64,9 +57,9 @@ const BoxStockCard: React.FC<BoxStockCardProps | { stock: BoxStock }> = (props) 
           <span className="font-medium">Tanggal Pembelian:</span>{' '}
           {formatDate(purchaseDate)}
         </div>
-        {'updated' in stockProps && stockProps.updated && (
+        {updated && (
           <div className="text-sm text-muted-foreground">
-            Terakhir diperbarui: {formatDate(stockProps.updated)}
+            Terakhir diperbarui: {formatDate(updated)}
           </div>
         )}
       </CardContent>
