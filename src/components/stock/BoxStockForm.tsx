@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   DialogContent, 
   DialogDescription, 
@@ -15,7 +15,7 @@ import {
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
-  SelectValue 
+  SelectValue
 } from '@/components/ui/select';
 import { PIZZA_SIZES, PRICES, formatCurrency } from '@/utils/constants';
 
@@ -34,35 +34,42 @@ interface BoxStockFormProps {
   handleBoxSizeChange: (value: string) => void;
 }
 
-const BoxStockForm: React.FC<BoxStockFormProps> = ({ 
-  newBoxStock, 
-  setNewBoxStock, 
-  handleBoxSubmit, 
-  handleBoxSizeChange 
+const BoxStockForm: React.FC<BoxStockFormProps> = ({
+  newBoxStock,
+  setNewBoxStock,
+  handleBoxSubmit,
+  handleBoxSizeChange
 }) => {
+  // Update cost price when size changes
+  useEffect(() => {
+    if (newBoxStock.size === 'Small') {
+      setNewBoxStock(prev => ({ ...prev, costPrice: PRICES.COST_SMALL_BOX }));
+    } else {
+      setNewBoxStock(prev => ({ ...prev, costPrice: PRICES.COST_MEDIUM_BOX }));
+    }
+  }, [newBoxStock.size]);
+
   return (
     <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Tambah Stok Dus</DialogTitle>
+        <DialogDescription>
+          Masukkan detail stok dus yang baru dibeli
+        </DialogDescription>
+      </DialogHeader>
+      
       <form onSubmit={handleBoxSubmit}>
-        <DialogHeader>
-          <DialogTitle>Tambah Stok Dus Baru</DialogTitle>
-          <DialogDescription>
-            Masukkan detail stok dus yang akan ditambahkan
-          </DialogDescription>
-        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="boxSize" className="text-right">
+            <Label htmlFor="size" className="text-right">
               Ukuran
             </Label>
-            <Select 
-              value={newBoxStock.size} 
-              onValueChange={handleBoxSizeChange}
-            >
-              <SelectTrigger className="col-span-3">
+            <Select value={newBoxStock.size} onValueChange={handleBoxSizeChange}>
+              <SelectTrigger id="size" className="col-span-3">
                 <SelectValue placeholder="Pilih ukuran" />
               </SelectTrigger>
               <SelectContent>
-                {PIZZA_SIZES.map((size) => (
+                {PIZZA_SIZES.map(size => (
                   <SelectItem key={size} value={size}>
                     {size}
                   </SelectItem>
@@ -72,36 +79,43 @@ const BoxStockForm: React.FC<BoxStockFormProps> = ({
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="boxQuantity" className="text-right">
+            <Label htmlFor="quantity" className="text-right">
               Jumlah
             </Label>
             <Input
-              id="boxQuantity"
+              id="quantity"
               type="number"
               min={1}
               value={newBoxStock.quantity}
-              onChange={(e) => setNewBoxStock({ ...newBoxStock, quantity: parseInt(e.target.value) || 1 })}
+              onChange={(e) => setNewBoxStock({ 
+                ...newBoxStock, 
+                quantity: parseInt(e.target.value) || 1 
+              })}
               className="col-span-3"
             />
           </div>
           
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="boxCostPrice" className="text-right">
+            <Label htmlFor="costPrice" className="text-right">
               Harga Modal
             </Label>
-            <div className="col-span-3 flex items-center gap-2">
-              <Input
-                id="boxCostPrice"
-                value={newBoxStock.costPrice}
-                readOnly
-                className="bg-muted"
-              />
-              <span className="text-sm text-muted-foreground">
-                {formatCurrency(newBoxStock.costPrice)}
-              </span>
+            <Input
+              id="costPrice"
+              type="number"
+              min={1}
+              value={newBoxStock.costPrice}
+              onChange={(e) => setNewBoxStock({ 
+                ...newBoxStock, 
+                costPrice: parseInt(e.target.value) || 0
+              })}
+              className="col-span-3"
+            />
+            <div className="col-span-4 text-right text-sm text-muted-foreground">
+              Default: {formatCurrency(newBoxStock.size === 'Small' ? PRICES.COST_SMALL_BOX : PRICES.COST_MEDIUM_BOX)}
             </div>
           </div>
         </div>
+        
         <DialogFooter>
           <Button type="submit">Tambah Stok</Button>
         </DialogFooter>

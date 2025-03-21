@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/utils/constants';
+import { formatCurrency, formatDate } from '@/utils/constants';
 import { 
   LineChart, 
   Line, 
@@ -18,12 +18,18 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent
+} from '@/components/ui/chart';
 import { fetchDashboardData } from '@/utils/supabase';
-import { format, subDays, isSameDay } from 'date-fns';
+import { format, subDays, subMonths, subYears, isSameDay, isWithinInterval, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { FadeIn, FadeInStagger } from '@/components/animations/FadeIn';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShoppingBag, Box, TrendingUp, Users, Calendar, ArrowUpRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -38,6 +44,7 @@ const Dashboard = () => {
     today: 0,
     week: 0,
     month: 0,
+    year: 0,
     transactions: 0,
     customers: 0,
     averageOrder: 0
@@ -62,6 +69,12 @@ const Dashboard = () => {
     loadDashboardData();
   }, []);
   
+  useEffect(() => {
+    if (dashboardData) {
+      updateSalesTrend(dashboardData.transactions);
+    }
+  }, [timeframe, dashboardData]);
+
   const processData = (data: any) => {
     if (!data) return;
     
@@ -76,14 +89,30 @@ const Dashboard = () => {
     const weekSales = transactions
       .filter((t: any) => {
         const txDate = new Date(t.date);
-        return txDate >= subDays(today, 7) && txDate <= today;
+        return isWithinInterval(txDate, {
+          start: startOfWeek(today, { locale: id }),
+          end: endOfWeek(today, { locale: id })
+        });
       })
       .reduce((sum: number, t: any) => sum + t.total_price, 0);
       
     const monthSales = transactions
       .filter((t: any) => {
         const txDate = new Date(t.date);
-        return txDate >= subDays(today, 30) && txDate <= today;
+        return isWithinInterval(txDate, {
+          start: startOfMonth(today),
+          end: endOfMonth(today)
+        });
+      })
+      .reduce((sum: number, t: any) => sum + t.total_price, 0);
+
+    const yearSales = transactions
+      .filter((t: any) => {
+        const txDate = new Date(t.date);
+        return isWithinInterval(txDate, {
+          start: startOfYear(today),
+          end: endOfYear(today)
+        });
       })
       .reduce((sum: number, t: any) => sum + t.total_price, 0);
       
@@ -95,40 +124,14 @@ const Dashboard = () => {
       today: todaySales,
       week: weekSales,
       month: monthSales,
+      year: yearSales,
       transactions: transactions.length,
       customers: customers.length,
       averageOrder
     });
     
-    // Process sales trend data
-    const salesByDay: {[key: string]: number} = {};
-    
-    // Initialize days
-    const days = 7; // For a week
-    for (let i = 0; i < days; i++) {
-      const date = subDays(today, i);
-      const dateKey = format(date, 'dd MMM', { locale: id });
-      salesByDay[dateKey] = 0;
-    }
-    
-    // Fill with actual data
-    transactions.forEach((t: any) => {
-      const txDate = new Date(t.date);
-      if (txDate >= subDays(today, days) && txDate <= today) {
-        const dateKey = format(txDate, 'dd MMM', { locale: id });
-        salesByDay[dateKey] = (salesByDay[dateKey] || 0) + t.total_price;
-      }
-    });
-    
-    // Convert to array for charts
-    const trendData = Object.entries(salesByDay)
-      .map(([date, amount]) => ({
-        date,
-        amount
-      }))
-      .reverse();
-      
-    setSalesTrend(trendData);
+    // Update sales trend initially
+    updateSalesTrend(transactions);
     
     // Process top products
     const productSales: {[key: string]: {quantity: number, revenue: number}} = {};
@@ -152,6 +155,145 @@ const Dashboard = () => {
       .slice(0, 5); // Top 5 products
       
     setTopProducts(sortedProducts);
+  };
+
+  // Update sales trend based on selected timeframe
+  const updateSalesTrend = (transactions: any[]) => {
+    if (!transactions || transactions.length === 0) {
+      setSalesTrend([]);
+      return;
+    }
+
+    const today = new Date();
+    const dateFormat = {
+      day: 'HH:mm',
+      week: 'dd MMM',
+      month: 'dd MMM',
+      year: 'MMM'
+    }[timeframe];
+    
+    let interval: {
+      start: Date;
+      end: Date;
+      groupBy: (date: Date) => string;
+      periods: number;
+    };
+
+    // Configure intervals based on timeframe
+    switch(timeframe) {
+      case 'day':
+        interval = {
+          start: startOfDay(today),
+          end: endOfDay(today),
+          groupBy: (date) => format(date, 'HH:mm', { locale: id }),
+          periods: 24 // hours in a day
+        };
+        break;
+      case 'week':
+        interval = {
+          start: startOfWeek(today, { locale: id }),
+          end: endOfWeek(today, { locale: id }),
+          groupBy: (date) => format(date, 'EEE', { locale: id }),
+          periods: 7 // days in a week
+        };
+        break;
+      case 'month':
+        interval = {
+          start: startOfMonth(today),
+          end: endOfMonth(today),
+          groupBy: (date) => format(date, 'dd', { locale: id }),
+          periods: 31 // max days in a month
+        };
+        break;
+      case 'year':
+        interval = {
+          start: startOfYear(today),
+          end: endOfYear(today),
+          groupBy: (date) => format(date, 'MMM', { locale: id }),
+          periods: 12 // months in a year
+        };
+        break;
+      default:
+        interval = {
+          start: subDays(today, 7),
+          end: today,
+          groupBy: (date) => format(date, 'dd MMM', { locale: id }),
+          periods: 7
+        };
+    }
+
+    // Filter transactions within the selected interval
+    const filteredTransactions = transactions.filter((t: any) => {
+      const txDate = new Date(t.date);
+      return isWithinInterval(txDate, {
+        start: interval.start,
+        end: interval.end
+      });
+    });
+
+    // Group transactions by period
+    const groupedSales: {[key: string]: number} = {};
+    
+    // Initialize all periods
+    if (timeframe === 'day') {
+      // For day, initialize hours
+      for (let i = 0; i < 24; i++) {
+        const hour = i < 10 ? `0${i}` : `${i}`;
+        groupedSales[`${hour}:00`] = 0;
+      }
+    } else if (timeframe === 'week') {
+      // For week, initialize days
+      const daysOfWeek = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+      daysOfWeek.forEach(day => {
+        groupedSales[day] = 0;
+      });
+    } else if (timeframe === 'month') {
+      // For month, initialize days
+      const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        groupedSales[i < 10 ? `0${i}` : `${i}`] = 0;
+      }
+    } else if (timeframe === 'year') {
+      // For year, initialize months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      months.forEach(month => {
+        groupedSales[month] = 0;
+      });
+    }
+
+    // Sum sales for each period
+    filteredTransactions.forEach((t: any) => {
+      const txDate = new Date(t.date);
+      const periodKey = interval.groupBy(txDate);
+      groupedSales[periodKey] = (groupedSales[periodKey] || 0) + t.total_price;
+    });
+
+    // Convert to array for chart
+    const trendData = Object.entries(groupedSales)
+      .map(([period, amount]) => ({
+        period,
+        amount
+      }));
+
+    // Sort data based on timeframe
+    if (timeframe === 'week') {
+      const dayOrder = {'Sen': 0, 'Sel': 1, 'Rab': 2, 'Kam': 3, 'Jum': 4, 'Sab': 5, 'Min': 6};
+      trendData.sort((a, b) => dayOrder[a.period as keyof typeof dayOrder] - dayOrder[b.period as keyof typeof dayOrder]);
+    } else if (timeframe === 'year') {
+      const monthOrder = {'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5, 'Jul': 6, 'Agu': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11};
+      trendData.sort((a, b) => monthOrder[a.period as keyof typeof monthOrder] - monthOrder[b.period as keyof typeof monthOrder]);
+    } else {
+      // For day and month, sort numerically
+      trendData.sort((a, b) => {
+        if (timeframe === 'day') {
+          return a.period.localeCompare(b.period);
+        } else {
+          return parseInt(a.period) - parseInt(b.period);
+        }
+      });
+    }
+      
+    setSalesTrend(trendData);
   };
   
   // Custom tooltip for charts
@@ -182,11 +324,22 @@ const Dashboard = () => {
       amount: t.total_price,
       customer: t.customer_name || 'Pelanggan Umum'
     }));
+
+  // Get title based on timeframe
+  const getTimeframeTitle = () => {
+    switch(timeframe) {
+      case 'day': return 'Hari Ini';
+      case 'week': return 'Minggu Ini';
+      case 'month': return 'Bulan Ini';
+      case 'year': return 'Tahun Ini';
+      default: return 'Minggu Ini';
+    }
+  };
   
   return (
     <Layout>
       <Header 
-        title="Dashboard" 
+        title="Beranda" 
         description="Ringkasan bisnis dan analitik penjualan"
       />
       
@@ -226,9 +379,9 @@ const Dashboard = () => {
                   <CardContent>
                     <div className="text-2xl font-bold">{formatCurrency(summarySales.today)}</div>
                     <p className="text-xs text-muted-foreground">
-                      {summarySales.week > 0 
-                        ? `${((summarySales.today / summarySales.week) * 100).toFixed(1)}% dari minggu ini`
-                        : "Belum ada penjualan minggu ini"}
+                      {summarySales.month > 0 
+                        ? `${((summarySales.today / summarySales.month) * 100).toFixed(1)}% dari bulan ini`
+                        : "Belum ada penjualan bulan ini"}
                     </p>
                   </CardContent>
                 </Card>
@@ -238,14 +391,16 @@ const Dashboard = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Rata-rata Pesanan
+                      Bulan Ini
                     </CardTitle>
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(summarySales.averageOrder)}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(summarySales.month)}</div>
                     <p className="text-xs text-muted-foreground">
-                      Per transaksi
+                      {summarySales.year > 0 
+                        ? `${((summarySales.month / summarySales.year) * 100).toFixed(1)}% dari tahun ini`
+                        : "Belum ada penjualan tahun ini"}
                     </p>
                   </CardContent>
                 </Card>
@@ -255,14 +410,14 @@ const Dashboard = () => {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Total Pelanggan
+                      Rata-rata Transaksi
                     </CardTitle>
                     <Users className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summarySales.customers}</div>
+                    <div className="text-2xl font-bold">{formatCurrency(summarySales.averageOrder)}</div>
                     <p className="text-xs text-muted-foreground">
-                      Pelanggan terdaftar
+                      Per transaksi
                     </p>
                   </CardContent>
                 </Card>
@@ -272,11 +427,25 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-7 mt-4">
               <FadeIn className="col-span-full lg:col-span-4">
                 <Card className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Tren Penjualan</CardTitle>
-                    <CardDescription>
-                      Penjualan dalam 7 hari terakhir
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Tren Penjualan</CardTitle>
+                      <CardDescription>
+                        {getTimeframeTitle()}
+                      </CardDescription>
+                    </div>
+                    <Tabs 
+                      value={timeframe} 
+                      onValueChange={setTimeframe}
+                      className="w-fit"
+                    >
+                      <TabsList className="grid w-fit grid-cols-4">
+                        <TabsTrigger value="day">Hari</TabsTrigger>
+                        <TabsTrigger value="week">Minggu</TabsTrigger>
+                        <TabsTrigger value="month">Bulan</TabsTrigger>
+                        <TabsTrigger value="year">Tahun</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="h-80">
@@ -292,7 +461,7 @@ const Dashboard = () => {
                             }}
                           >
                             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                            <XAxis dataKey="date" />
+                            <XAxis dataKey="period" />
                             <YAxis tickFormatter={(value) => `Rp${value/1000}k`} />
                             <Tooltip content={<CustomTooltip />} />
                             <Line

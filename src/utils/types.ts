@@ -27,6 +27,18 @@ export interface BoxStock {
   updatedAt: string;
 }
 
+export interface PizzaSaleItem {
+  size: 'Small' | 'Medium';
+  flavor: string;
+  quantity: number;
+  state: 'Mentah' | 'Matang';
+  includeBox: boolean;
+  sellingPrice: number;
+  totalPrice: number;
+  pizzaStockId?: string;
+  boxStockId?: string;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -37,6 +49,15 @@ export interface Transaction {
   state: 'Mentah' | 'Matang'; 
   includeBox: boolean; // Menambahkan opsi dus
   sellingPrice: number;
+  totalPrice: number;
+  customerName?: string;
+  notes?: string;
+}
+
+export interface MultiItemTransaction {
+  id: string;
+  date: string;
+  items: PizzaSaleItem[];
   totalPrice: number;
   customerName?: string;
   notes?: string;

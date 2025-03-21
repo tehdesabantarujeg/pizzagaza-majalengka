@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   DialogContent, 
   DialogDescription, 
@@ -15,7 +15,7 @@ import {
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
-  SelectValue 
+  SelectValue
 } from '@/components/ui/select';
 import { PIZZA_FLAVORS, PIZZA_SIZES, PRICES, formatCurrency } from '@/utils/constants';
 
@@ -36,35 +36,42 @@ interface PizzaStockFormProps {
   handlePizzaSizeChange: (value: string) => void;
 }
 
-const PizzaStockForm: React.FC<PizzaStockFormProps> = ({ 
-  newPizzaStock, 
-  setNewPizzaStock, 
-  handlePizzaSubmit, 
-  handlePizzaSizeChange 
+const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
+  newPizzaStock,
+  setNewPizzaStock,
+  handlePizzaSubmit,
+  handlePizzaSizeChange
 }) => {
+  // Update cost price when size changes
+  useEffect(() => {
+    if (newPizzaStock.size === 'Small') {
+      setNewPizzaStock(prev => ({ ...prev, costPrice: PRICES.COST_SMALL_PIZZA }));
+    } else {
+      setNewPizzaStock(prev => ({ ...prev, costPrice: PRICES.COST_MEDIUM_PIZZA }));
+    }
+  }, [newPizzaStock.size]);
+
   return (
     <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Tambah Stok Pizza</DialogTitle>
+        <DialogDescription>
+          Masukkan detail stok pizza yang baru dibeli
+        </DialogDescription>
+      </DialogHeader>
+      
       <form onSubmit={handlePizzaSubmit}>
-        <DialogHeader>
-          <DialogTitle>Tambah Stok Pizza Baru</DialogTitle>
-          <DialogDescription>
-            Masukkan detail stok pizza yang akan ditambahkan
-          </DialogDescription>
-        </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="size" className="text-right">
               Ukuran
             </Label>
-            <Select 
-              value={newPizzaStock.size} 
-              onValueChange={handlePizzaSizeChange}
-            >
-              <SelectTrigger className="col-span-3">
+            <Select value={newPizzaStock.size} onValueChange={handlePizzaSizeChange}>
+              <SelectTrigger id="size" className="col-span-3">
                 <SelectValue placeholder="Pilih ukuran" />
               </SelectTrigger>
               <SelectContent>
-                {PIZZA_SIZES.map((size) => (
+                {PIZZA_SIZES.map(size => (
                   <SelectItem key={size} value={size}>
                     {size}
                   </SelectItem>
@@ -81,11 +88,11 @@ const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
               value={newPizzaStock.flavor} 
               onValueChange={(value) => setNewPizzaStock({ ...newPizzaStock, flavor: value })}
             >
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger id="flavor" className="col-span-3">
                 <SelectValue placeholder="Pilih rasa" />
               </SelectTrigger>
               <SelectContent>
-                {PIZZA_FLAVORS.map((flavor) => (
+                {PIZZA_FLAVORS.map(flavor => (
                   <SelectItem key={flavor} value={flavor}>
                     {flavor}
                   </SelectItem>
@@ -103,7 +110,10 @@ const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
               type="number"
               min={1}
               value={newPizzaStock.quantity}
-              onChange={(e) => setNewPizzaStock({ ...newPizzaStock, quantity: parseInt(e.target.value) || 1 })}
+              onChange={(e) => setNewPizzaStock({ 
+                ...newPizzaStock, 
+                quantity: parseInt(e.target.value) || 1 
+              })}
               className="col-span-3"
             />
           </div>
@@ -112,19 +122,23 @@ const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
             <Label htmlFor="costPrice" className="text-right">
               Harga Modal
             </Label>
-            <div className="col-span-3 flex items-center gap-2">
-              <Input
-                id="costPrice"
-                value={newPizzaStock.costPrice}
-                readOnly
-                className="bg-muted"
-              />
-              <span className="text-sm text-muted-foreground">
-                {formatCurrency(newPizzaStock.costPrice)}
-              </span>
+            <Input
+              id="costPrice"
+              type="number"
+              min={1}
+              value={newPizzaStock.costPrice}
+              onChange={(e) => setNewPizzaStock({ 
+                ...newPizzaStock, 
+                costPrice: parseInt(e.target.value) || 0
+              })}
+              className="col-span-3"
+            />
+            <div className="col-span-4 text-right text-sm text-muted-foreground">
+              Default: {formatCurrency(newPizzaStock.size === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA)}
             </div>
           </div>
         </div>
+        
         <DialogFooter>
           <Button type="submit">Tambah Stok</Button>
         </DialogFooter>

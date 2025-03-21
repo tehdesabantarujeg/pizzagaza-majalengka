@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus } from 'lucide-react';
 import SaleForm from '@/components/sales/SaleForm';
+import MultiItemSaleForm from '@/components/sales/MultiItemSaleForm';
 import TransactionList from '@/components/sales/TransactionList';
 import useSaleManagement from '@/hooks/useSaleManagement';
 
@@ -19,14 +20,25 @@ const Sales = () => {
     setOpen,
     newSale,
     setNewSale,
+    saleItems,
+    setSaleItems,
+    customerName,
+    setCustomerName,
+    notes,
+    setNotes,
     sellingPrice,
     totalPrice,
     error,
+    isMultiItem,
+    setIsMultiItem,
     handleSizeChange,
     handleFlavorChange,
     handleStateChange,
     handleSaveOnly,
-    handleSavePrint
+    handleSavePrint,
+    handleAddItem,
+    handleRemoveItem,
+    handleItemChange
   } = useSaleManagement();
 
   return (
@@ -37,23 +49,41 @@ const Sales = () => {
       >
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => setIsMultiItem(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Penjualan Baru
             </Button>
           </DialogTrigger>
-          <SaleForm
-            newSale={newSale}
-            setNewSale={setNewSale}
-            sellingPrice={sellingPrice}
-            totalPrice={totalPrice}
-            error={error}
-            handleSaveOnly={handleSaveOnly}
-            handleSavePrint={handleSavePrint}
-            handleSizeChange={handleSizeChange}
-            handleFlavorChange={handleFlavorChange}
-            handleStateChange={handleStateChange}
-          />
+          {isMultiItem ? (
+            <MultiItemSaleForm
+              saleItems={saleItems}
+              setSaleItems={setSaleItems}
+              customerName={customerName}
+              setCustomerName={setCustomerName}
+              notes={notes}
+              setNotes={setNotes}
+              totalPrice={totalPrice}
+              error={error}
+              handleSaveOnly={handleSaveOnly}
+              handleSavePrint={handleSavePrint}
+              handleAddItem={handleAddItem}
+              handleRemoveItem={handleRemoveItem}
+              handleItemChange={handleItemChange}
+            />
+          ) : (
+            <SaleForm
+              newSale={newSale}
+              setNewSale={setNewSale}
+              sellingPrice={sellingPrice}
+              totalPrice={totalPrice}
+              error={error}
+              handleSaveOnly={handleSaveOnly}
+              handleSavePrint={handleSavePrint}
+              handleSizeChange={handleSizeChange}
+              handleFlavorChange={handleFlavorChange}
+              handleStateChange={handleStateChange}
+            />
+          )}
         </Dialog>
       </Header>
 

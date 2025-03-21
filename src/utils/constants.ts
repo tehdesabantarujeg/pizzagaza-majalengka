@@ -67,6 +67,28 @@ export const formatDateShort = (dateString: string): string => {
   }).format(date);
 };
 
+// Format tanggal dan waktu untuk nota
+export const formatReceiptDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const time = date.toLocaleTimeString('id-ID', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  
+  const day = date.toLocaleDateString('id-ID', {
+    weekday: 'long',
+  });
+  
+  const dateFormatted = date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  }).replace(/\//g, '/');
+  
+  return `${time}, ${day} ${dateFormatted}`;
+};
+
 // Data pengguna untuk login
 export const USERS = [
   {
@@ -98,6 +120,14 @@ export const STORE_INFO = {
 export const printReceipt = (transaction: Transaction) => {
   const receiptWindow = window.open('', '_blank');
   if (!receiptWindow) return;
+  
+  const boxPrice = transaction.includeBox 
+    ? (transaction.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX) 
+    : 0;
+  
+  const boxDisplay = transaction.includeBox
+    ? `${transaction.quantity}x${formatCurrency(boxPrice)} = ${formatCurrency(boxPrice * transaction.quantity)}`
+    : 'Tidak';
 
   const receiptContent = `
     <html>
@@ -120,6 +150,11 @@ export const printReceipt = (transaction: Transaction) => {
             margin-bottom: 20px;
             border-bottom: 1px dashed #000;
             padding-bottom: 10px;
+          }
+          .date-time {
+            text-align: right;
+            font-size: 11px;
+            margin-bottom: 5px;
           }
           .info {
             margin-bottom: 15px;
@@ -151,7 +186,7 @@ export const printReceipt = (transaction: Transaction) => {
         <div class="header">
           <h1>${STORE_INFO.name.toUpperCase()}</h1>
           <div>${STORE_INFO.address}</div>
-          <div>${formatDate(transaction.date)}</div>
+          <div class="date-time">${formatReceiptDate(transaction.date)}</div>
         </div>
         
         <div class="info">
@@ -160,7 +195,7 @@ export const printReceipt = (transaction: Transaction) => {
           <div><span>Ukuran:</span> <span>${transaction.size}</span></div>
           <div><span>Kondisi:</span> <span>${transaction.state}</span></div>
           <div><span>Jumlah:</span> <span>${transaction.quantity}</span></div>
-          <div><span>Dus:</span> <span>${transaction.includeBox ? 'Ya' : 'Tidak'}</span></div>
+          <div><span>Dus:</span> <span>${boxDisplay}</span></div>
           <div><span>Harga Satuan:</span> <span>${formatCurrency(transaction.sellingPrice)}</span></div>
         </div>
         
@@ -183,4 +218,3 @@ export const printReceipt = (transaction: Transaction) => {
   receiptWindow.document.write(receiptContent);
   receiptWindow.document.close();
 };
-

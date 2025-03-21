@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { PizzaStock, BoxStock, Transaction } from '@/utils/types';
+import { PizzaStock, BoxStock, Transaction, PizzaSaleItem } from '@/utils/types';
 import { PRICES, formatCurrency, printReceipt } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -19,7 +20,9 @@ export const useSaleManagement = () => {
   const [boxItems, setBoxItems] = useState<BoxStock[]>([]);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
+  const [isMultiItem, setIsMultiItem] = useState(true);
   
+  // Single item state (legacy)
   const [newSale, setNewSale] = useState({
     size: 'Small' as 'Small' | 'Medium',
     flavor: 'Original',
@@ -29,6 +32,22 @@ export const useSaleManagement = () => {
     customerName: '',
     notes: ''
   });
+  
+  // Multi-item state
+  const [customerName, setCustomerName] = useState('');
+  const [notes, setNotes] = useState('');
+  
+  const initialSaleItem = {
+    size: 'Small' as 'Small' | 'Medium',
+    flavor: 'Original',
+    quantity: 1,
+    state: 'Mentah' as 'Mentah' | 'Matang',
+    includeBox: false,
+    sellingPrice: PRICES.SELLING_SMALL_RAW,
+    totalPrice: PRICES.SELLING_SMALL_RAW
+  };
+  
+  const [saleItems, setSaleItems] = useState<PizzaSaleItem[]>([initialSaleItem]);
   
   const [sellingPrice, setSellingPrice] = useState(PRICES.SELLING_SMALL_RAW);
   const [totalPrice, setTotalPrice] = useState(PRICES.SELLING_SMALL_RAW);
@@ -78,15 +97,35 @@ export const useSaleManagement = () => {
 
   // Perbarui harga saat ukuran, kondisi, atau jumlah berubah
   const updatePrices = () => {
-    const base = calculateSellingPrice(newSale.size, newSale.state);
-    const boxPrice = calculateBoxPrice(newSale.size, newSale.includeBox);
-    setSellingPrice(base);
-    setTotalPrice((base * newSale.quantity) + (boxPrice * newSale.quantity));
+    if (isMultiItem) {
+      // For multi-item, update each item's price
+      const updatedItems = saleItems.map(item => {
+        const basePrice = calculateSellingPrice(item.size, item.state);
+        const boxPrice = calculateBoxPrice(item.size, item.includeBox);
+        return {
+          ...item,
+          sellingPrice: basePrice,
+          totalPrice: (basePrice * item.quantity) + (boxPrice * item.quantity)
+        };
+      });
+      
+      setSaleItems(updatedItems);
+      
+      // Calculate total price of all items
+      const total = updatedItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      setTotalPrice(total);
+    } else {
+      // Legacy single-item mode
+      const base = calculateSellingPrice(newSale.size, newSale.state);
+      const boxPrice = calculateBoxPrice(newSale.size, newSale.includeBox);
+      setSellingPrice(base);
+      setTotalPrice((base * newSale.quantity) + (boxPrice * newSale.quantity));
+    }
   };
 
   useEffect(() => {
     updatePrices();
-  }, [newSale.size, newSale.state, newSale.quantity, newSale.includeBox]);
+  }, [newSale.size, newSale.state, newSale.quantity, newSale.includeBox, isMultiItem, saleItems]);
 
   // Handle perubahan ukuran
   const handleSizeChange = (value: string) => {
@@ -103,155 +142,210 @@ export const useSaleManagement = () => {
     setNewSale({ ...newSale, state: value as 'Mentah' | 'Matang' });
   };
 
+  // Handle item changes for multi-item form
+  const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
+    const newItems = [...saleItems];
+    // Update item
+    newItems[index] = updatedItem;
+    
+    // Recalculate price
+    const basePrice = calculateSellingPrice(updatedItem.size, updatedItem.state);
+    const boxPrice = calculateBoxPrice(updatedItem.size, updatedItem.includeBox);
+    newItems[index].sellingPrice = basePrice;
+    newItems[index].totalPrice = (basePrice * updatedItem.quantity) + (boxPrice * updatedItem.quantity);
+    
+    setSaleItems(newItems);
+  };
+
+  // Add a new item to the multi-item form
+  const handleAddItem = () => {
+    setSaleItems([...saleItems, initialSaleItem]);
+  };
+
+  // Remove an item from the multi-item form
+  const handleRemoveItem = (index: number) => {
+    if (saleItems.length <= 1) return; // Always keep at least one item
+    const newItems = saleItems.filter((_, i) => i !== index);
+    setSaleItems(newItems);
+  };
+
   // Periksa apakah stok pizza tersedia
-  const isPizzaStockAvailable = () => {
+  const isPizzaStockAvailable = (item: PizzaSaleItem) => {
     const stockItem = stockItems.find(
-      item => item.size === newSale.size && item.flavor === newSale.flavor
+      stock => stock.size === item.size && stock.flavor === item.flavor
     );
     
     if (!stockItem) {
-      setError(`Tidak ada stok untuk pizza ${newSale.flavor} ${newSale.size}`);
+      setError(`Tidak ada stok untuk pizza ${item.flavor} ${item.size}`);
       return false;
     }
     
-    if (stockItem.quantity < newSale.quantity) {
-      setError(`Hanya tersisa ${stockItem.quantity} pizza ${newSale.flavor} ${newSale.size} dalam stok`);
+    if (stockItem.quantity < item.quantity) {
+      setError(`Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok`);
       return false;
     }
     
-    return stockItem;
+    return {
+      ...stockItem,
+      remainingQuantity: stockItem.quantity - item.quantity
+    };
   };
 
   // Periksa apakah stok dus tersedia jika diperlukan
-  const isBoxStockAvailable = () => {
-    if (!newSale.includeBox) return true;
+  const isBoxStockAvailable = (item: PizzaSaleItem) => {
+    if (!item.includeBox) return true;
     
     const boxStock = boxItems.find(
-      item => item.size === newSale.size
+      stock => stock.size === item.size
     );
     
     if (!boxStock) {
-      setError(`Tidak ada stok dus ukuran ${newSale.size}`);
+      setError(`Tidak ada stok dus ukuran ${item.size}`);
       return false;
     }
     
-    if (boxStock.quantity < newSale.quantity) {
-      setError(`Hanya tersisa ${boxStock.quantity} dus ${newSale.size} dalam stok`);
+    if (boxStock.quantity < item.quantity) {
+      setError(`Hanya tersisa ${boxStock.quantity} dus ${item.size} dalam stok`);
       return false;
     }
     
-    return boxStock;
+    return {
+      ...boxStock,
+      remainingQuantity: boxStock.quantity - item.quantity
+    };
   };
 
   // Memvalidasi stok yang tersedia
   const validateStock = () => {
     setError('');
-    const pizzaStock = isPizzaStockAvailable();
-    const boxStock = isBoxStockAvailable();
     
-    if (!pizzaStock || (newSale.includeBox && !boxStock)) {
-      return false;
+    if (isMultiItem) {
+      // Validate each item in the sale
+      const stockUpdates = [];
+      
+      for (let i = 0; i < saleItems.length; i++) {
+        const item = saleItems[i];
+        const pizzaStock = isPizzaStockAvailable(item);
+        const boxStock = isBoxStockAvailable(item);
+        
+        if (!pizzaStock || (item.includeBox && !boxStock)) {
+          return false;
+        }
+        
+        // Track stock updates
+        stockUpdates.push({
+          item,
+          pizzaStock,
+          boxStock: item.includeBox ? boxStock : true
+        });
+      }
+      
+      return stockUpdates;
+    } else {
+      // Legacy single-item validation
+      const singleItem: PizzaSaleItem = {
+        size: newSale.size,
+        flavor: newSale.flavor,
+        quantity: newSale.quantity,
+        state: newSale.state,
+        includeBox: newSale.includeBox,
+        sellingPrice: sellingPrice,
+        totalPrice: totalPrice
+      };
+      
+      const pizzaStock = isPizzaStockAvailable(singleItem);
+      const boxStock = isBoxStockAvailable(singleItem);
+      
+      if (!pizzaStock || (newSale.includeBox && !boxStock)) {
+        return false;
+      }
+      
+      return [{
+        item: singleItem,
+        pizzaStock,
+        boxStock: newSale.includeBox ? boxStock : true
+      }];
     }
-    
-    return { pizzaStock, boxStock };
   };
 
   // Proses penjualan
   const processSale = async (withPrinting = false) => {
     // Validasi stok
-    const stockResult = validateStock();
-    if (!stockResult) return false;
-    
-    const { pizzaStock, boxStock } = stockResult as { 
-      pizzaStock: PizzaStock, 
-      boxStock: BoxStock | true 
-    };
-    
-    // Perbarui stok pizza
-    const updatedPizzaStock = {
-      ...pizzaStock,
-      quantity: pizzaStock.quantity - newSale.quantity
-    };
-    
-    // Perbarui stok dus jika termasuk
-    let updatedBoxStock;
-    if (newSale.includeBox && boxStock !== true) {
-      updatedBoxStock = {
-        ...boxStock as BoxStock,
-        quantity: (boxStock as BoxStock).quantity - newSale.quantity
-      };
-    }
-    
-    // Buat transaksi baru
-    const boxPrice = calculateBoxPrice(newSale.size, newSale.includeBox);
-    const basePrice = calculateSellingPrice(newSale.size, newSale.state);
-    const totalPrice = (basePrice * newSale.quantity) + (boxPrice * newSale.quantity);
-    
-    const newTransaction: Omit<Transaction, 'id'> = {
-      date: new Date().toISOString(),
-      pizzaId: pizzaStock.id,
-      size: newSale.size,
-      flavor: newSale.flavor,
-      quantity: newSale.quantity,
-      state: newSale.state,
-      includeBox: newSale.includeBox,
-      sellingPrice: basePrice,
-      totalPrice,
-      customerName: newSale.customerName || undefined,
-      notes: newSale.notes || undefined
-    };
+    const stockUpdates = validateStock();
+    if (!stockUpdates) return false;
     
     try {
-      // Simpan perubahan ke database
-      await updateStockItem(updatedPizzaStock);
+      // Create transactions for each item (or single item)
+      const transactions = [];
+      const stockUpdatesPromises = [];
       
-      if (newSale.includeBox && updatedBoxStock) {
-        await updateBoxStock(updatedBoxStock);
-      }
-      
-      const savedTransaction = await addTransaction(newTransaction);
-      
-      if (savedTransaction) {
-        // Perbarui state lokal
-        setStockItems(stockItems.map(item => 
-          item.id === pizzaStock.id ? updatedPizzaStock : item
-        ));
+      for (const { item, pizzaStock, boxStock } of stockUpdates as any[]) {
+        // Update pizza stock
+        const updatedPizzaStock = {
+          ...pizzaStock,
+          quantity: pizzaStock.remainingQuantity
+        };
         
-        if (newSale.includeBox && updatedBoxStock) {
-          setBoxItems(boxItems.map(item => 
-            item.id === (boxStock as BoxStock).id ? updatedBoxStock : item
-          ));
+        stockUpdatesPromises.push(updateStockItem(updatedPizzaStock));
+        
+        // Update box stock if needed
+        if (item.includeBox && boxStock !== true) {
+          const updatedBoxStock = {
+            ...boxStock,
+            quantity: boxStock.remainingQuantity
+          };
+          
+          stockUpdatesPromises.push(updateBoxStock(updatedBoxStock));
         }
         
-        setTransactions([savedTransaction, ...transactions]);
+        // Create transaction
+        const transaction: Omit<Transaction, 'id'> = {
+          date: new Date().toISOString(),
+          pizzaId: pizzaStock.id,
+          size: item.size,
+          flavor: item.flavor,
+          quantity: item.quantity,
+          state: item.state,
+          includeBox: item.includeBox,
+          sellingPrice: item.sellingPrice,
+          totalPrice: item.totalPrice,
+          customerName: isMultiItem ? customerName : newSale.customerName,
+          notes: isMultiItem ? notes : newSale.notes
+        };
         
-        // Tampilkan toast sukses
-        toast({
-          title: "Penjualan berhasil dicatat",
-          description: `${newSale.quantity} pizza ${newSale.flavor} ${newSale.size} terjual dengan harga ${formatCurrency(totalPrice)}`,
-        });
-        
-        // Cetak nota jika diminta
-        if (withPrinting) {
-          printReceipt(savedTransaction);
+        const savedTransaction = await addTransaction(transaction);
+        if (savedTransaction) {
+          transactions.push(savedTransaction);
         }
-        
-        // Tutup dialog
-        setOpen(false);
-        
-        // Reset formulir
-        setNewSale({
-          size: 'Small',
-          flavor: 'Original',
-          quantity: 1,
-          state: 'Mentah',
-          includeBox: false,
-          customerName: '',
-          notes: ''
-        });
-        
-        return true;
       }
+      
+      // Apply all stock updates
+      await Promise.all(stockUpdatesPromises);
+      
+      // Update local state
+      setTransactions([...transactions, ...transactions]);
+      
+      // Update stock items in state
+      await loadData(); // Reload to get updated stock
+      
+      // Show success message
+      toast({
+        title: "Penjualan berhasil dicatat",
+        description: `${isMultiItem ? saleItems.length : 1} item terjual dengan total ${formatCurrency(totalPrice)}`,
+      });
+      
+      // Print receipt if requested
+      if (withPrinting && transactions.length > 0) {
+        // For now, print first transaction only
+        // In the future, you could create a combined receipt
+        printReceipt(transactions[0]);
+      }
+      
+      // Close dialog and reset form
+      setOpen(false);
+      resetForm();
+      
+      return true;
     } catch (error) {
       console.error("Error saat memproses penjualan:", error);
       toast({
@@ -262,6 +356,25 @@ export const useSaleManagement = () => {
     }
     
     return false;
+  };
+
+  // Reset form to initial state
+  const resetForm = () => {
+    if (isMultiItem) {
+      setSaleItems([initialSaleItem]);
+      setCustomerName('');
+      setNotes('');
+    } else {
+      setNewSale({
+        size: 'Small',
+        flavor: 'Original',
+        quantity: 1,
+        state: 'Mentah',
+        includeBox: false,
+        customerName: '',
+        notes: ''
+      });
+    }
   };
 
   // Handle simpan saja
@@ -284,14 +397,25 @@ export const useSaleManagement = () => {
     setOpen,
     newSale,
     setNewSale,
+    saleItems,
+    setSaleItems,
+    customerName,
+    setCustomerName,
+    notes,
+    setNotes,
     sellingPrice,
     totalPrice,
     error,
+    isMultiItem,
+    setIsMultiItem,
     handleSizeChange,
     handleFlavorChange,
     handleStateChange,
     handleSaveOnly,
-    handleSavePrint
+    handleSavePrint,
+    handleAddItem,
+    handleRemoveItem,
+    handleItemChange
   };
 };
 
