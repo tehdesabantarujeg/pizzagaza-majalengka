@@ -49,7 +49,7 @@ const Sales = () => {
       >
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsMultiItem(true)}>
+            <Button onClick={() => { setIsMultiItem(true); setOpen(true); }}>
               <Plus className="mr-2 h-4 w-4" />
               Penjualan Baru
             </Button>

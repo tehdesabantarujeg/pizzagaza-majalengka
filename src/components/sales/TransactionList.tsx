@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { FadeInStagger } from '@/components/animations/FadeIn';
-import TransactionCard from '@/components/TransactionCard';
-import { Button } from '@/components/ui/button';
-import { Plus, ShoppingCart } from 'lucide-react';
 import { Transaction } from '@/utils/types';
+import { formatCurrency, formatDateShort } from '@/utils/constants';
+import { ShoppingCart } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import PizzaVariantBadge from '@/components/PizzaVariantBadge';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -13,26 +13,51 @@ interface TransactionListProps {
 
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <FadeInStagger staggerDelay={50}>
-        {transactions.length > 0 ? (
-          transactions.map((transaction) => (
-            <TransactionCard key={transaction.id} transaction={transaction} />
-          ))
-        ) : (
-          <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-            <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">Belum ada penjualan tercatat</h3>
-            <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Catat penjualan pertama Anda untuk memulai
-            </p>
-            <Button onClick={() => setOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Penjualan Baru
-            </Button>
-          </div>
-        )}
-      </FadeInStagger>
+    <div>
+      {transactions.length > 0 ? (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tanggal</TableHead>
+                <TableHead>Item</TableHead>
+                <TableHead>Varian</TableHead>
+                <TableHead>Jumlah</TableHead>
+                <TableHead>Dus</TableHead>
+                <TableHead>Pelanggan</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions.map((transaction) => (
+                <TableRow key={transaction.id}>
+                  <TableCell>{formatDateShort(transaction.date)}</TableCell>
+                  <TableCell>{transaction.flavor}</TableCell>
+                  <TableCell>
+                    <PizzaVariantBadge 
+                      size={transaction.size} 
+                      flavor={transaction.flavor} 
+                      state={transaction.state}
+                    />
+                  </TableCell>
+                  <TableCell>{transaction.quantity}</TableCell>
+                  <TableCell>{transaction.includeBox ? 'Ya' : 'Tidak'}</TableCell>
+                  <TableCell>{transaction.customerName || '-'}</TableCell>
+                  <TableCell className="text-right font-medium">{formatCurrency(transaction.totalPrice)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <ShoppingCart className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium">Belum ada penjualan tercatat</h3>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Catat penjualan pertama Anda untuk memulai
+          </p>
+        </div>
+      )}
     </div>
   );
 };
