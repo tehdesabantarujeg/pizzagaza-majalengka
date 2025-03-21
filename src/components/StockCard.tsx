@@ -2,9 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FormatDatum, formatCurrency } from '@/utils/constants';
+import { formatDate, formatCurrency } from '@/utils/constants';
 import EditableCostPrice from '@/components/stock/EditableCostPrice';
 import { updatePizzaStockCostPrice } from '@/utils/supabase';
+import { PizzaStock } from '@/utils/types';
 
 interface StockCardProps {
   id: string;
@@ -16,15 +17,21 @@ interface StockCardProps {
   updated?: string;
 }
 
-const StockCard: React.FC<StockCardProps> = ({
-  id,
-  flavor,
-  size,
-  quantity,
-  costPrice,
-  purchaseDate,
-  updated
-}) => {
+// Add an overload for accepting a stock object
+const StockCard: React.FC<StockCardProps | { stock: PizzaStock }> = (props) => {
+  // Handle both prop formats
+  const stockProps = 'stock' in props ? props.stock : props;
+  const { id, flavor, size, quantity, costPrice, purchaseDate } = 'stock' in props ? 
+    { 
+      id: props.stock.id, 
+      flavor: props.stock.flavor, 
+      size: props.stock.size, 
+      quantity: props.stock.quantity, 
+      costPrice: props.stock.costPrice, 
+      purchaseDate: props.stock.purchaseDate,
+      updated: props.stock.updatedAt 
+    } : props;
+
   const handleUpdateCostPrice = async (newPrice: number) => {
     await updatePizzaStockCostPrice(id, newPrice);
   };
@@ -53,11 +60,11 @@ const StockCard: React.FC<StockCardProps> = ({
         </div>
         <div className="text-sm">
           <span className="font-medium">Tanggal Pembelian:</span>{' '}
-          {FormatDatum(purchaseDate)}
+          {formatDate(purchaseDate)}
         </div>
-        {updated && (
+        {'updated' in stockProps && stockProps.updated && (
           <div className="text-sm text-muted-foreground">
-            Terakhir diperbarui: {FormatDatum(updated)}
+            Terakhir diperbarui: {formatDate(stockProps.updated)}
           </div>
         )}
       </CardContent>
