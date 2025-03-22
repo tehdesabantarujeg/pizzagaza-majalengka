@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from 'react';
 import { Transaction } from '@/utils/types';
-import { fetchTransactions, addTransaction } from '@/utils/supabase';
+import { fetchTransactions, addTransaction, getTransactionCount } from '@/utils/supabase';
 import { setupSupabaseTables } from '@/utils/supabase';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatTransactionNumber } from '@/utils/constants';
 
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -42,12 +43,25 @@ export const useTransactions = () => {
       return null;
     }
   };
+  
+  // Function to get the next transaction number
+  const getNextTransactionNumber = async (): Promise<string> => {
+    try {
+      const count = await getTransactionCount();
+      return formatTransactionNumber(count + 1);
+    } catch (error) {
+      console.error("Error getting transaction count:", error);
+      // Fallback to current timestamp if we can't get the count
+      return formatTransactionNumber(Date.now());
+    }
+  };
 
   return {
     transactions,
     setTransactions,
     loadTransactions,
-    addNewTransaction
+    addNewTransaction,
+    getNextTransactionNumber
   };
 };
 

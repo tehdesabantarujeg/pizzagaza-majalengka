@@ -6,19 +6,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import PizzaVariantBadge from '@/components/PizzaVariantBadge';
-import { Package, Search, ArrowUpDown, Printer } from 'lucide-react';
+import { Package, Search, ArrowUpDown, Printer, Edit, Trash } from 'lucide-react';
+import { 
+  Dialog,
+  DialogContent,
+  DialogTrigger
+} from '@/components/ui/dialog';
 import { reprintTransactionReceipt } from '@/utils/supabase';
 import { useToast } from '@/hooks/use-toast';
+import SaleForm from './SaleForm';
+import MultiItemSaleForm from './MultiItemSaleForm';
 
 interface TransactionListProps {
   transactions: Transaction[];
   setOpen?: (open: boolean) => void;
+  onEdit?: (transaction: Transaction) => void;
+  onDelete?: (transactionId: string) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ 
+  transactions, 
+  setOpen,
+  onEdit,
+  onDelete
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof Transaction>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
 
   // Handle search input
@@ -54,6 +69,29 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
     }
   };
   
+  // Handle edit transaction
+  const handleEdit = (transaction: Transaction) => {
+    if (onEdit) {
+      onEdit(transaction);
+    } else {
+      setEditingTransaction(transaction);
+    }
+  };
+  
+  // Handle delete transaction
+  const handleDelete = (transactionId: string) => {
+    if (onDelete) {
+      onDelete(transactionId);
+    } else {
+      // Default delete behavior if no handler provided
+      toast({
+        title: "Fitur belum tersedia",
+        description: "Fitur hapus transaksi belum diimplementasikan",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Filter and sort transactions
   const filteredTransactions = transactions
     .filter(transaction => 
@@ -68,6 +106,18 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
       if (a[sortField] > b[sortField]) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
+
+  // Group transactions by their transaction number for the print feature
+  const transactionsByNumber: {[key: string]: Transaction[]} = {};
+  
+  filteredTransactions.forEach(transaction => {
+    if (transaction.transactionNumber) {
+      if (!transactionsByNumber[transaction.transactionNumber]) {
+        transactionsByNumber[transaction.transactionNumber] = [];
+      }
+      transactionsByNumber[transaction.transactionNumber].push(transaction);
+    }
+  });
 
   return (
     <div>
@@ -187,14 +237,40 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
                   <TableCell>{formatCurrency(transaction.sellingPrice)}</TableCell>
                   <TableCell className="font-medium">{formatCurrency(transaction.totalPrice)}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleReprintReceipt(transaction.id)}
-                      title="Cetak Ulang Nota"
-                    >
-                      <Printer className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          // Find all transactions with the same transaction number
+                          const relatedTransactions = transaction.transactionNumber 
+                            ? transactionsByNumber[transaction.transactionNumber] 
+                            : [transaction];
+                            
+                          // Print all related transactions as one receipt
+                          handleReprintReceipt(transaction.id);
+                        }}
+                        title="Cetak Ulang Nota"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(transaction)}
+                        title="Edit Transaksi"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(transaction.id)}
+                        title="Hapus Transaksi"
+                      >
+                        <Trash className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -210,6 +286,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
           </TableBody>
         </Table>
       </div>
+      
+      {/* Edit Transaction Dialog */}
+      {editingTransaction && (
+        <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+          <DialogContent className="sm:max-w-[700px]">
+            <p className="text-center py-4">Fitur edit transaksi belum diimplementasikan</p>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

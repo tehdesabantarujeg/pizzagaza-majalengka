@@ -1,16 +1,12 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatTransactionNumber } from '@/utils/constants';
 
-// Function to setup tables (placeholder since tables are already created in Supabase)
 export const setupSupabaseTables = async (): Promise<void> => {
-  // Tables are already created via SQL migrations
   return Promise.resolve();
 };
 
-// API Pizza Stock
 export const fetchStockItems = async (): Promise<PizzaStock[]> => {
   const { data, error } = await supabase
     .from('pizza_stock')
@@ -22,7 +18,6 @@ export const fetchStockItems = async (): Promise<PizzaStock[]> => {
     return [];
   }
   
-  // Map database columns to our TypeScript model
   return (data || []).map(item => ({
     id: item.id,
     size: item.size as 'Small' | 'Medium',
@@ -35,7 +30,6 @@ export const fetchStockItems = async (): Promise<PizzaStock[]> => {
 };
 
 export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt'>): Promise<PizzaStock | null> => {
-  // Convert our model to database columns
   const dbItem = {
     size: stockItem.size,
     flavor: stockItem.flavor,
@@ -56,7 +50,6 @@ export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt
     return null;
   }
   
-  // Map back from database to our model
   return {
     id: data.id,
     size: data.size as 'Small' | 'Medium',
@@ -69,7 +62,6 @@ export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt
 };
 
 export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
-  // Convert our model to database columns
   const dbItem = {
     size: stockItem.size,
     flavor: stockItem.flavor,
@@ -92,12 +84,10 @@ export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> =
   return true;
 };
 
-// Add the missing updatePizzaStock function
 export const updatePizzaStock = async (stockItem: PizzaStock): Promise<boolean> => {
   return updateStockItem(stockItem);
 };
 
-// Add the missing deletePizzaStock function
 export const deletePizzaStock = async (id: string): Promise<boolean> => {
   const { error } = await supabase
     .from('pizza_stock')
@@ -112,7 +102,6 @@ export const deletePizzaStock = async (id: string): Promise<boolean> => {
   return true;
 };
 
-// API Box Stock
 export const fetchBoxStock = async (): Promise<BoxStock[]> => {
   const { data, error } = await supabase
     .from('box_stock')
@@ -124,7 +113,6 @@ export const fetchBoxStock = async (): Promise<BoxStock[]> => {
     return [];
   }
   
-  // Map database columns to our TypeScript model
   return (data || []).map(item => ({
     id: item.id,
     size: item.size as 'Small' | 'Medium',
@@ -136,7 +124,6 @@ export const fetchBoxStock = async (): Promise<BoxStock[]> => {
 };
 
 export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>): Promise<BoxStock | null> => {
-  // Convert our model to database columns
   const dbItem = {
     size: boxStock.size,
     quantity: boxStock.quantity,
@@ -156,7 +143,6 @@ export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>):
     return null;
   }
   
-  // Map back from database to our model
   return {
     id: data.id,
     size: data.size as 'Small' | 'Medium',
@@ -168,7 +154,6 @@ export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>):
 };
 
 export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
-  // Convert our model to database columns
   const dbItem = {
     size: boxStock.size,
     quantity: boxStock.quantity,
@@ -190,7 +175,6 @@ export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
   return true;
 };
 
-// Add the missing deleteBoxStock function
 export const deleteBoxStock = async (id: string): Promise<boolean> => {
   const { error } = await supabase
     .from('box_stock')
@@ -205,7 +189,6 @@ export const deleteBoxStock = async (id: string): Promise<boolean> => {
   return true;
 };
 
-// API Transaksi
 export const fetchTransactions = async (): Promise<Transaction[]> => {
   const { data, error } = await supabase
     .from('transactions')
@@ -217,7 +200,6 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
     return [];
   }
   
-  // Map database columns to our TypeScript model
   return (data || []).map(item => ({
     id: item.id,
     date: item.date || new Date().toISOString(),
@@ -249,11 +231,9 @@ export const getTransactionCount = async (): Promise<number> => {
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
-  // Get current transaction count for generating transaction number
   const count = await getTransactionCount();
   const transactionNumber = formatTransactionNumber(count + 1);
   
-  // Convert our model to database columns
   const dbItem = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
@@ -280,7 +260,6 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     return null;
   }
   
-  // Map back from database to our model
   return {
     id: data.id,
     date: data.date || new Date().toISOString(),
@@ -298,20 +277,54 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   };
 };
 
-// Function to reprint a transaction receipt
 export const reprintTransactionReceipt = async (transactionId: string): Promise<void> => {
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('id', transactionId);
+    .eq('id', transactionId)
+    .single();
     
-  if (error || !data || data.length === 0) {
+  if (error || !data) {
     console.error('Error fetching transaction for reprint:', error);
     return;
   }
   
-  // Map database columns to our TypeScript model
-  const transactions = data.map(item => ({
+  const transactionNumber = data.transaction_number;
+  
+  if (!transactionNumber) {
+    const transaction = {
+      id: data.id,
+      date: data.date || new Date().toISOString(),
+      pizzaId: data.pizza_id || '',
+      size: data.size as 'Small' | 'Medium',
+      flavor: data.flavor,
+      quantity: data.quantity,
+      state: data.state as 'Mentah' | 'Matang',
+      includeBox: data.include_box || false,
+      sellingPrice: data.selling_price,
+      totalPrice: data.total_price,
+      customerName: data.customer_name,
+      notes: data.notes,
+      transactionNumber: data.transaction_number
+    };
+    
+    import('./constants').then(({ printReceipt }) => {
+      printReceipt([transaction]);
+    });
+    return;
+  }
+  
+  const { data: relatedData, error: relatedError } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_number', transactionNumber);
+    
+  if (relatedError || !relatedData || relatedData.length === 0) {
+    console.error('Error fetching related transactions for reprint:', relatedError);
+    return;
+  }
+  
+  const transactions = relatedData.map(item => ({
     id: item.id,
     date: item.date || new Date().toISOString(),
     pizzaId: item.pizza_id || '',
@@ -327,7 +340,6 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
     transactionNumber: item.transaction_number
   }));
   
-  // Print the receipt
   if (transactions.length > 0) {
     import('./constants').then(({ printReceipt }) => {
       printReceipt(transactions);
@@ -335,7 +347,6 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
   }
 };
 
-// API Pelanggan
 export const fetchCustomers = async (): Promise<Customer[]> => {
   const { data, error } = await supabase
     .from('customers')
@@ -347,7 +358,6 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
     return [];
   }
   
-  // Map database columns to our TypeScript model
   return (data || []).map(item => ({
     id: item.id,
     name: item.name,
@@ -357,7 +367,6 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
 };
 
 export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer | null> => {
-  // Convert our model to database columns
   const dbItem = {
     name: customer.name,
     purchases: customer.purchases,
@@ -375,7 +384,6 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Custo
     return null;
   }
   
-  // Map back from database to our model
   return {
     id: data.id,
     name: data.name,
@@ -385,7 +393,6 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Custo
 };
 
 export const updateCustomer = async (customer: Customer): Promise<boolean> => {
-  // Convert our model to database columns
   const dbItem = {
     name: customer.name,
     purchases: customer.purchases,
@@ -405,7 +412,6 @@ export const updateCustomer = async (customer: Customer): Promise<boolean> => {
   return true;
 };
 
-// API Laporan
 export const fetchSalesReportData = async (startDate: string, endDate: string): Promise<any> => {
   const { data, error } = await supabase
     .from('transactions')
@@ -449,7 +455,6 @@ export const fetchDashboardData = async (): Promise<any> => {
   };
 };
 
-// Add the new functions to update cost price for pizza and box stock
 export const updatePizzaStockCostPrice = async (id: string, costPrice: number): Promise<void> => {
   const { error } = await supabase
     .from('pizza_stock')

@@ -14,7 +14,8 @@ export const useSaleManagement = () => {
   const { 
     transactions, 
     loadTransactions, 
-    addNewTransaction 
+    addNewTransaction,
+    getNextTransactionNumber  // We'll add this to useTransactions
   } = useTransactions();
   
   const { 
@@ -115,6 +116,9 @@ export const useSaleManagement = () => {
     if (!stockUpdates) return false;
     
     try {
+      // Get a single transaction number for all items
+      const transactionNumber = await getNextTransactionNumber();
+      
       // Create transactions for each item (or single item)
       const savedTransactions: Transaction[] = [];
       const stockUpdatesPromises = [];
@@ -138,7 +142,7 @@ export const useSaleManagement = () => {
           stockUpdatesPromises.push(updateBoxStockQuantity(updatedBoxStock));
         }
         
-        // Create transaction
+        // Create transaction with the same transaction number for all items
         const transaction: Omit<Transaction, 'id'> = {
           date: new Date().toISOString(),
           pizzaId: pizzaStock.id,
@@ -150,7 +154,8 @@ export const useSaleManagement = () => {
           sellingPrice: item.sellingPrice,
           totalPrice: item.totalPrice,
           customerName: isMultiItem ? customerName : newSale.customerName,
-          notes: isMultiItem ? notes : newSale.notes
+          notes: isMultiItem ? notes : newSale.notes,
+          transactionNumber: transactionNumber  // Same transaction number for all items
         };
         
         const savedTransaction = await addNewTransaction(transaction);

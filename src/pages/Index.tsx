@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { FadeIn, FadeInStagger } from '@/components/animations/FadeIn';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
-import { STORE_INFO } from '@/utils/constants';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -24,6 +23,7 @@ const Index = () => {
           <p className="text-muted-foreground text-base md:text-lg">
             Nikmati pizza berkualitas premium dengan rasa yang khas dan autentik.
             Setiap pembelian Anda berkontribusi pada dukungan untuk Gaza, menyatukan kelezatan dan kepedulian dalam setiap gigitan.
+            Kami berkomitmen untuk menyediakan pizza yang lezat serta untuk tujuan kemanusiaan yang mulia.
           </p>
         </FadeIn>
 
