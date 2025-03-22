@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,6 +92,26 @@ export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> =
   return true;
 };
 
+// Add the missing updatePizzaStock function
+export const updatePizzaStock = async (stockItem: PizzaStock): Promise<boolean> => {
+  return updateStockItem(stockItem);
+};
+
+// Add the missing deletePizzaStock function
+export const deletePizzaStock = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('pizza_stock')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error deleting pizza stock:', error);
+    return false;
+  }
+  
+  return true;
+};
+
 // API Box Stock
 export const fetchBoxStock = async (): Promise<BoxStock[]> => {
   const { data, error } = await supabase
@@ -163,6 +184,21 @@ export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
     
   if (error) {
     console.error('Error updating box stock:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+// Add the missing deleteBoxStock function
+export const deleteBoxStock = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('box_stock')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error deleting box stock:', error);
     return false;
   }
   
