@@ -16,10 +16,10 @@ const Index = () => {
       <div className="container px-4 md:px-6 py-8 max-w-5xl mx-auto">
         <FadeIn className="text-center mb-12 max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-            {STORE_INFO.name}
+            Pizza Gaza
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground font-semibold mb-4">
-            {STORE_INFO.motto}
+            Enjoy While Helping Gaza
           </p>
           <p className="text-muted-foreground text-base md:text-lg">
             Nikmati pizza berkualitas premium dengan rasa yang khas dan autentik.

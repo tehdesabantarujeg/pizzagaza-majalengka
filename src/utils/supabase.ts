@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, formatTransactionNumber } from './constants';
+import { formatCurrency, formatTransactionNumber } from './utils/constants';
 
 // Function to setup tables (placeholder since tables are already created in Supabase)
 export const setupSupabaseTables = async (): Promise<void> => {

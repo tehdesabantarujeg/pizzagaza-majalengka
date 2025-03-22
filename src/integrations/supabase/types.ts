@@ -101,6 +101,7 @@ export type Database = {
           size: string
           state: string
           total_price: number
+          transaction_number: string | null
         }
         Insert: {
           customer_name?: string | null
@@ -115,6 +116,7 @@ export type Database = {
           size: string
           state: string
           total_price: number
+          transaction_number?: string | null
         }
         Update: {
           customer_name?: string | null
@@ -129,6 +131,7 @@ export type Database = {
           size?: string
           state?: string
           total_price?: number
+          transaction_number?: string | null
         }
         Relationships: []
       }

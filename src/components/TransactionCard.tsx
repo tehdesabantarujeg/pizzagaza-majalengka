@@ -55,6 +55,12 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-sm mt-4">
+        {transaction.transactionNumber && (
+          <div className="flex flex-col col-span-2 mb-2">
+            <span className="text-muted-foreground text-xs">ID Transaksi</span>
+            <span className="font-medium">{transaction.transactionNumber}</span>
+          </div>
+        )}
         <div className="flex flex-col">
           <span className="text-muted-foreground text-xs">Harga Per Item</span>
           <span className="font-medium">{formatCurrency(transaction.sellingPrice)}</span>
