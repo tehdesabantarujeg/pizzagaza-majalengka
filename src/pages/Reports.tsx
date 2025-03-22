@@ -2,538 +2,259 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchSalesReportData } from '@/utils/supabase';
 import { formatCurrency } from '@/utils/constants';
-import { FadeIn } from '@/components/animations/FadeIn';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  Bar, BarChart, CartesianGrid, Legend, 
+  Line, LineChart, Pie, PieChart, Cell, 
+  ResponsiveContainer, Tooltip, XAxis, YAxis 
 } from 'recharts';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
-import { fetchSalesReportData, fetchStockSummary } from '@/utils/supabase';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-3 border rounded-md shadow-md">
-        <p className="font-medium">{`${label}`}</p>
-        {payload.map((entry: any, index: number) => (
-          <p key={`item-${index}`} style={{ color: entry.color }}>
-            {`${entry.name}: ${formatCurrency(entry.value)}`}
-          </p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
-const PieChartTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-3 border rounded-md shadow-md">
-        <p className="font-medium text-sm">{`${payload[0].name}: ${payload[0].value}%`}</p>
-      </div>
-    );
-  }
-  return null;
-};
+import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
+import { fetchTransactions } from '@/utils/supabase';
 
 const Reports = () => {
-  const [period, setPeriod] = useState('daily');
-  const [salesData, setSalesData] = useState<any[]>([]);
-  const [flavorData, setFlavorData] = useState<any[]>([]);
-  const [sizeData, setSizeData] = useState<any[]>([]);
-  const [stateData, setStateData] = useState<any[]>([]);
-  const [stockSummary, setStockSummary] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('sales');
+  const [dateRange, setDateRange] = useState({
+    from: new Date(new Date().setDate(new Date().getDate() - 30)),
+    to: new Date()
+  });
   
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const endDate = new Date();
-        let startDate = new Date();
-        
-        if (period === 'daily') {
-          startDate.setDate(startDate.getDate() - 7);
-        } else if (period === 'weekly') {
-          startDate.setMonth(startDate.getMonth() - 1);
-        } else {
-          startDate.setMonth(startDate.getMonth() - 6);
-        }
-        
-        const salesData = await fetchSalesReportData(
-          startDate.toISOString(),
-          endDate.toISOString()
-        );
-        
-        const processedSalesData = processReportData(salesData, period);
-        setSalesData(processedSalesData);
-        
-        const { flavorDistribution, sizeDistribution, stateDistribution } = processDistributionData(salesData);
-        setFlavorData(flavorDistribution);
-        setSizeData(sizeDistribution);
-        setStateData(stateDistribution);
-        
-        const stockData = await fetchStockSummary();
-        // Fixed: Ensuring the processed stock summary is an array
-        const processedStockData = processStockSummary(stockData);
-        setStockSummary(processedStockData);
-      } catch (error) {
-        console.error('Error fetching report data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [period]);
+  const startDate = dateRange.from?.toISOString() || '';
+  const endDate = dateRange.to?.toISOString() || '';
   
-  const processReportData = (data: any[], period: string) => {
-    if (!data || data.length === 0) return [];
+  // Fetch recent transactions for the transactions list
+  const transactionsQuery = useQuery({
+    queryKey: ['transactions'],
+    queryFn: fetchTransactions
+  });
+  
+  // Fetch report data based on date range
+  const { data: reportData, isLoading } = useQuery({
+    queryKey: ['reportData', startDate, endDate],
+    queryFn: () => fetchSalesReportData(startDate, endDate)
+  });
+  
+  // Calculate basic metrics
+  const totalSales = reportData?.reduce((sum, item) => sum + item.total_price, 0) || 0;
+  const totalItems = reportData?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+  
+  // Group by date for trend chart
+  const getTrendChartData = () => {
+    if (!reportData) return [];
     
-    const groupedData: { [key: string]: { sales: number, profit: number } } = {};
-    
-    data.forEach((item) => {
-      let dateKey;
-      const itemDate = new Date(item.date);
-      
-      if (period === 'daily') {
-        dateKey = format(itemDate, 'dd MMM', { locale: id });
-      } else if (period === 'weekly') {
-        dateKey = `Minggu ${format(itemDate, 'w', { locale: id })}`;
-      } else {
-        dateKey = format(itemDate, 'MMM yyyy', { locale: id });
+    const dataByDate = reportData.reduce((acc, item) => {
+      const date = new Date(item.date).toLocaleDateString();
+      if (!acc[date]) {
+        acc[date] = { date, sales: 0, profit: 0, items: 0 };
       }
-      
-      if (!groupedData[dateKey]) {
-        groupedData[dateKey] = { sales: 0, profit: 0 };
-      }
-      
-      groupedData[dateKey].sales += item.total_price;
-      groupedData[dateKey].profit += item.total_price * 0.3;
-    });
+      acc[date].sales += item.total_price;
+      // Estimating profit as 30% of sales for visualization
+      acc[date].profit += Math.round(item.total_price * 0.3);
+      acc[date].items += item.quantity;
+      return acc;
+    }, {});
     
-    return Object.entries(groupedData).map(([date, values]) => ({
-      date,
-      sales: values.sales,
-      profit: Math.round(values.profit)
-    }));
+    return Object.values(dataByDate);
   };
   
-  const processDistributionData = (data: any[]) => {
-    if (!data || data.length === 0) {
-      return {
-        flavorDistribution: [{ name: 'Tidak ada data', value: 100 }],
-        sizeDistribution: [{ name: 'Tidak ada data', value: 100 }],
-        stateDistribution: [{ name: 'Tidak ada data', value: 100 }]
-      };
-    }
+  // Group by flavor for product distribution chart
+  const getProductDistributionData = () => {
+    if (!reportData) return [];
     
-    const flavorCounts: { [key: string]: number } = {};
-    const sizeCounts: { [key: string]: number } = {};
-    const stateCounts: { [key: string]: number } = {};
-    
-    data.forEach((item) => {
-      if (!flavorCounts[item.flavor]) flavorCounts[item.flavor] = 0;
-      flavorCounts[item.flavor] += item.quantity;
-      
-      if (!sizeCounts[item.size]) sizeCounts[item.size] = 0;
-      sizeCounts[item.size] += item.quantity;
-      
-      if (!stateCounts[item.state]) stateCounts[item.state] = 0;
-      stateCounts[item.state] += item.quantity;
-    });
-    
-    const totalFlavors = Object.values(flavorCounts).reduce((sum, count) => sum + count, 0);
-    const totalSizes = Object.values(sizeCounts).reduce((sum, count) => sum + count, 0);
-    const totalStates = Object.values(stateCounts).reduce((sum, count) => sum + count, 0);
-    
-    const flavorDistribution = Object.entries(flavorCounts).map(([name, value]) => ({
-      name,
-      value: Math.round((value / totalFlavors) * 100)
-    }));
-    
-    const sizeDistribution = Object.entries(sizeCounts).map(([name, value]) => ({
-      name,
-      value: Math.round((value / totalSizes) * 100)
-    }));
-    
-    const stateDistribution = Object.entries(stateCounts).map(([name, value]) => ({
-      name,
-      value: Math.round((value / totalStates) * 100)
-    }));
-    
-    return { flavorDistribution, sizeDistribution, stateDistribution };
-  };
-  
-  const processStockSummary = (data: any[]): any[] => {
-    if (!data || data.length === 0) return [];
-    
-    const stockSummary: { [key: string]: { [key: string]: number } } = {};
-    
-    data.forEach((item) => {
-      if (!stockSummary[item.flavor]) {
-        stockSummary[item.flavor] = { Small: 0, Medium: 0 };
+    const dataByFlavor = reportData.reduce((acc, item) => {
+      const flavor = item.flavor;
+      if (!acc[flavor]) {
+        acc[flavor] = { name: flavor, value: 0 };
       }
-      
-      stockSummary[item.flavor][item.size] += item.quantity;
-    });
+      acc[flavor].value += item.quantity;
+      return acc;
+    }, {});
     
-    return Object.entries(stockSummary).map(([flavor, sizes]) => ({
-      flavor,
-      sizes
-    }));
+    return Object.values(dataByFlavor);
   };
   
-  const totalSales = salesData.reduce((sum, item) => sum + item.sales, 0);
-  const totalProfit = salesData.reduce((sum, item) => sum + item.profit, 0);
-  const averageSales = salesData.length > 0 ? totalSales / salesData.length : 0;
+  // Colors for pie chart
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28DFF', '#FF6B6B', '#54A0FF', '#5ED5A8'];
   
   return (
     <Layout>
       <Header 
-        title="Laporan & Analitik" 
-        description="Lihat performa penjualan dan analitik stok"
+        title="Laporan"
+        description="Visualisasi tren penjualan dan performa bisnis"
       />
       
       <div className="container px-4 py-6">
-        <FadeIn>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="flex flex-col gap-6">
+          {/* Recent Transactions List */}
+          {!transactionsQuery.isLoading && (
+            <RecentTransactionsList transactions={transactionsQuery.data || []} />
+          )}
+          
+          {/* Report Controls */}
+          <div className="flex flex-col lg:flex-row justify-between gap-4 mb-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-md">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="sales">Penjualan</TabsTrigger>
+                <TabsTrigger value="profit">Keuntungan</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            
+            <DateRangePicker 
+              value={dateRange}
+              onChange={setDateRange}
+            />
+          </div>
+          
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
                   Total Penjualan
                 </CardTitle>
+                <ChevronUp className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(totalSales)}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    formatCurrency(totalSales)
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Dari {salesData.length} periode penjualan
+                <p className="text-xs text-muted-foreground">
+                  {startDate && endDate ? (
+                    `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`
+                  ) : 'Seluruh periode'}
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Keuntungan
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Jumlah Item Terjual
                 </CardTitle>
+                <ChevronUp className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(totalProfit)}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    totalItems
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Margin keuntungan: {totalSales > 0 ? Math.round((totalProfit / totalSales) * 100) : 0}%
+                <p className="text-xs text-muted-foreground">
+                  Pizza
                 </p>
               </CardContent>
             </Card>
             
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Rata-rata Penjualan Harian
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Keuntungan (Estimasi)
                 </CardTitle>
+                <ChevronUp className="h-4 w-4 text-green-500" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(averageSales)}
+                  {isLoading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    formatCurrency(Math.round(totalSales * 0.3))
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Berdasarkan {salesData.length} periode
+                <p className="text-xs text-muted-foreground">
+                  30% dari total penjualan
                 </p>
               </CardContent>
             </Card>
           </div>
-        </FadeIn>
-        
-        <FadeIn delay={100}>
-          <Tabs defaultValue="sales" className="mb-8">
-            <TabsList className="mb-4">
-              <TabsTrigger value="sales">Tren Penjualan</TabsTrigger>
-              <TabsTrigger value="distribution">Distribusi Penjualan</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="sales">
-              <Card className="overflow-hidden">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <CardTitle>Tren Penjualan & Keuntungan</CardTitle>
-                    <div className="flex items-center gap-2">
-                      <div className="text-xs font-medium">Periode:</div>
-                      <select 
-                        className="text-xs border rounded px-2 py-1"
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value)}
-                      >
-                        <option value="daily">Harian</option>
-                        <option value="weekly">Mingguan</option>
-                        <option value="monthly">Bulanan</option>
-                      </select>
-                    </div>
-                  </div>
-                  <CardDescription>
-                    Ikhtisar penjualan dan keuntungan dari waktu ke waktu
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="h-80">
-                    {isLoading ? (
-                      <div className="h-full flex items-center justify-center">Memuat data...</div>
-                    ) : salesData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={salesData}
-                          margin={{
-                            top: 20,
-                            right: 30,
-                            left: 20,
-                            bottom: 30,
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                          <XAxis dataKey="date" />
-                          <YAxis 
-                            tickFormatter={(value) => `Rp${value/1000}k`}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <Bar dataKey="sales" name="Penjualan" fill="#0088FE" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="profit" name="Keuntungan" fill="#00C49F" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center">Tidak ada data penjualan ditemukan</div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="distribution">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Varian Pizza</CardTitle>
-                    <CardDescription>
-                      Distribusi berdasarkan rasa
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      {isLoading ? (
-                        <div className="h-full flex items-center justify-center">Memuat data...</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={flavorData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                                const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                                return percent > 0.05 ? (
-                                  <text
-                                    x={x}
-                                    y={y}
-                                    fill="white"
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    className="text-xs font-medium"
-                                  >
-                                    {`${(percent * 100).toFixed(0)}%`}
-                                  </text>
-                                ) : null;
-                              }}
-                              outerRadius={80}
-                              dataKey="value"
-                            >
-                              {flavorData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<PieChartTooltip />} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Ukuran Pizza</CardTitle>
-                    <CardDescription>
-                      Distribusi berdasarkan ukuran
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      {isLoading ? (
-                        <div className="h-full flex items-center justify-center">Memuat data...</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={sizeData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                                const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                                return (
-                                  <text
-                                    x={x}
-                                    y={y}
-                                    fill="white"
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    className="text-xs font-medium"
-                                  >
-                                    {`${(percent * 100).toFixed(0)}%`}
-                                  </text>
-                                );
-                              }}
-                              outerRadius={80}
-                              dataKey="value"
-                            >
-                              {sizeData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip content={<PieChartTooltip />} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="overflow-hidden">
-                  <CardHeader>
-                    <CardTitle>Kondisi Penyajian</CardTitle>
-                    <CardDescription>
-                      Distribusi Mentah vs Matang
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      {isLoading ? (
-                        <div className="h-full flex items-center justify-center">Memuat data...</div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={stateData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                                const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                                const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                                return (
-                                  <text
-                                    x={x}
-                                    y={y}
-                                    fill="white"
-                                    textAnchor="middle"
-                                    dominantBaseline="central"
-                                    className="text-xs font-medium"
-                                  >
-                                    {`${(percent * 100).toFixed(0)}%`}
-                                  </text>
-                                );
-                              }}
-                              outerRadius={80}
-                              dataKey="value"
-                            >
-                              <Cell fill="#0088FE" />
-                              <Cell fill="#FF8042" />
-                            </Pie>
-                            <Tooltip content={<PieChartTooltip />} />
-                            <Legend />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </FadeIn>
-        
-        <FadeIn delay={200}>
-          <Card className="mb-6">
+          
+          {/* Sales & Profit Trend Chart */}
+          <Card>
             <CardHeader>
-              <CardTitle>Ketersediaan Stok</CardTitle>
-              <CardDescription>
-                Level stok saat ini untuk berbagai varian pizza
-              </CardDescription>
+              <CardTitle>Tren {activeTab === 'sales' ? 'Penjualan' : 'Keuntungan'}</CardTitle>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="h-40 flex items-center justify-center">Memuat data...</div>
-              ) : stockSummary.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-muted/50">
-                        <th className="text-left p-3 font-medium text-sm">Rasa</th>
-                        <th className="text-center p-3 font-medium text-sm">Small</th>
-                        <th className="text-center p-3 font-medium text-sm">Medium</th>
-                        <th className="text-center p-3 font-medium text-sm">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockSummary.map((item, index) => {
-                        const smallQty = item.sizes.Small || 0;
-                        const mediumQty = item.sizes.Medium || 0;
-                        const total = smallQty + mediumQty;
-                        
-                        return (
-                          <tr key={index} className={index % 2 === 0 ? 'bg-background' : 'bg-muted/20'}>
-                            <td className="p-3 font-medium">{item.flavor}</td>
-                            <td className="text-center p-3">{smallQty}</td>
-                            <td className="text-center p-3">{mediumQty}</td>
-                            <td className="text-center p-3 font-medium">{total}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                <div className="flex justify-center items-center h-80">
+                  <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="h-40 flex items-center justify-center">Tidak ada data stok ditemukan</div>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart
+                    data={getTrendChartData()}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="date" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value) => formatCurrency(value as number)}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey={activeTab === 'sales' ? 'sales' : 'profit'} 
+                      name={activeTab === 'sales' ? 'Penjualan' : 'Keuntungan'}
+                      stroke={activeTab === 'sales' ? "#8884d8" : "#82ca9d"} 
+                      strokeWidth={2}
+                      activeDot={{ r: 8 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
-        </FadeIn>
+          
+          {/* Product Distribution Pie Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribusi Produk</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-80">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={400}>
+                  <PieChart>
+                    <Pie
+                      data={getProductDistributionData()}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={true}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={150}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {getProductDistributionData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${value} item`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </Layout>
   );

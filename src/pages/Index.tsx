@@ -5,132 +5,88 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { FadeIn, FadeInStagger } from '@/components/animations/FadeIn';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
+import { STORE_INFO } from '@/utils/constants';
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
     <Layout>
-      <div className="container px-4 md:px-6 py-8 max-w-6xl">
-        <FadeIn className="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-            Sistem Manajemen Stok & Penjualan Pizza
+      <div className="container px-4 md:px-6 py-8 max-w-5xl mx-auto">
+        <FadeIn className="text-center mb-12 max-w-3xl mx-auto">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+            {STORE_INFO.name}
           </h1>
-          <p className="text-muted-foreground md:text-lg">
-            Kelola inventaris pizza dan transaksi penjualan dengan sistem yang intuitif ini.
-            Pantau tingkat stok, proses penjualan, dan visualisasikan kinerja bisnis Anda dengan mudah.
+          <p className="text-xl md:text-2xl text-muted-foreground font-semibold mb-4">
+            {STORE_INFO.motto}
+          </p>
+          <p className="text-muted-foreground text-base md:text-lg">
+            Nikmati pizza berkualitas premium dengan rasa yang khas dan autentik.
+            Setiap pembelian Anda berkontribusi pada dukungan untuk Gaza, menyatukan kelezatan dan kepedulian dalam setiap gigitan.
           </p>
         </FadeIn>
 
         <FadeInStagger 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
           staggerDelay={100}
         >
-          <Card className="overflow-hidden transition-all hover:shadow-glass-hover">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center mb-2">
-                <ShoppingBag className="h-6 w-6 text-blue-600" />
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4 mx-auto">
+                <ShoppingBag className="h-8 w-8 text-blue-600" />
               </div>
               <CardTitle>Manajemen Stok</CardTitle>
               <CardDescription>
-                Tambah dan kelola inventaris pizza Anda
+                Kelola inventaris pizza Anda
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 pb-2">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Tambahkan pembelian stok baru</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Lihat tingkat stok saat ini</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Pantau riwayat pembelian</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="pt-2">
+            <CardFooter className="pt-2 flex justify-center">
               <Button 
                 onClick={() => navigate('/stock')}
                 className="w-full"
               >
-                Kelola Stok
+                Buka
               </Button>
             </CardFooter>
           </Card>
 
-          <Card className="overflow-hidden transition-all hover:shadow-glass-hover">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mb-2">
-                <ShoppingCart className="h-6 w-6 text-green-600" />
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto">
+                <ShoppingCart className="h-8 w-8 text-green-600" />
               </div>
               <CardTitle>Proses Penjualan</CardTitle>
               <CardDescription>
-                Proses dan catat penjualan pizza
+                Catat transaksi penjualan baru
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 pb-2">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Catat transaksi penjualan baru</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Perbarui stok secara otomatis</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Lihat riwayat penjualan</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="pt-2">
+            <CardFooter className="pt-2 flex justify-center">
               <Button 
                 onClick={() => navigate('/sales')}
                 className="w-full"
               >
-                Proses Penjualan
+                Buka
               </Button>
             </CardFooter>
           </Card>
 
-          <Card className="overflow-hidden transition-all hover:shadow-glass-hover">
-            <CardHeader className="pb-2">
-              <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-2">
-                <BarChart2 className="h-6 w-6 text-purple-600" />
+          <Card className="transition-all hover:shadow-lg hover:scale-105">
+            <CardHeader className="text-center pb-2">
+              <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4 mx-auto">
+                <BarChart2 className="h-8 w-8 text-purple-600" />
               </div>
               <CardTitle>Laporan & Analisis</CardTitle>
               <CardDescription>
-                Visualisasikan kinerja bisnis Anda
+                Lihat data penjualan dan keuntungan
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-0 pb-2">
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Lihat analisis penjualan</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Lacak rasa terlaris</span>
-                </li>
-                <li className="flex items-center">
-                  <ChevronRight className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <span>Pantau pendapatan dan keuntungan</span>
-                </li>
-              </ul>
-            </CardContent>
-            <CardFooter className="pt-2">
+            <CardFooter className="pt-2 flex justify-center">
               <Button 
                 onClick={() => navigate('/reports')}
                 className="w-full"
               >
-                Lihat Laporan
+                Buka
               </Button>
             </CardFooter>
           </Card>

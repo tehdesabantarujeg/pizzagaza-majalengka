@@ -4,8 +4,11 @@ import { Transaction } from '@/utils/types';
 import { formatDateShort, formatCurrency } from '@/utils/constants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import PizzaVariantBadge from '@/components/PizzaVariantBadge';
-import { Package, Search, ArrowUpDown } from 'lucide-react';
+import { Package, Search, ArrowUpDown, Printer } from 'lucide-react';
+import { reprintTransactionReceipt } from '@/utils/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -16,6 +19,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<keyof Transaction>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const { toast } = useToast();
 
   // Handle search input
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,13 +36,32 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
     }
   };
   
+  // Handle receipt reprint
+  const handleReprintReceipt = async (transactionId: string) => {
+    try {
+      await reprintTransactionReceipt(transactionId);
+      toast({
+        title: "Mencetak Nota",
+        description: "Nota berhasil dicetak ulang",
+      });
+    } catch (error) {
+      console.error("Error reprinting receipt:", error);
+      toast({
+        title: "Gagal Mencetak Nota",
+        description: "Terjadi kesalahan saat mencetak ulang nota",
+        variant: "destructive"
+      });
+    }
+  };
+  
   // Filter and sort transactions
   const filteredTransactions = transactions
     .filter(transaction => 
       transaction.flavor.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.state.toLowerCase().includes(searchTerm.toLowerCase())
+      transaction.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.transactionNumber?.toLowerCase().includes(searchTerm.toLowerCase())
     )
     .sort((a, b) => {
       if (a[sortField] < b[sortField]) return sortDirection === 'asc' ? -1 : 1;
@@ -64,6 +87,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead onClick={() => handleSort('transactionNumber')} className="cursor-pointer hover:bg-muted whitespace-nowrap">
+                <div className="flex items-center">
+                  ID Transaksi
+                  {sortField === 'transactionNumber' && (
+                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
+                  )}
+                </div>
+              </TableHead>
               <TableHead onClick={() => handleSort('date')} className="cursor-pointer hover:bg-muted">
                 <div className="flex items-center">
                   Tanggal
@@ -129,12 +160,14 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
                   )}
                 </div>
               </TableHead>
+              <TableHead>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTransactions.length > 0 ? (
               filteredTransactions.map((transaction) => (
                 <TableRow key={transaction.id}>
+                  <TableCell className="font-medium">{transaction.transactionNumber || '-'}</TableCell>
                   <TableCell>{formatDateShort(transaction.date)}</TableCell>
                   <TableCell>{transaction.customerName || 'Umum'}</TableCell>
                   <TableCell>{transaction.flavor}</TableCell>
@@ -153,11 +186,21 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, setOpen
                   </TableCell>
                   <TableCell>{formatCurrency(transaction.sellingPrice)}</TableCell>
                   <TableCell className="font-medium">{formatCurrency(transaction.totalPrice)}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleReprintReceipt(transaction.id)}
+                      title="Cetak Ulang Nota"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-6">
+                <TableCell colSpan={11} className="text-center py-6">
                   {searchTerm 
                     ? 'Tidak ada transaksi yang sesuai dengan pencarian' 
                     : 'Belum ada transaksi'}

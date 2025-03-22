@@ -95,6 +95,11 @@ export const formatReceiptDate = (dateString: string): string => {
   return `${time}, ${day} ${dateFormatted}`;
 };
 
+// Format transaction number
+export const formatTransactionNumber = (transactionCount: number): string => {
+  return `trx-${String(transactionCount).padStart(6, '0')}`;
+};
+
 // Data pengguna untuk login
 export const USERS = [
   {
@@ -117,8 +122,9 @@ export const USERS = [
 
 // Alamat toko
 export const STORE_INFO = {
-  name: 'Pizza Gaza Majalengka',
+  name: 'PIZZA GAZA MAJALENGKA',
   address: 'Jl. Pemuda No. 34 Majalengka',
+  motto: 'Enjoy While Helping Gaza',
   instagram: ['@pizza.gaza.majalengka', '@tehdesa.majalengka']
 };
 
@@ -135,6 +141,7 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
   const firstTransaction = transactions[0];
   const customerName = firstTransaction.customerName || 'Umum';
   const date = firstTransaction.date;
+  const transactionNumber = firstTransaction.transactionNumber || 'trx-000000';
   
   // Calculate total
   const overallTotal = transactions.reduce((sum, t) => sum + t.totalPrice, 0);
@@ -145,22 +152,26 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
       ? (t.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX) 
       : 0;
     
-    const boxDisplay = t.includeBox
-      ? `${t.quantity}x${formatCurrency(boxPrice)} = ${formatCurrency(boxPrice * t.quantity)}`
+    const boxDisplayText = t.includeBox
+      ? `${t.quantity}x${formatCurrency(boxPrice)}=${formatCurrency(boxPrice * t.quantity)}`
       : 'Tidak';
       
     return `
-      <div class="item">
-        <div><span>Pizza:</span> <span>${t.flavor}</span></div>
-        <div><span>Ukuran:</span> <span>${t.size}</span></div>
-        <div><span>Kondisi:</span> <span>${t.state}</span></div>
-        <div><span>Jumlah:</span> <span>${t.quantity}</span></div>
-        <div><span>Dus:</span> <span>${boxDisplay}</span></div>
-        <div><span>Harga Satuan:</span> <span>${formatCurrency(t.sellingPrice)}</span></div>
-        <div class="item-total"><span>Subtotal:</span> <span>${formatCurrency(t.totalPrice)}</span></div>
+      <div class="item-row">
+        <div class="item-name">Pizza:${t.flavor}</div>
+        <div class="item-details">
+          <div>Ukuran:${t.size}</div>
+          <div>Kondisi:${t.state}</div>
+          <div>Jumlah:${t.quantity}</div>
+          <div>Dus:${boxDisplayText}</div>
+        </div>
+        <div class="item-price">
+          <div>Harga Satuan:${formatCurrency(t.sellingPrice)}</div>
+          <div class="subtotal">Subtotal:${formatCurrency(t.totalPrice)}</div>
+        </div>
       </div>
     `;
-  }).join('<div class="item-separator"></div>');
+  }).join('<div class="separator"></div>');
 
   const receiptContent = `
     <html>
@@ -168,83 +179,111 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
         <title>Nota Penjualan</title>
         <style>
           body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 300px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 350px;
             margin: 0 auto;
-          }
-          h1 {
-            font-size: 16px;
-            text-align: center;
-            margin-bottom: 10px;
+            padding: 15px;
           }
           .header {
             text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 10px;
+            margin-bottom: 10px;
           }
-          .date-time {
+          .header h1 {
+            font-size: 16px;
+            margin: 0;
+            font-weight: bold;
+          }
+          .header p {
+            margin: 3px 0;
+          }
+          .transaction-number {
             text-align: right;
-            font-size: 11px;
             margin-bottom: 5px;
+            font-weight: bold;
           }
-          .info {
-            margin-bottom: 15px;
+          .separator {
+            border-top: 1px dashed #000;
+            margin: 10px 0;
           }
           .customer {
             margin-bottom: 10px;
           }
-          .info div {
+          .item-row {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+          }
+          .item-name {
+            font-weight: bold;
+          }
+          .item-details {
+            display: flex;
+            flex-wrap: wrap;
+            column-gap: 15px;
+            margin: 5px 0;
+          }
+          .item-price {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
+            margin-top: 3px;
           }
-          .item {
-            margin-bottom: 10px;
-          }
-          .item-separator {
-            border-top: 1px dotted #ccc;
-            margin: 10px 0;
-          }
-          .item-total {
+          .subtotal {
             font-weight: bold;
           }
           .total {
             font-weight: bold;
             border-top: 1px dashed #000;
-            padding-top: 10px;
-            margin-top: 10px;
+            border-bottom: 1px dashed #000;
+            padding: 10px 0;
+            margin: 10px 0;
+            text-align: right;
           }
           .footer {
             text-align: center;
             margin-top: 20px;
-            font-size: 12px;
+            font-size: 11px;
           }
           @media print {
             button {
               display: none;
             }
           }
+          .print-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <h1>${STORE_INFO.name.toUpperCase()}</h1>
-          <div>${STORE_INFO.address}</div>
-          <div class="date-time">${formatReceiptDate(date)}</div>
+          <h1>${STORE_INFO.name}</h1>
+          <p>${STORE_INFO.address}</p>
+          <p>${formatReceiptDate(date)}</p>
+        </div>
+        
+        <div class="separator"></div>
+        
+        <div class="transaction-number">
+          <div>${transactionNumber}</div>
         </div>
         
         <div class="customer">
-          <div><span>Pelanggan:</span> <span>${customerName}</span></div>
+          <div><span>Pelanggan: </span>${customerName}</div>
         </div>
         
-        <div class="info">
+        <div class="items">
           ${itemsList}
         </div>
         
         <div class="total">
-          <div><span>Total:</span> <span>${formatCurrency(overallTotal)}</span></div>
+          <div>Total: ${formatCurrency(overallTotal)}</div>
         </div>
         
         <div class="footer">
@@ -253,7 +292,7 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
           <p>${STORE_INFO.instagram.join(' dan ')}</p>
         </div>
         
-        <button onclick="window.print(); window.close();" style="margin-top: 20px; padding: 10px;">Cetak Nota</button>
+        <button class="print-button" onclick="window.print(); window.close();">Cetak Nota</button>
       </body>
     </html>
   `;

@@ -1,8 +1,7 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer } from './types';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from './constants';
+import { formatCurrency, formatTransactionNumber } from './constants';
 
 // Function to setup tables (placeholder since tables are already created in Supabase)
 export const setupSupabaseTables = async (): Promise<void> => {
@@ -230,11 +229,29 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
     sellingPrice: item.selling_price,
     totalPrice: item.total_price,
     customerName: item.customer_name,
-    notes: item.notes
+    notes: item.notes,
+    transactionNumber: item.transaction_number
   }));
 };
 
+export const getTransactionCount = async (): Promise<number> => {
+  const { count, error } = await supabase
+    .from('transactions')
+    .select('*', { count: 'exact', head: true });
+    
+  if (error) {
+    console.error('Error counting transactions:', error);
+    return 0;
+  }
+  
+  return count || 0;
+};
+
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
+  // Get current transaction count for generating transaction number
+  const count = await getTransactionCount();
+  const transactionNumber = formatTransactionNumber(count + 1);
+  
   // Convert our model to database columns
   const dbItem = {
     date: transaction.date,
@@ -247,7 +264,8 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     selling_price: transaction.sellingPrice,
     total_price: transaction.totalPrice,
     customer_name: transaction.customerName,
-    notes: transaction.notes
+    notes: transaction.notes,
+    transaction_number: transactionNumber
   };
 
   const { data, error } = await supabase
@@ -274,8 +292,46 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     sellingPrice: data.selling_price,
     totalPrice: data.total_price,
     customerName: data.customer_name,
-    notes: data.notes
+    notes: data.notes,
+    transactionNumber: data.transaction_number
   };
+};
+
+// Function to reprint a transaction receipt
+export const reprintTransactionReceipt = async (transactionId: string): Promise<void> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('id', transactionId);
+    
+  if (error || !data || data.length === 0) {
+    console.error('Error fetching transaction for reprint:', error);
+    return;
+  }
+  
+  // Map database columns to our TypeScript model
+  const transactions = data.map(item => ({
+    id: item.id,
+    date: item.date || new Date().toISOString(),
+    pizzaId: item.pizza_id || '',
+    size: item.size as 'Small' | 'Medium',
+    flavor: item.flavor,
+    quantity: item.quantity,
+    state: item.state as 'Mentah' | 'Matang',
+    includeBox: item.include_box || false,
+    sellingPrice: item.selling_price,
+    totalPrice: item.total_price,
+    customerName: item.customer_name,
+    notes: item.notes,
+    transactionNumber: item.transaction_number
+  }));
+  
+  // Print the receipt
+  if (transactions.length > 0) {
+    import('./constants').then(({ printReceipt }) => {
+      printReceipt(transactions);
+    });
+  }
 };
 
 // API Pelanggan

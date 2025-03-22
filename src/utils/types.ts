@@ -1,4 +1,3 @@
-
 export interface Pizza {
   id?: string;
   size: 'Small' | 'Medium';
@@ -39,6 +38,7 @@ export interface PizzaSaleItem {
   boxStockId?: string;
 }
 
+// Tipe data untuk transaksi penjualan
 export interface Transaction {
   id: string;
   date: string;
@@ -46,12 +46,13 @@ export interface Transaction {
   size: 'Small' | 'Medium';
   flavor: string;
   quantity: number;
-  state: 'Mentah' | 'Matang'; 
-  includeBox: boolean; // Menambahkan opsi dus
+  state: 'Mentah' | 'Matang';
+  includeBox: boolean;
   sellingPrice: number;
   totalPrice: number;
   customerName?: string;
   notes?: string;
+  transactionNumber?: string;
 }
 
 export interface MultiItemTransaction {
