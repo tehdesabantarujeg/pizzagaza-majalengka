@@ -4,7 +4,7 @@ import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import SalesTrendChart from '@/components/dashboard/SalesTrendChart';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { addDays, subDays } from 'date-fns';
+import { addDays, subDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { fetchSalesReportData, fetchTransactions } from '@/utils/supabase';
 import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
@@ -19,11 +19,19 @@ const Reports = () => {
   const [reportData, setReportData] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState('week');
+  const [salesTrend, setSalesTrend] = useState<Array<{ period: string; amount: number }>>([]);
 
   useEffect(() => {
     loadReportData();
     loadTransactions();
   }, [date]);
+
+  useEffect(() => {
+    if (reportData.length > 0) {
+      processSalesTrendData();
+    }
+  }, [reportData, timeframe]);
 
   const loadReportData = async () => {
     if (date?.from && date?.to) {
@@ -50,6 +58,35 @@ const Reports = () => {
     }
   };
 
+  const processSalesTrendData = () => {
+    // Simple processing of report data into format needed by SalesTrendChart
+    // This is a simplified version - you may need more complex processing
+    if (reportData.length === 0) {
+      setSalesTrend([]);
+      return;
+    }
+
+    // Group by date and sum total_price
+    const groupedByDate: {[key: string]: number} = {};
+    
+    reportData.forEach(sale => {
+      const date = new Date(sale.date);
+      const formattedDate = format(date, 'dd MMM');
+      
+      if (!groupedByDate[formattedDate]) {
+        groupedByDate[formattedDate] = 0;
+      }
+      groupedByDate[formattedDate] += sale.total_price || 0;
+    });
+    
+    const trendData = Object.entries(groupedByDate).map(([period, amount]) => ({
+      period,
+      amount
+    }));
+    
+    setSalesTrend(trendData);
+  };
+
   return (
     <Layout>
       <Header 
@@ -74,7 +111,11 @@ const Reports = () => {
         
         {/* Sales Trend Chart */}
         <div className="grid gap-6">
-          <SalesTrendChart data={reportData} loading={loading} />
+          <SalesTrendChart 
+            salesTrend={salesTrend}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+          />
         </div>
       </div>
     </Layout>
