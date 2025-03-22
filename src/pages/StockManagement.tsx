@@ -15,6 +15,7 @@ import BoxStockForm from '@/components/stock/BoxStockForm';
 import PizzaStockList from '@/components/stock/PizzaStockList';
 import BoxStockList from '@/components/stock/BoxStockList';
 import StockStatusChart from '@/components/dashboard/StockStatusChart';
+import BoxStockStatusChart from '@/components/dashboard/BoxStockStatusChart';
 
 const StockManagement = () => {
   const { toast } = useToast();
@@ -200,18 +201,17 @@ const StockManagement = () => {
           </TabsList>
           
           <TabsContent value="pizza" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className="md:col-span-3">
-                <PizzaStockList stockItems={stockItems} setOpenPizza={setOpenPizza} />
-              </div>
-              <div className="md:col-span-2">
-                <StockStatusChart stockItems={stockItems} />
-              </div>
+            <div className="grid grid-cols-1 gap-6">
+              <StockStatusChart stockItems={stockItems} />
+              <PizzaStockList stockItems={stockItems} setOpenPizza={setOpenPizza} loadStockData={loadStockData} />
             </div>
           </TabsContent>
           
           <TabsContent value="box" className="mt-6">
-            <BoxStockList boxItems={boxItems} setOpenBox={setOpenBox} />
+            <div className="grid grid-cols-1 gap-6">
+              <BoxStockStatusChart boxItems={boxItems} />
+              <BoxStockList boxItems={boxItems} setOpenBox={setOpenBox} loadStockData={loadStockData} />
+            </div>
           </TabsContent>
         </Tabs>
       </div>

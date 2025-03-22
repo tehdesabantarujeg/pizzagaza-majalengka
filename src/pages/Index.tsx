@@ -5,7 +5,7 @@ import Layout from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { FadeIn, FadeInStagger } from '@/components/animations/FadeIn';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronRight, Layers, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
+import { ChevronRight, ShoppingBag, ShoppingCart, BarChart2 } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
