@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import Dashboard from "./pages/Dashboard";
 import StockManagement from "./pages/StockManagement";
 import Sales from "./pages/Sales";
 import Reports from "./pages/Reports";
@@ -25,18 +24,18 @@ const ProtectedRoute = ({ element, allowedRoles }: { element: JSX.Element, allow
 
   // Check role authorization if roles are specified
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" />;
+    return <Navigate to="/sales" />;
   }
 
   return element;
 };
 
-// Redirect to home if already logged in
+// Redirect to sales if already logged in
 const PublicRoute = ({ element }: { element: JSX.Element }) => {
   const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/" />;
+    return <Navigate to="/sales" />;
   }
 
   return element;
@@ -46,7 +45,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute element={<Login />} />} />
-      <Route path="/" element={<ProtectedRoute element={<Dashboard />} />} />
+      <Route path="/" element={<Navigate to="/sales" />} />
       <Route path="/stock" element={<ProtectedRoute element={<StockManagement />} allowedRoles={['admin']} />} />
       <Route path="/sales" element={<ProtectedRoute element={<Sales />} />} />
       <Route path="/reports" element={<ProtectedRoute element={<Reports />} allowedRoles={['admin']} />} />

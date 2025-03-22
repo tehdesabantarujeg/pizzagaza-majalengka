@@ -17,7 +17,7 @@ import {
   SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Pizza, Home, ShoppingBag, ShoppingCart, BarChart2, LogOut, Moon, Sun, User } from 'lucide-react';
+import { Pizza, ShoppingBag, ShoppingCart, BarChart2, LogOut, Moon, Sun, User } from 'lucide-react';
 
 const AppSidebar = () => {
   const { user, logout } = useAuth();
@@ -43,15 +43,6 @@ const AppSidebar = () => {
           <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Beranda">
-                  <NavLink to="/">
-                    <Home className="h-5 w-5" />
-                    <span>Beranda</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Penjualan">
                   <NavLink to="/sales">

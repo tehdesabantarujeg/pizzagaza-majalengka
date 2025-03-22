@@ -25,7 +25,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <Header 
-        title="Beranda" 
+        title="Dashboard" 
         description="Ringkasan bisnis dan analitik penjualan"
       />
       
