@@ -52,7 +52,7 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="col-span-full lg:col-span-12 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Tren Penjualan</CardTitle>

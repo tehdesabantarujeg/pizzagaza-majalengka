@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -6,7 +7,6 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { addDays, subDays, format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { fetchSalesReportData, fetchTransactions, fetchStockSummary } from '@/utils/supabase';
-import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
 import SalesTrendChart from '@/components/dashboard/SalesTrendChart';
 import StockStatusChart from '@/components/dashboard/StockStatusChart';
 import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
@@ -210,10 +210,6 @@ const Reports = () => {
             totalCost={summaryStats.totalCost}
             transactionCount={summaryStats.transactionCount}
           />
-        </div>
-        
-        <div className="mb-6">
-          <RecentTransactionsList transactions={transactions} />
         </div>
         
         <div className="mb-6">
