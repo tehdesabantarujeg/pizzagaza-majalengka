@@ -39,7 +39,9 @@ const Sales = () => {
     handleSavePrint,
     handleAddItem,
     handleRemoveItem,
-    handleItemChange
+    handleItemChange,
+    handleEditTransaction,
+    handleDeleteTransaction
   } = useSaleManagement();
 
   return (
@@ -92,7 +94,12 @@ const Sales = () => {
       </Header>
 
       <div className="container px-4 py-6">
-        <TransactionList transactions={transactions} setOpen={setOpen} />
+        <TransactionList 
+          transactions={transactions} 
+          setOpen={setOpen}
+          onEdit={handleEditTransaction}
+          onDelete={handleDeleteTransaction}
+        />
       </div>
     </Layout>
   );

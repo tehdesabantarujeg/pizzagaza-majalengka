@@ -15,7 +15,9 @@ export const useSaleManagement = () => {
     transactions, 
     loadTransactions, 
     addNewTransaction,
-    getNextTransactionNumber
+    getNextTransactionNumber,
+    deleteTransactionById,
+    updateExistingTransaction
   } = useTransactions();
   
   const { 
@@ -55,6 +57,9 @@ export const useSaleManagement = () => {
     handleRemoveItem,
     resetForm
   } = useSaleForm();
+
+  // Added state for editing transaction
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
   // Memvalidasi stok yang tersedia
   const validateStock = () => {
@@ -158,7 +163,7 @@ export const useSaleManagement = () => {
           transactionNumber: transactionNumber  // Same transaction number for all items
         };
         
-        const savedTransaction = await addNewTransaction(transaction);
+        const savedTransaction = await addNewTransaction(transaction, transactionNumber);
         if (savedTransaction) {
           savedTransactions.push(savedTransaction);
         }
@@ -212,6 +217,42 @@ export const useSaleManagement = () => {
     await processSale(true);
   };
 
+  // Handle edit transaction
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    // For now, we'll show a notification since editing isn't fully implemented
+    toast({
+      title: "Fitur Edit",
+      description: "Fitur edit transaksi akan segera diimplementasikan",
+    });
+  };
+
+  // Handle delete transaction
+  const handleDeleteTransaction = async (transactionId: string) => {
+    try {
+      const success = await deleteTransactionById(transactionId);
+      if (success) {
+        toast({
+          title: "Transaksi dihapus",
+          description: "Transaksi berhasil dihapus dari sistem",
+        });
+      } else {
+        toast({
+          title: "Gagal menghapus",
+          description: "Terjadi kesalahan saat menghapus transaksi",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting transaction:", error);
+      toast({
+        title: "Terjadi kesalahan",
+        description: "Gagal menghapus transaksi",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     transactions,
     stockItems,
@@ -238,7 +279,11 @@ export const useSaleManagement = () => {
     handleSavePrint,
     handleAddItem,
     handleRemoveItem,
-    handleItemChange
+    handleItemChange,
+    handleEditTransaction,
+    handleDeleteTransaction,
+    editingTransaction,
+    setEditingTransaction
   };
 };
 

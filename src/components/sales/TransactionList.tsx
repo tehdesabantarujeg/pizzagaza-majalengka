@@ -5,17 +5,19 @@ import { formatDateShort, formatCurrency } from '@/utils/constants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import PizzaVariantBadge from '@/components/PizzaVariantBadge';
-import { Package, Search, ArrowUpDown, Printer, Edit, Trash } from 'lucide-react';
 import { 
   Dialog,
   DialogContent,
-  DialogTrigger
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+  DialogFooter
 } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import PizzaVariantBadge from '@/components/PizzaVariantBadge';
+import { Package, Search, ArrowUpDown, Printer, Edit, Trash } from 'lucide-react';
 import { reprintTransactionReceipt } from '@/utils/supabase';
 import { useToast } from '@/hooks/use-toast';
-import SaleForm from './SaleForm';
-import MultiItemSaleForm from './MultiItemSaleForm';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -34,6 +36,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [sortField, setSortField] = useState<keyof Transaction>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Handle search input
@@ -81,7 +84,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
   // Handle delete transaction
   const handleDelete = (transactionId: string) => {
     if (onDelete) {
-      onDelete(transactionId);
+      // Open confirmation dialog
+      setTransactionToDelete(transactionId);
     } else {
       // Default delete behavior if no handler provided
       toast({
@@ -89,6 +93,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
         description: "Fitur hapus transaksi belum diimplementasikan",
         variant: "destructive"
       });
+    }
+  };
+
+  // Confirm delete transaction
+  const confirmDelete = () => {
+    if (transactionToDelete && onDelete) {
+      onDelete(transactionToDelete);
+      setTransactionToDelete(null);
     }
   };
   
@@ -291,10 +303,40 @@ const TransactionList: React.FC<TransactionListProps> = ({
       {editingTransaction && (
         <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
           <DialogContent className="sm:max-w-[700px]">
-            <p className="text-center py-4">Fitur edit transaksi belum diimplementasikan</p>
+            <DialogHeader>
+              <DialogTitle>Edit Transaksi</DialogTitle>
+              <DialogDescription>
+                Edit detail transaksi #{editingTransaction.transactionNumber}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <p>Fitur edit transaksi sedang dalam pengembangan.</p>
+              <p>Silakan kembali nanti untuk menggunakan fitur ini.</p>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setEditingTransaction(null)}>Tutup</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Hapus</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus transaksi ini? Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setTransactionToDelete(null)}>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

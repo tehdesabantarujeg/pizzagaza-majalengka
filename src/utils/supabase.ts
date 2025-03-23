@@ -220,10 +220,12 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
 export const getTransactionCount = async (): Promise<number> => {
   const { count, error } = await supabase
     .from('transactions')
-    .select('*', { count: 'exact', head: true });
+    .select('transaction_number', { count: 'exact', head: true })
+    .is('transaction_number', 'not.null')
+    .filter('transaction_number', 'neq', '');
     
   if (error) {
-    console.error('Error counting transactions:', error);
+    console.error('Error counting unique transaction numbers:', error);
     return 0;
   }
   
@@ -231,9 +233,6 @@ export const getTransactionCount = async (): Promise<number> => {
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
-  const count = await getTransactionCount();
-  const transactionNumber = formatTransactionNumber(count + 1);
-  
   const dbItem = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
@@ -246,7 +245,7 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     total_price: transaction.totalPrice,
     customer_name: transaction.customerName,
     notes: transaction.notes,
-    transaction_number: transactionNumber
+    transaction_number: transaction.transactionNumber
   };
 
   const { data, error } = await supabase
@@ -275,6 +274,49 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     notes: data.notes,
     transactionNumber: data.transaction_number
   };
+};
+
+export const deleteTransaction = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error deleting transaction:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
+  const dbItem = {
+    date: transaction.date,
+    pizza_id: transaction.pizzaId,
+    size: transaction.size,
+    flavor: transaction.flavor,
+    quantity: transaction.quantity,
+    state: transaction.state,
+    include_box: transaction.includeBox,
+    selling_price: transaction.sellingPrice,
+    total_price: transaction.totalPrice,
+    customer_name: transaction.customerName,
+    notes: transaction.notes,
+    transaction_number: transaction.transactionNumber
+  };
+
+  const { error } = await supabase
+    .from('transactions')
+    .update(dbItem)
+    .eq('id', transaction.id);
+    
+  if (error) {
+    console.error('Error updating transaction:', error);
+    return false;
+  }
+  
+  return true;
 };
 
 export const reprintTransactionReceipt = async (transactionId: string): Promise<void> => {
