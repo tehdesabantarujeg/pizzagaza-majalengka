@@ -2,11 +2,14 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  PieChart, 
-  Pie, 
+  BarChart, 
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
   Tooltip, 
-  ResponsiveContainer, 
-  Cell 
+  ResponsiveContainer,
+  LabelList
 } from 'recharts';
 
 interface StockStatusChartProps {
@@ -16,7 +19,7 @@ interface StockStatusChartProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems }) => {
-  // Process stock data for pie chart
+  // Process stock data for bar chart
   const stockData = stockItems
     ? stockItems
         .reduce((acc: any[], item: any) => {
@@ -43,22 +46,27 @@ const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems }) => {
         <div className="h-[300px]">
           {stockData && stockData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={stockData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {stockData.map((_: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
+              <BarChart
+                data={stockData}
+                layout="vertical"
+                margin={{ top: 20, right: 30, left: 120, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  tick={{ fontSize: 12 }}
+                  width={110}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} unit`, 'Jumlah']}
+                  labelFormatter={(name) => `Rasa: ${name}`}
+                />
+                <Bar dataKey="value" fill="#8884d8">
+                  <LabelList dataKey="value" position="right" />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center">

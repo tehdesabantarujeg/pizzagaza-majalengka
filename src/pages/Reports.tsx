@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -159,7 +160,7 @@ const Reports = () => {
     const totalCost = Math.round(totalRevenue * estimatedCostRatio);
     const totalProfit = totalRevenue - totalCost;
     
-    const uniqueTransactionIds = new Set(data.map(sale => sale.id));
+    const uniqueTransactionIds = new Set(data.map(sale => sale.transaction_number));
     const transactionCount = uniqueTransactionIds.size;
     
     setSummaryStats({
@@ -216,12 +217,14 @@ const Reports = () => {
           <RecentTransactionsList transactions={transactions} />
         </div>
         
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <BestSellingProductsChart products={bestSellingProducts} isLoading={loading} />
-          
-          <Card className="col-span-full lg:col-span-6">
+        <div className="mb-6">
+          <Card className="col-span-full">
             <StockStatusChart stockItems={stockItems} />
           </Card>
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <BestSellingProductsChart products={bestSellingProducts} isLoading={loading} />
           
           <div className="col-span-full">
             <SalesTrendChart 

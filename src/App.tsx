@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import Index from "./pages/Index";
 import StockManagement from "./pages/StockManagement";
 import Sales from "./pages/Sales";
 import Reports from "./pages/Reports";
@@ -35,7 +36,7 @@ const PublicRoute = ({ element }: { element: JSX.Element }) => {
   const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/sales" />;
+    return <Navigate to="/" />;
   }
 
   return element;
@@ -45,7 +46,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute element={<Login />} />} />
-      <Route path="/" element={<Navigate to="/sales" />} />
+      <Route path="/" element={<ProtectedRoute element={<Index />} />} />
       <Route path="/stock" element={<ProtectedRoute element={<StockManagement />} allowedRoles={['admin']} />} />
       <Route path="/sales" element={<ProtectedRoute element={<Sales />} />} />
       <Route path="/reports" element={<ProtectedRoute element={<Reports />} allowedRoles={['admin']} />} />

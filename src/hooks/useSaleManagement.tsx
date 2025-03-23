@@ -15,7 +15,7 @@ export const useSaleManagement = () => {
     transactions, 
     loadTransactions, 
     addNewTransaction,
-    getNextTransactionNumber  // We'll add this to useTransactions
+    getNextTransactionNumber
   } = useTransactions();
   
   const { 
