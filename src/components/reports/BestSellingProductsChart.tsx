@@ -19,7 +19,7 @@ interface BestSellingProductsChartProps {
 
 const BestSellingProductsChart: React.FC<BestSellingProductsChartProps> = ({ products, isLoading }) => {
   return (
-    <Card className="col-span-full lg:col-span-6">
+    <Card className="col-span-full lg:col-span-12">
       <CardHeader>
         <CardTitle>Produk Terlaris</CardTitle>
         <CardDescription>
@@ -49,8 +49,8 @@ const BestSellingProductsChart: React.FC<BestSellingProductsChartProps> = ({ pro
                 <YAxis 
                   type="category" 
                   dataKey="name" 
-                  width={120}
-                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                  width={150}
+                  tickFormatter={(value) => value.length > 20 ? `${value.substring(0, 20)}...` : value}
                 />
                 <Tooltip 
                   formatter={(value, name) => [

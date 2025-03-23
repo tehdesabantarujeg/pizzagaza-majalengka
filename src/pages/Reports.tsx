@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -223,7 +222,7 @@ const Reports = () => {
           </Card>
         </div>
         
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-6">
           <BestSellingProductsChart products={bestSellingProducts} isLoading={loading} />
           
           <div className="col-span-full">

@@ -11,7 +11,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatCurrency } from '@/utils/constants';
@@ -27,13 +26,16 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
   onCancel, 
   onSave 
 }) => {
+  // Create a complete copy of the transaction to edit
   const [editedTransaction, setEditedTransaction] = useState<Transaction>({...transaction});
+  
+  // Extract specific fields for easier handling in the form
   const [quantity, setQuantity] = useState<number>(transaction.quantity);
   const [includeBox, setIncludeBox] = useState<boolean>(transaction.includeBox);
   const [notes, setNotes] = useState<string>(transaction.notes || '');
   const [customerName, setCustomerName] = useState<string>(transaction.customerName || '');
 
-  // Update total price when quantity changes
+  // Update transaction state when input fields change
   useEffect(() => {
     const updatedTotal = editedTransaction.sellingPrice * quantity;
     setEditedTransaction(prev => ({
