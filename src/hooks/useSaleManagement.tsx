@@ -220,11 +220,6 @@ export const useSaleManagement = () => {
   // Handle edit transaction
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    // For now, we'll show a notification since editing isn't fully implemented
-    toast({
-      title: "Fitur Edit",
-      description: "Fitur edit transaksi akan segera diimplementasikan",
-    });
   };
 
   // Handle delete transaction
@@ -248,6 +243,32 @@ export const useSaleManagement = () => {
       toast({
         title: "Terjadi kesalahan",
         description: "Gagal menghapus transaksi",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to update a transaction
+  const handleUpdateTransaction = async (transaction: Transaction) => {
+    try {
+      const success = await updateExistingTransaction(transaction);
+      if (success) {
+        toast({
+          title: "Transaksi diperbarui",
+          description: "Detail transaksi berhasil diperbarui",
+        });
+      } else {
+        toast({
+          title: "Gagal memperbarui",
+          description: "Terjadi kesalahan saat memperbarui transaksi",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+      toast({
+        title: "Terjadi kesalahan",
+        description: "Gagal memperbarui transaksi",
         variant: "destructive"
       });
     }
@@ -283,7 +304,8 @@ export const useSaleManagement = () => {
     handleEditTransaction,
     handleDeleteTransaction,
     editingTransaction,
-    setEditingTransaction
+    setEditingTransaction,
+    updateExistingTransaction: handleUpdateTransaction
   };
 };
 

@@ -12,6 +12,7 @@ import { Plus } from 'lucide-react';
 import SaleForm from '@/components/sales/SaleForm';
 import MultiItemSaleForm from '@/components/sales/MultiItemSaleForm';
 import TransactionList from '@/components/sales/TransactionList';
+import EditTransactionForm from '@/components/sales/EditTransactionForm';
 import useSaleManagement from '@/hooks/useSaleManagement';
 
 const Sales = () => {
@@ -41,8 +42,17 @@ const Sales = () => {
     handleRemoveItem,
     handleItemChange,
     handleEditTransaction,
-    handleDeleteTransaction
+    handleDeleteTransaction,
+    editingTransaction,
+    setEditingTransaction,
+    updateExistingTransaction
   } = useSaleManagement();
+
+  // Handle saving edited transaction
+  const handleSaveEditedTransaction = (updatedTransaction: any) => {
+    updateExistingTransaction(updatedTransaction);
+    setEditingTransaction(null);
+  };
 
   return (
     <Layout>
@@ -101,6 +111,17 @@ const Sales = () => {
           onDelete={handleDeleteTransaction}
         />
       </div>
+
+      {/* Edit Transaction Dialog */}
+      {editingTransaction && (
+        <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+          <EditTransactionForm
+            transaction={editingTransaction}
+            onCancel={() => setEditingTransaction(null)}
+            onSave={handleSaveEditedTransaction}
+          />
+        </Dialog>
+      )}
     </Layout>
   );
 };

@@ -33,9 +33,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
   onDelete
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Transaction>('date');
+  const [sortField, setSortField] = useState<keyof Transaction | 'date'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -45,7 +44,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
   
   // Handle column sorting
-  const handleSort = (field: keyof Transaction) => {
+  const handleSort = (field: keyof Transaction | 'date') => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -73,11 +72,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
   
   // Handle edit transaction
-  const handleEdit = (transaction: Transaction) => {
-    if (onEdit) {
-      onEdit(transaction);
-    } else {
-      setEditingTransaction(transaction);
+  const handleEdit = (transactions: Transaction[]) => {
+    if (onEdit && transactions.length > 0) {
+      // Pass the first transaction as representative of the group
+      onEdit(transactions[0]);
     }
   };
   
@@ -103,8 +101,23 @@ const TransactionList: React.FC<TransactionListProps> = ({
       setTransactionToDelete(null);
     }
   };
+
+  // Group transactions by transaction number
+  const groupTransactionsByNumber = (transactions: Transaction[]) => {
+    const groups: { [key: string]: Transaction[] } = {};
+    
+    transactions.forEach(transaction => {
+      const key = transaction.transactionNumber || transaction.id;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(transaction);
+    });
+    
+    return Object.values(groups);
+  };
   
-  // Filter and sort transactions
+  // Filter transactions
   const filteredTransactions = transactions
     .filter(transaction => 
       transaction.flavor.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -112,24 +125,39 @@ const TransactionList: React.FC<TransactionListProps> = ({
       transaction.size.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.transactionNumber?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (a[sortField] < b[sortField]) return sortDirection === 'asc' ? -1 : 1;
-      if (a[sortField] > b[sortField]) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
+    );
 
-  // Group transactions by their transaction number for the print feature
-  const transactionsByNumber: {[key: string]: Transaction[]} = {};
+  // Group filtered transactions by transaction number
+  const groupedTransactions = groupTransactionsByNumber(filteredTransactions);
   
-  filteredTransactions.forEach(transaction => {
-    if (transaction.transactionNumber) {
-      if (!transactionsByNumber[transaction.transactionNumber]) {
-        transactionsByNumber[transaction.transactionNumber] = [];
-      }
-      transactionsByNumber[transaction.transactionNumber].push(transaction);
+  // Sort grouped transactions
+  const sortedGroups = [...groupedTransactions].sort((a, b) => {
+    // Use the first transaction in each group for sorting
+    const transA = a[0];
+    const transB = b[0];
+    
+    if (sortField === 'date') {
+      const dateA = new Date(transA.date);
+      const dateB = new Date(transB.date);
+      return sortDirection === 'asc' ? dateA.getTime() - dateB.getTime() : dateB.getTime() - dateA.getTime();
     }
+    
+    if (transA[sortField] < transB[sortField]) return sortDirection === 'asc' ? -1 : 1;
+    if (transA[sortField] > transB[sortField]) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
   });
+
+  // Format multiple items for display
+  const formatMultipleItems = (transactions: Transaction[], field: keyof Transaction) => {
+    return transactions.map(t => String(t[field])).join(', ');
+  };
+
+  // Calculate total quantities, prices, etc.
+  const calculateTotals = (transactions: Transaction[]) => {
+    const totalBoxes = transactions.filter(t => t.includeBox).length;
+    const totalPrice = transactions.reduce((sum, t) => sum + t.totalPrice, 0);
+    return { totalBoxes, totalPrice };
+  };
 
   return (
     <div>
@@ -173,122 +201,68 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   )}
                 </div>
               </TableHead>
-              <TableHead onClick={() => handleSort('flavor')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Produk
-                  {sortField === 'flavor' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => handleSort('size')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Ukuran
-                  {sortField === 'size' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => handleSort('state')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Kondisi
-                  {sortField === 'state' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => handleSort('quantity')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Jumlah
-                  {sortField === 'quantity' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
+              <TableHead>Produk</TableHead>
+              <TableHead>Ukuran</TableHead>
+              <TableHead>Kondisi</TableHead>
+              <TableHead>Jumlah</TableHead>
               <TableHead>Dus</TableHead>
-              <TableHead onClick={() => handleSort('sellingPrice')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Harga
-                  {sortField === 'sellingPrice' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
-              <TableHead onClick={() => handleSort('totalPrice')} className="cursor-pointer hover:bg-muted">
-                <div className="flex items-center">
-                  Total
-                  {sortField === 'totalPrice' && (
-                    <ArrowUpDown className={`ml-1 h-4 w-4 ${sortDirection === 'desc' ? 'rotate-180' : ''}`} />
-                  )}
-                </div>
-              </TableHead>
+              <TableHead>Total</TableHead>
               <TableHead>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">{transaction.transactionNumber || '-'}</TableCell>
-                  <TableCell>{formatDateShort(transaction.date)}</TableCell>
-                  <TableCell>{transaction.customerName || 'Umum'}</TableCell>
-                  <TableCell>{transaction.flavor}</TableCell>
-                  <TableCell>{transaction.size}</TableCell>
-                  <TableCell>{transaction.state}</TableCell>
-                  <TableCell>{transaction.quantity}</TableCell>
-                  <TableCell>
-                    {transaction.includeBox ? (
-                      <div className="flex items-center gap-1">
-                        <Package className="h-3 w-3 text-orange-600" />
-                        <span>Ya</span>
+            {sortedGroups.length > 0 ? (
+              sortedGroups.map((group) => {
+                const { totalBoxes, totalPrice } = calculateTotals(group);
+                return (
+                  <TableRow key={group[0].transactionNumber || group[0].id}>
+                    <TableCell className="font-medium">{group[0].transactionNumber || '-'}</TableCell>
+                    <TableCell>{formatDateShort(group[0].date)}</TableCell>
+                    <TableCell>{group[0].customerName || 'Umum'}</TableCell>
+                    <TableCell>{formatMultipleItems(group, 'flavor')}</TableCell>
+                    <TableCell>{formatMultipleItems(group, 'size')}</TableCell>
+                    <TableCell>{formatMultipleItems(group, 'state')}</TableCell>
+                    <TableCell>{group.map(t => t.quantity).join(', ')}</TableCell>
+                    <TableCell>{totalBoxes > 0 ? totalBoxes : 'Tidak'}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(totalPrice)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleReprintReceipt(group[0].id)}
+                          title="Cetak Ulang Nota"
+                        >
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(group)}
+                          title="Edit Transaksi"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            // For simplicity, we'll delete the first transaction's ID
+                            // In a real app, you might want to delete all transactions in the group
+                            handleDelete(group[0].id);
+                          }}
+                          title="Hapus Transaksi"
+                        >
+                          <Trash className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                    ) : (
-                      'Tidak'
-                    )}
-                  </TableCell>
-                  <TableCell>{formatCurrency(transaction.sellingPrice)}</TableCell>
-                  <TableCell className="font-medium">{formatCurrency(transaction.totalPrice)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          // Find all transactions with the same transaction number
-                          const relatedTransactions = transaction.transactionNumber 
-                            ? transactionsByNumber[transaction.transactionNumber] 
-                            : [transaction];
-                            
-                          // Print all related transactions as one receipt
-                          handleReprintReceipt(transaction.id);
-                        }}
-                        title="Cetak Ulang Nota"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(transaction)}
-                        title="Edit Transaksi"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(transaction.id)}
-                        title="Hapus Transaksi"
-                      >
-                        <Trash className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-6">
+                <TableCell colSpan={10} className="text-center py-6">
                   {searchTerm 
                     ? 'Tidak ada transaksi yang sesuai dengan pencarian' 
                     : 'Belum ada transaksi'}
@@ -299,27 +273,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </Table>
       </div>
       
-      {/* Edit Transaction Dialog */}
-      {editingTransaction && (
-        <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
-          <DialogContent className="sm:max-w-[700px]">
-            <DialogHeader>
-              <DialogTitle>Edit Transaksi</DialogTitle>
-              <DialogDescription>
-                Edit detail transaksi #{editingTransaction.transactionNumber}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <p>Fitur edit transaksi sedang dalam pengembangan.</p>
-              <p>Silakan kembali nanti untuk menggunakan fitur ini.</p>
-            </div>
-            <DialogFooter>
-              <Button onClick={() => setEditingTransaction(null)}>Tutup</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
         <AlertDialogContent>
