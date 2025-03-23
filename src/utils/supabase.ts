@@ -221,8 +221,8 @@ export const getTransactionCount = async (): Promise<number> => {
   const { count, error } = await supabase
     .from('transactions')
     .select('transaction_number', { count: 'exact', head: true })
-    .is('transaction_number', 'not.null')
-    .filter('transaction_number', 'neq', '');
+    .not('transaction_number', 'is', null)
+    .neq('transaction_number', '');
     
   if (error) {
     console.error('Error counting unique transaction numbers:', error);
