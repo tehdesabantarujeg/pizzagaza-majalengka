@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -14,6 +13,7 @@ import BestSellingProductsChart from '@/components/reports/BestSellingProductsCh
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
 import { Transaction } from '@/utils/types';
 import { formatCurrency } from '@/utils/constants';
+import { Card } from '@/components/ui/card';
 
 const Reports = () => {
   const [date, setDate] = useState<DateRange | undefined>({
@@ -29,7 +29,6 @@ const Reports = () => {
   const [salesTrend, setSalesTrend] = useState<Array<{ period: string; amount: number }>>([]);
   const [bestSellingProducts, setBestSellingProducts] = useState<Array<{ name: string; quantity: number; revenue: number }>>([]);
   
-  // Summary statistics
   const [summaryStats, setSummaryStats] = useState({
     totalRevenue: 0,
     totalProfit: 0,
@@ -48,7 +47,6 @@ const Reports = () => {
         const fromDate = date.from.toISOString();
         const toDate = date.to.toISOString();
         
-        // Fetch all data needed
         const [salesData, transactionsData, stockData] = await Promise.all([
           fetchSalesReportData(fromDate, toDate),
           fetchTransactions(),
@@ -59,7 +57,6 @@ const Reports = () => {
         setTransactions(transactionsData);
         setStockItems(stockData);
         
-        // Process data
         processSalesTrendData(salesData);
         processBestSellingProducts(salesData);
         calculateSummaryStats(salesData);
@@ -77,7 +74,6 @@ const Reports = () => {
       return;
     }
 
-    // Group by date and sum total_price
     const groupedByDate: {[key: string]: number} = {};
     
     data.forEach(sale => {
@@ -121,7 +117,6 @@ const Reports = () => {
       return;
     }
 
-    // Group by product and sum quantities and revenue
     const groupedByProduct: {[key: string]: {quantity: number, revenue: number}} = {};
     
     data.forEach(sale => {
@@ -135,7 +130,6 @@ const Reports = () => {
       groupedByProduct[productKey].revenue += sale.total_price || 0;
     });
     
-    // Convert to array and sort by revenue
     const productData = Object.entries(groupedByProduct)
       .map(([name, { quantity, revenue }]) => ({
         name,
@@ -143,7 +137,7 @@ const Reports = () => {
         revenue
       }))
       .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5); // Top 5 products
+      .slice(0, 5);
     
     setBestSellingProducts(productData);
   };
@@ -159,16 +153,12 @@ const Reports = () => {
       return;
     }
 
-    // Calculate totals
     const totalRevenue = data.reduce((sum, sale) => sum + (sale.total_price || 0), 0);
     
-    // Estimate costs and profit (this is an approximation)
-    // In a real app, you'd get the actual cost from the cost_price in your data
-    const estimatedCostRatio = 0.6; // 60% of revenue goes to costs (adjust as needed)
+    const estimatedCostRatio = 0.6;
     const totalCost = Math.round(totalRevenue * estimatedCostRatio);
     const totalProfit = totalRevenue - totalCost;
     
-    // Count unique transactions
     const uniqueTransactionIds = new Set(data.map(sale => sale.id));
     const transactionCount = uniqueTransactionIds.size;
     
@@ -188,7 +178,6 @@ const Reports = () => {
       />
 
       <div className="container px-4 py-6">
-        {/* Time Period Selector */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-semibold">Periode</h2>
@@ -214,7 +203,6 @@ const Reports = () => {
           </Tabs>
         </div>
         
-        {/* Summary Cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
           <ReportSummaryCards
             totalRevenue={summaryStats.totalRevenue}
@@ -224,22 +212,17 @@ const Reports = () => {
           />
         </div>
         
-        {/* Recent Transactions List */}
         <div className="mb-6">
           <RecentTransactionsList transactions={transactions} />
         </div>
         
-        {/* Charts Section */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          {/* Best Selling Products Chart */}
           <BestSellingProductsChart products={bestSellingProducts} isLoading={loading} />
           
-          {/* Stock Status Chart */}
           <Card className="col-span-full lg:col-span-6">
             <StockStatusChart stockItems={stockItems} />
           </Card>
           
-          {/* Sales Trend Chart */}
           <div className="col-span-full">
             <SalesTrendChart 
               salesTrend={salesTrend}
