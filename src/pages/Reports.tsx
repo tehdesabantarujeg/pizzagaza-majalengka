@@ -1,356 +1,208 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
+import { format, subDays, startOfMonth } from 'date-fns';
+import { 
+  CalendarIcon, 
+  ArrowRightIcon, 
+  LineChartIcon, 
+  BarChartIcon,
+  PieChartIcon
+} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { addDays, subDays, format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
-import { fetchSalesReportData, fetchTransactions, fetchStockSummary, fetchExpensesByDateRange } from '@/utils/supabase';
-import SalesTrendChart from '@/components/dashboard/SalesTrendChart';
-import StockStatusChart from '@/components/dashboard/StockStatusChart';
-import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
-import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+
+// Report components
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
-import { Transaction } from '@/utils/types';
-import { formatCurrency } from '@/utils/constants';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart';
+import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
+import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
+
+// Data helpers
+import { fetchSalesReportData, fetchExpensesByDateRange } from '@/utils/supabase';
+import { PIZZA_FLAVORS } from '@/utils/constants';
 
 const Reports = () => {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30),
+  const [dateRange, setDateRange] = useState<{
+    from: Date;
+    to: Date;
+  }>({
+    from: startOfMonth(new Date()),
     to: new Date(),
   });
-
-  const [timeframe, setTimeframe] = useState('week');
-  const [reportData, setReportData] = useState<any[]>([]);
-  const [expensesData, setExpensesData] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [stockItems, setStockItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [salesTrend, setSalesTrend] = useState<Array<{ period: string; amount: number }>>([]);
-  const [bestSellingProducts, setBestSellingProducts] = useState<Array<{ name: string; quantity: number; revenue: number }>>([]);
-  const [revenueVsExpensesData, setRevenueVsExpensesData] = useState<Array<{ period: string; revenue: number; expenses: number; profit: number }>>([]);
   
-  const [summaryStats, setSummaryStats] = useState({
-    totalRevenue: 0,
-    totalProfit: 0,
-    totalCost: 0,
-    transactionCount: 0
-  });
+  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
 
-  useEffect(() => {
-    loadData();
-  }, [date, timeframe]);
-
-  const loadData = async () => {
-    if (date?.from && date?.to) {
-      setLoading(true);
-      try {
-        const fromDate = date.from.toISOString();
-        const toDate = date.to.toISOString();
-        
-        const [salesData, transactionsData, stockData, expensesData] = await Promise.all([
-          fetchSalesReportData(fromDate, toDate),
-          fetchTransactions(),
-          fetchStockSummary(),
-          fetchExpensesByDateRange(fromDate, toDate)
-        ]);
-        
-        setReportData(salesData);
-        setTransactions(transactionsData);
-        setStockItems(stockData);
-        setExpensesData(expensesData);
-        
-        processSalesTrendData(salesData);
-        processBestSellingProducts(salesData);
-        processRevenueVsExpensesData(salesData, expensesData);
-        calculateSummaryStats(salesData, expensesData);
-      } catch (error) {
-        console.error("Error loading report data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const processSalesTrendData = (data: any[]) => {
-    if (data.length === 0) {
-      setSalesTrend([]);
-      return;
-    }
-
-    const groupedByDate: {[key: string]: number} = {};
-    
-    data.forEach(sale => {
-      const date = new Date(sale.date);
-      let formattedDate;
+  // Fetch report data
+  const { data, isLoading } = useQuery({
+    queryKey: ['reportData', dateRange.from, dateRange.to],
+    queryFn: async () => {
+      const startDate = format(dateRange.from, 'yyyy-MM-dd');
+      const endDate = format(dateRange.to, 'yyyy-MM-dd');
       
-      switch(timeframe) {
-        case 'day':
-          formattedDate = format(date, 'HH:mm');
-          break;
-        case 'week':
-          formattedDate = format(date, 'EEE');
-          break;
-        case 'month':
-          formattedDate = format(date, 'dd MMM');
-          break;
-        case 'year':
-          formattedDate = format(date, 'MMM');
-          break;
-        default:
-          formattedDate = format(date, 'dd MMM');
-      }
+      const [salesData, expensesData] = await Promise.all([
+        fetchSalesReportData(startDate, endDate),
+        fetchExpensesByDateRange(startDate, endDate)
+      ]);
       
-      if (!groupedByDate[formattedDate]) {
-        groupedByDate[formattedDate] = 0;
-      }
-      groupedByDate[formattedDate] += sale.total_price || 0;
-    });
-    
-    const trendData = Object.entries(groupedByDate).map(([period, amount]) => ({
-      period,
-      amount
-    }));
-    
-    setSalesTrend(trendData);
-  };
-
-  const processBestSellingProducts = (data: any[]) => {
-    if (data.length === 0) {
-      setBestSellingProducts([]);
-      return;
-    }
-
-    const groupedByProduct: {[key: string]: {quantity: number, revenue: number}} = {};
-    
-    data.forEach(sale => {
-      const productKey = `${sale.flavor} ${sale.size} ${sale.state}`;
+      // Process sales data for best selling products
+      const productSales = PIZZA_FLAVORS.map(flavor => ({
+        name: flavor,
+        quantity: 0,
+        revenue: 0
+      }));
       
-      if (!groupedByProduct[productKey]) {
-        groupedByProduct[productKey] = { quantity: 0, revenue: 0 };
-      }
+      salesData.forEach((sale: any) => {
+        const index = productSales.findIndex(p => p.name === sale.flavor);
+        if (index !== -1) {
+          productSales[index].quantity += sale.quantity || 0;
+          productSales[index].revenue += sale.total_price || 0;
+        }
+      });
       
-      groupedByProduct[productKey].quantity += sale.quantity || 0;
-      groupedByProduct[productKey].revenue += sale.total_price || 0;
-    });
-    
-    const productData = Object.entries(groupedByProduct)
-      .map(([name, { quantity, revenue }]) => ({
-        name,
-        quantity,
-        revenue
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 5);
-    
-    setBestSellingProducts(productData);
-  };
-
-  const processRevenueVsExpensesData = (salesData: any[], expensesData: any[]) => {
-    if (salesData.length === 0 && expensesData.length === 0) {
-      setRevenueVsExpensesData([]);
-      return;
-    }
-
-    const revenueByPeriod: {[key: string]: number} = {};
-    const expensesByPeriod: {[key: string]: number} = {};
-    
-    salesData.forEach(sale => {
-      const date = new Date(sale.date);
-      let formattedDate;
-      
-      switch(timeframe) {
-        case 'day':
-          formattedDate = format(date, 'yyyy-MM-dd');
-          break;
-        case 'week':
-          formattedDate = `${format(date, 'yyyy')}-W${format(date, 'ww')}`;
-          break;
-        case 'month':
-          formattedDate = format(date, 'yyyy-MM');
-          break;
-        case 'year':
-          formattedDate = format(date, 'yyyy');
-          break;
-        default:
-          formattedDate = format(date, 'yyyy-MM-dd');
-      }
-      
-      if (!revenueByPeriod[formattedDate]) {
-        revenueByPeriod[formattedDate] = 0;
-      }
-      revenueByPeriod[formattedDate] += sale.total_price || 0;
-    });
-    
-    expensesData.forEach(expense => {
-      const date = new Date(expense.date);
-      let formattedDate;
-      
-      switch(timeframe) {
-        case 'day':
-          formattedDate = format(date, 'yyyy-MM-dd');
-          break;
-        case 'week':
-          formattedDate = `${format(date, 'yyyy')}-W${format(date, 'ww')}`;
-          break;
-        case 'month':
-          formattedDate = format(date, 'yyyy-MM');
-          break;
-        case 'year':
-          formattedDate = format(date, 'yyyy');
-          break;
-        default:
-          formattedDate = format(date, 'yyyy-MM-dd');
-      }
-      
-      if (!expensesByPeriod[formattedDate]) {
-        expensesByPeriod[formattedDate] = 0;
-      }
-      expensesByPeriod[formattedDate] += expense.amount || 0;
-    });
-    
-    const allPeriods = new Set([...Object.keys(revenueByPeriod), ...Object.keys(expensesByPeriod)]);
-    const chartData = Array.from(allPeriods).map(periodKey => {
-      const revenue = revenueByPeriod[periodKey] || 0;
-      const expenses = expensesByPeriod[periodKey] || 0;
-      const profit = revenue - expenses;
-      
-      let displayPeriod;
-      switch(timeframe) {
-        case 'day':
-          displayPeriod = format(new Date(periodKey), 'dd MMM');
-          break;
-        case 'week':
-          const [year, week] = periodKey.split('-W');
-          displayPeriod = `W${week}`;
-          break;
-        case 'month':
-          displayPeriod = format(new Date(periodKey + '-01'), 'MMM yy');
-          break;
-        case 'year':
-          displayPeriod = periodKey;
-          break;
-        default:
-          displayPeriod = format(new Date(periodKey), 'dd MMM');
-      }
+      const bestSellingProducts = [...productSales]
+        .filter(p => p.revenue > 0)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 5);
       
       return {
-        period: displayPeriod,
-        revenue,
-        expenses,
-        profit
+        salesData,
+        expensesData,
+        bestSellingProducts,
+        totalSales: salesData.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0),
+        totalExpenses: expensesData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0),
+        totalQuantity: salesData.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0),
       };
-    });
-    
-    setRevenueVsExpensesData(chartData.sort((a, b) => a.period.localeCompare(b.period)));
-  };
-
-  const calculateSummaryStats = (salesData: any[], expensesData: any[]) => {
-    if (salesData.length === 0 && expensesData.length === 0) {
-      setSummaryStats({
-        totalRevenue: 0,
-        totalProfit: 0,
-        totalCost: 0,
-        transactionCount: 0
-      });
-      return;
     }
+  });
 
-    const totalRevenue = salesData.reduce((sum, sale) => sum + (sale.total_price || 0), 0);
-    const totalExpenses = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  const handleSetDateRange = (type: 'daily' | 'weekly' | 'monthly') => {
+    setReportType(type);
     
-    const totalProfit = totalRevenue - totalExpenses;
+    const today = new Date();
+    let fromDate;
     
-    const totalCost = expensesData.reduce((sum, expense) => {
-      if (['Belanja Bahan', 'Maintenance'].includes(expense.category)) {
-        return sum + (expense.amount || 0);
-      }
-      return sum;
-    }, 0);
+    switch (type) {
+      case 'weekly':
+        fromDate = subDays(today, 7);
+        break;
+      case 'monthly':
+        fromDate = startOfMonth(today);
+        break;
+      case 'daily':
+      default:
+        fromDate = subDays(today, 1);
+        break;
+    }
     
-    const uniqueTransactionIds = new Set(salesData.map(sale => sale.transaction_number));
-    const transactionCount = uniqueTransactionIds.size;
-    
-    setSummaryStats({
-      totalRevenue,
-      totalProfit,
-      totalCost,
-      transactionCount
+    setDateRange({
+      from: fromDate,
+      to: today
     });
   };
 
   return (
     <Layout>
-      <Header 
-        title="Laporan Penjualan" 
-        description="Lihat laporan penjualan dan pendapatan"
+      <Header
+        title="Laporan"
+        description="Lihat laporan penjualan dan keuangan"
       />
-
+      
       <div className="container px-4 py-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4">
-            <h2 className="text-xl font-semibold">Periode</h2>
-            <div className="w-full md:max-w-sm">
-              <DateRangePicker 
-                value={date} 
-                onChange={setDate} 
-              />
-            </div>
-          </div>
-          
-          <Tabs 
-            value={timeframe} 
-            onValueChange={setTimeframe}
-            className="w-full md:w-fit"
-          >
-            <TabsList className="grid w-full md:w-fit grid-cols-4">
-              <TabsTrigger value="day">Harian</TabsTrigger>
-              <TabsTrigger value="week">Mingguan</TabsTrigger>
-              <TabsTrigger value="month">Bulanan</TabsTrigger>
-              <TabsTrigger value="year">Tahunan</TabsTrigger>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <Tabs defaultValue="daily" className="w-full sm:w-auto">
+            <TabsList>
+              <TabsTrigger 
+                value="daily" 
+                onClick={() => handleSetDateRange('daily')}
+              >
+                Harian
+              </TabsTrigger>
+              <TabsTrigger 
+                value="weekly" 
+                onClick={() => handleSetDateRange('weekly')}
+              >
+                Mingguan
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monthly" 
+                onClick={() => handleSetDateRange('monthly')}
+              >
+                Bulanan
+              </TabsTrigger>
             </TabsList>
           </Tabs>
+          
+          <div className="flex items-center space-x-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="justify-start text-left font-normal w-[240px]"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange?.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "dd MMM yyyy")} -{" "}
+                        {format(dateRange.to, "dd MMM yyyy")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "dd MMM yyyy")
+                    )
+                  ) : (
+                    <span>Pilih tanggal</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={(range) => range && setDateRange(range)}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <ReportSummaryCards
-            totalRevenue={summaryStats.totalRevenue}
-            totalProfit={summaryStats.totalProfit}
-            totalCost={summaryStats.totalCost}
-            transactionCount={summaryStats.transactionCount}
-          />
-        </div>
-        
-        <div className="mb-6">
-          <Card className="col-span-full w-full">
-            <CardHeader>
-              <CardTitle>Status Stok</CardTitle>
-              <CardDescription>
-                Persediaan pizza saat ini
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-96">
-                <StockStatusChart stockItems={stockItems} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="grid grid-cols-1 gap-6">
-          <RevenueVsExpensesChart 
-            data={revenueVsExpensesData}
-            isLoading={loading} 
+        <div className="grid gap-6">
+          <ReportSummaryCards 
+            totalSales={data?.totalSales || 0}
+            totalExpenses={data?.totalExpenses || 0}
+            totalProfit={(data?.totalSales || 0) - (data?.totalExpenses || 0)}
+            totalQuantity={data?.totalQuantity || 0}
+            isLoading={isLoading}
           />
           
-          <BestSellingProductsChart products={bestSellingProducts} isLoading={loading} />
-          
-          <SalesTrendChart 
-            salesTrend={salesTrend}
-            timeframe={timeframe}
-            setTimeframe={setTimeframe}
-          />
+          <div className="grid grid-cols-1 gap-6">
+            <RevenueVsExpensesChart 
+              salesData={data?.salesData || []}
+              expensesData={data?.expensesData || []}
+              isLoading={isLoading}
+              reportType={reportType}
+            />
+            
+            <BestSellingProductsChart 
+              products={data?.bestSellingProducts || []}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
       </div>
     </Layout>

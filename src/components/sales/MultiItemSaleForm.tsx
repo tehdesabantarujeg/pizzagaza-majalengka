@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   DialogContent, 
   DialogDescription, 
@@ -48,9 +48,12 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
   handleRemoveItem,
   handleItemChange
 }) => {
+  // Calculate total price from all items
+  const calculatedTotalPrice = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
   return (
     <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-      <form>
+      <form onSubmit={handleSavePrint}>
         <DialogHeader>
           <DialogTitle>Catat Penjualan Baru</DialogTitle>
           <DialogDescription>
@@ -133,17 +136,17 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
               Total
             </Label>
             <div className="col-span-3 text-xl font-bold">
-              {formatCurrency(totalPrice)}
+              {formatCurrency(calculatedTotalPrice)}
             </div>
           </div>
         </div>
         
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleSaveOnly}>
+          <Button variant="outline" type="button" onClick={handleSaveOnly}>
             <Save className="mr-2 h-4 w-4" />
             Simpan Saja
           </Button>
-          <Button onClick={handleSavePrint} type="submit">
+          <Button type="submit">
             <Printer className="mr-2 h-4 w-4" />
             Simpan & Cetak Nota
           </Button>

@@ -24,7 +24,13 @@ export const useSaleForm = () => {
     return {
       customerName: formData.customerName,
       notes: formData.notes,
-      items: formData.items
+      items: formData.items.map(item => ({
+        ...item,
+        // Ensure all numeric values are numbers
+        quantity: Number(item.quantity),
+        sellingPrice: Number(item.sellingPrice),
+        totalPrice: Number(item.sellingPrice) * Number(item.quantity)
+      }))
     };
   };
 
@@ -84,7 +90,7 @@ export const useSaleForm = () => {
       
       // Recalculate total price when quantity or selling price changes
       if (field === 'quantity' || field === 'sellingPrice') {
-        updatedItems[index].totalPrice = updatedItems[index].quantity * updatedItems[index].sellingPrice;
+        updatedItems[index].totalPrice = Number(updatedItems[index].quantity) * Number(updatedItems[index].sellingPrice);
       }
       
       return {

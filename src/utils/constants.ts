@@ -144,7 +144,7 @@ export const EXPENSE_CATEGORIES = [
   'Lainnya'
 ] as const;
 
-// Fungsi untuk memprint nota
+// Fungsi untuk memprint nota - Updated for thermal printer support
 export const printReceipt = (transaction: Transaction | Transaction[]): void => {
   const receiptWindow = window.open('', '_blank');
   if (!receiptWindow) return;
@@ -174,16 +174,14 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
       
     return `
       <div class="item-row">
-        <div class="item-name">Pizza:${t.flavor}</div>
+        <div class="item-name">${t.flavor}</div>
         <div class="item-details">
-          <div>Ukuran:${t.size}</div>
-          <div>Kondisi:${t.state}</div>
-          <div>Jumlah:${t.quantity}</div>
-          <div>Dus:${boxDisplayText}</div>
+          <div>${t.size}, ${t.state}, ${t.quantity}pcs</div>
+          <div>Dus: ${t.includeBox ? 'Ya' : 'Tidak'}</div>
         </div>
         <div class="item-price">
-          <div>Harga Satuan:${formatCurrency(t.sellingPrice)}</div>
-          <div class="subtotal">Subtotal:${formatCurrency(t.totalPrice)}</div>
+          <div>${formatCurrency(t.sellingPrice)} x ${t.quantity}</div>
+          <div class="subtotal">${formatCurrency(t.totalPrice)}</div>
         </div>
       </div>
     `;
@@ -196,53 +194,52 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
         <style>
           body {
             font-family: monospace;
-            font-size: 12px;
-            max-width: 350px;
+            font-size: 10px;
+            max-width: 40mm;
             margin: 0 auto;
-            padding: 15px;
+            padding: 4px;
           }
           .header {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
           }
           .header h1 {
-            font-size: 16px;
+            font-size: 12px;
             margin: 0;
             font-weight: bold;
           }
           .header p {
-            margin: 3px 0;
+            margin: 2px 0;
+            font-size: 9px;
           }
           .transaction-number {
-            text-align: right;
-            margin-bottom: 5px;
+            text-align: center;
+            margin-bottom: 4px;
             font-weight: bold;
+            font-size: 9px;
           }
           .separator {
             border-top: 1px dashed #000;
-            margin: 10px 0;
+            margin: 4px 0;
           }
           .customer {
-            margin-bottom: 10px;
+            margin-bottom: 4px;
+            font-size: 9px;
           }
           .item-row {
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
+            margin-bottom: 4px;
           }
           .item-name {
             font-weight: bold;
           }
           .item-details {
-            display: flex;
-            flex-wrap: wrap;
-            column-gap: 15px;
-            margin: 5px 0;
+            font-size: 8px;
+            margin: 2px 0;
           }
           .item-price {
             display: flex;
             justify-content: space-between;
-            margin-top: 3px;
+            font-size: 8px;
           }
           .subtotal {
             font-weight: bold;
@@ -251,24 +248,29 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
             font-weight: bold;
             border-top: 1px dashed #000;
             border-bottom: 1px dashed #000;
-            padding: 10px 0;
-            margin: 10px 0;
+            padding: 4px 0;
+            margin: 4px 0;
             text-align: right;
           }
           .footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 11px;
+            margin-top: 8px;
+            font-size: 8px;
           }
           @media print {
+            body {
+              width: 40mm;
+              margin: 0;
+              padding: 0;
+            }
             button {
               display: none;
             }
           }
           .print-button {
             display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
+            margin: 10px auto;
+            padding: 6px 10px;
             background: #4CAF50;
             color: white;
             border: none;
@@ -291,7 +293,7 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
         </div>
         
         <div class="customer">
-          <div><span>Pelanggan: </span>${customerName}</div>
+          <div>Pelanggan: ${customerName}</div>
         </div>
         
         <div class="items">
@@ -304,11 +306,10 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
         
         <div class="footer">
           <p>Terima kasih telah berbelanja!</p>
-          <p>Follow kami di Instagram:</p>
-          <p>${STORE_INFO.instagram.join(' dan ')}</p>
+          <p>${STORE_INFO.instagram.join(' & ')}</p>
         </div>
         
-        <button class="print-button" onclick="window.print(); window.close();">Cetak Nota</button>
+        <button class="print-button" onclick="window.print(); setTimeout(() => window.close(), 500);">Cetak Nota</button>
       </body>
     </html>
   `;
@@ -316,4 +317,17 @@ export const printReceipt = (transaction: Transaction | Transaction[]): void => 
   receiptWindow.document.open();
   receiptWindow.document.write(receiptContent);
   receiptWindow.document.close();
+  
+  // Automatically trigger print after content is loaded
+  receiptWindow.onload = function() {
+    setTimeout(() => {
+      receiptWindow.print();
+      // Close the window after printing (or after 2 seconds if print is cancelled)
+      setTimeout(() => {
+        if (!receiptWindow.closed) {
+          receiptWindow.close();
+        }
+      }, 2000);
+    }, 500);
+  };
 };
