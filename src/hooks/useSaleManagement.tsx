@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { addTransaction, fetchTransactions, generateTransactionNumber, updateTransaction, deleteTransaction } from '@/utils/supabase';
@@ -16,7 +15,6 @@ export const useSaleManagement = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const { toast } = useToast();
   
-  // Sale form states
   const [newSale, setNewSale] = useState({
     size: 'Small' as 'Small' | 'Medium',
     flavor: '',
@@ -49,7 +47,6 @@ export const useSaleManagement = () => {
     loadTransactions();
   }, []);
   
-  // Calculate selling price based on size, state, and includeBox
   const calculateSellingPrice = (size: 'Small' | 'Medium', state: 'Mentah' | 'Matang', includeBox: boolean): number => {
     let basePrice = 0;
     
@@ -59,7 +56,6 @@ export const useSaleManagement = () => {
       basePrice = state === 'Mentah' ? PRICES.SELLING_MEDIUM_RAW : PRICES.SELLING_MEDIUM_COOKED;
     }
     
-    // Add box price if needed
     if (includeBox) {
       basePrice += size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX;
     }
@@ -67,17 +63,14 @@ export const useSaleManagement = () => {
     return basePrice;
   };
   
-  // Calculate totalPrice based on selling price and quantity
   const calculateTotalPrice = (sellingPrice: number, quantity: number): number => {
     return sellingPrice * quantity;
   };
   
-  // Update sellingPrice when size or state changes
   useEffect(() => {
     const sellingPrice = calculateSellingPrice(newSale.size, newSale.state, newSale.includeBox);
     const totalPrice = calculateTotalPrice(sellingPrice, newSale.quantity);
     
-    // Update saleItems for multi-item form
     setSaleItems(items => items.map((item, index) => {
       const price = calculateSellingPrice(item.size, item.state, item.includeBox);
       return {
@@ -110,11 +103,12 @@ export const useSaleManagement = () => {
     try {
       const transactionNumber = await generateTransactionNumber();
       
-      // Create an array of transactions, one for each item
       const transactions = await Promise.all(items.map(async (item) => {
+        const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
+        
         const transaction: Omit<Transaction, 'id'> = {
           date: new Date().toISOString(),
-          pizzaId: item.pizzaStockId || '',
+          pizzaId: pizzaId || null,
           size: item.size,
           flavor: item.flavor,
           quantity: item.quantity,
@@ -130,16 +124,11 @@ export const useSaleManagement = () => {
         return addTransaction(transaction);
       }));
       
-      // Filter out any null values from failed transactions
       const successfulTransactions = transactions.filter((t): t is Transaction => t !== null);
       
       if (successfulTransactions.length > 0) {
-        // Print receipt
         printReceipt(successfulTransactions);
-        
-        // Reload transactions
         await loadTransactions();
-        
         toast({
           title: "Success",
           description: "Transaction completed successfully",
@@ -163,7 +152,6 @@ export const useSaleManagement = () => {
     }
   };
 
-  // Handle size change
   const handleSizeChange = (value: string) => {
     setNewSale(prev => {
       const updatedSale = { ...prev, size: value as 'Small' | 'Medium' };
@@ -172,12 +160,10 @@ export const useSaleManagement = () => {
     });
   };
 
-  // Handle flavor change
   const handleFlavorChange = (value: string) => {
     setNewSale(prev => ({ ...prev, flavor: value }));
   };
 
-  // Handle state change
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
       const updatedSale = { ...prev, state: value as 'Mentah' | 'Matang' };
@@ -186,13 +172,10 @@ export const useSaleManagement = () => {
     });
   };
 
-  // Get the selling price for current settings
   const sellingPrice = calculateSellingPrice(newSale.size, newSale.state, newSale.includeBox);
   
-  // Calculate total price
   const totalPrice = sellingPrice * newSale.quantity;
 
-  // Handle adding an item to the multi-item form
   const handleAddItem = () => {
     setSaleItems([
       ...saleItems,
@@ -208,16 +191,13 @@ export const useSaleManagement = () => {
     ]);
   };
 
-  // Handle removing an item from the multi-item form
   const handleRemoveItem = (index: number) => {
     if (saleItems.length > 1) {
       setSaleItems(saleItems.filter((_, i) => i !== index));
     }
   };
 
-  // Handle item change in multi-item form
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    // Recalculate selling price and total price
     const sellingPrice = calculateSellingPrice(
       updatedItem.size, 
       updatedItem.state, 
@@ -232,13 +212,11 @@ export const useSaleManagement = () => {
     setSaleItems(newItems);
   };
 
-  // Handle Save Only action
   const handleSaveOnly = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
     if (isMultiItem) {
-      // Check if at least one item has a flavor
       if (!saleItems.some(item => item.flavor)) {
         setError('Please select at least one pizza flavor');
         return;
@@ -246,7 +224,6 @@ export const useSaleManagement = () => {
       
       await createTransaction(saleItems, customerName, notes);
       
-      // Reset form after successful submission
       setSaleItems([{ 
         size: 'Small', 
         flavor: '', 
@@ -260,7 +237,6 @@ export const useSaleManagement = () => {
       setNotes('');
       setOpen(false);
     } else {
-      // Single item form
       if (!newSale.flavor) {
         setError('Please select a pizza flavor');
         return;
@@ -278,7 +254,6 @@ export const useSaleManagement = () => {
       
       await createTransaction([saleItem], newSale.customerName, newSale.notes);
       
-      // Reset form after successful submission
       setNewSale({
         size: 'Small',
         flavor: '',
@@ -292,7 +267,6 @@ export const useSaleManagement = () => {
     }
   };
 
-  // Handle Save & Print action
   const handleSavePrint = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsPrinting(true);
@@ -300,12 +274,10 @@ export const useSaleManagement = () => {
     setIsPrinting(false);
   };
 
-  // Handle edit transaction
   const handleEditTransaction = (transaction: Transaction) => {
     setEditingTransaction(transaction);
   };
 
-  // Handle delete transaction
   const handleDeleteTransaction = async (transactionId: string) => {
     try {
       const success = await deleteTransaction(transactionId);
@@ -332,7 +304,6 @@ export const useSaleManagement = () => {
     }
   };
 
-  // Update existing transaction
   const updateExistingTransaction = async (updatedTransaction: Transaction) => {
     try {
       const success = await updateTransaction(updatedTransaction);
@@ -365,7 +336,6 @@ export const useSaleManagement = () => {
     isPrinting,
     loadTransactions,
     createTransaction,
-    // Sale form states and functions
     open,
     setOpen,
     newSale,
@@ -381,7 +351,6 @@ export const useSaleManagement = () => {
     error,
     isMultiItem,
     setIsMultiItem,
-    // Handlers
     handleSizeChange,
     handleFlavorChange,
     handleStateChange,

@@ -41,7 +41,7 @@ const RevenueVsExpensesChart: React.FC<RevenueVsExpensesChartProps> = ({ data, i
   const isMobile = useIsMobile();
 
   return (
-    <Card className="col-span-full">
+    <Card className="col-span-full w-full">
       <CardHeader>
         <CardTitle>Pendapatan vs Pengeluaran</CardTitle>
         <CardDescription>
@@ -49,7 +49,7 @@ const RevenueVsExpensesChart: React.FC<RevenueVsExpensesChartProps> = ({ data, i
         </CardDescription>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-80">
+        <div className="h-96">
           {isLoading ? (
             <div className="h-full flex items-center justify-center">
               Memuat data...

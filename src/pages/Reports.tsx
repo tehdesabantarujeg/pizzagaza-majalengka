@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -14,7 +13,7 @@ import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart'
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
 import { Transaction } from '@/utils/types';
 import { formatCurrency } from '@/utils/constants';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 const Reports = () => {
   const [date, setDate] = useState<DateRange | undefined>({
@@ -157,7 +156,6 @@ const Reports = () => {
     const revenueByPeriod: {[key: string]: number} = {};
     const expensesByPeriod: {[key: string]: number} = {};
     
-    // Group sales data by period
     salesData.forEach(sale => {
       const date = new Date(sale.date);
       let formattedDate;
@@ -185,7 +183,6 @@ const Reports = () => {
       revenueByPeriod[formattedDate] += sale.total_price || 0;
     });
     
-    // Group expense data by period
     expensesData.forEach(expense => {
       const date = new Date(expense.date);
       let formattedDate;
@@ -213,14 +210,12 @@ const Reports = () => {
       expensesByPeriod[formattedDate] += expense.amount || 0;
     });
     
-    // Combine data and calculate profit
     const allPeriods = new Set([...Object.keys(revenueByPeriod), ...Object.keys(expensesByPeriod)]);
     const chartData = Array.from(allPeriods).map(periodKey => {
       const revenue = revenueByPeriod[periodKey] || 0;
       const expenses = expensesByPeriod[periodKey] || 0;
       const profit = revenue - expenses;
       
-      // Format period for display
       let displayPeriod;
       switch(timeframe) {
         case 'day':
@@ -265,11 +260,9 @@ const Reports = () => {
     const totalRevenue = salesData.reduce((sum, sale) => sum + (sale.total_price || 0), 0);
     const totalExpenses = expensesData.reduce((sum, expense) => sum + (expense.amount || 0), 0);
     
-    // Calculate profit: revenue - expenses
     const totalProfit = totalRevenue - totalExpenses;
     
     const totalCost = expensesData.reduce((sum, expense) => {
-      // Only include certain categories as 'cost'
       if (['Belanja Bahan', 'Maintenance'].includes(expense.category)) {
         return sum + (expense.amount || 0);
       }
@@ -330,8 +323,18 @@ const Reports = () => {
         </div>
         
         <div className="mb-6">
-          <Card className="col-span-full">
-            <StockStatusChart stockItems={stockItems} />
+          <Card className="col-span-full w-full">
+            <CardHeader>
+              <CardTitle>Status Stok</CardTitle>
+              <CardDescription>
+                Persediaan pizza saat ini
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="h-96">
+                <StockStatusChart stockItems={stockItems} />
+              </div>
+            </CardContent>
           </Card>
         </div>
         

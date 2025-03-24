@@ -52,7 +52,7 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
   };
 
   return (
-    <Card className="col-span-full lg:col-span-12 overflow-hidden">
+    <Card className="col-span-full w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Tren Penjualan</CardTitle>
@@ -74,7 +74,7 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
         </Tabs>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-80">
+        <div className="h-96">
           {salesTrend.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
