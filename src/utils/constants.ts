@@ -95,9 +95,14 @@ export const formatReceiptDate = (dateString: string): string => {
   return `${time}, ${day} ${dateFormatted}`;
 };
 
-// Format transaction number
+// Format transaction number - Updated
 export const formatTransactionNumber = (transactionCount: number): string => {
-  return `trx-${String(transactionCount).padStart(6, '0')}`;
+  const now = new Date();
+  const yearPart = now.getFullYear().toString().substr(2, 2); // YY
+  const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
+  const sequenceNumber = String(transactionCount).padStart(4, '0'); // XXXX
+  
+  return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
 };
 
 // Data pengguna untuk login
@@ -127,6 +132,17 @@ export const STORE_INFO = {
   motto: 'Enjoy While Helping Gaza',
   instagram: ['@pizza.gaza.majalengka', '@tehdesa.majalengka']
 };
+
+// Define expense categories
+export const EXPENSE_CATEGORIES = [
+  'Belanja Bahan',
+  'Gaji Pemilik',
+  'Iuran',
+  'Maintenance',
+  'Marketing',
+  'Upah Karyawan',
+  'Lainnya'
+] as const;
 
 // Fungsi untuk memprint nota
 export const printReceipt = (transaction: Transaction | Transaction[]): void => {

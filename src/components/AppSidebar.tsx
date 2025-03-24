@@ -17,7 +17,19 @@ import {
   SidebarSeparator
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Pizza, ShoppingBag, ShoppingCart, BarChart2, LogOut, Moon, Sun, User, Home } from 'lucide-react';
+import { 
+  Pizza, 
+  ShoppingBag, 
+  ShoppingCart, 
+  BarChart2, 
+  LogOut, 
+  Moon, 
+  Sun, 
+  User, 
+  Home, 
+  DollarSign, 
+  Wallet 
+} from 'lucide-react';
 
 const AppSidebar = () => {
   const { user, logout } = useAuth();
@@ -67,6 +79,28 @@ const AppSidebar = () => {
                     <NavLink to="/stock">
                       <ShoppingBag className="h-5 w-5" />
                       <span>Manajemen Stok</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              {user?.role === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Pengeluaran">
+                    <NavLink to="/expenses">
+                      <DollarSign className="h-5 w-5" />
+                      <span>Pengeluaran</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              
+              {user?.role === 'admin' && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="KasKu">
+                    <NavLink to="/cash">
+                      <Wallet className="h-5 w-5" />
+                      <span>KasKu</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

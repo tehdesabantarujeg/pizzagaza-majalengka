@@ -1,175 +1,183 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { addTransaction, updatePizzaStock, updateBoxStock, generateTransactionNumber } from '@/utils/supabase';
 import { PizzaSaleItem } from '@/utils/types';
-import { PRICES } from '@/utils/constants';
+import { useToast } from '@/components/ui/use-toast';
+
+interface SaleFormData {
+  customerName: string;
+  notes: string;
+  items: PizzaSaleItem[];
+}
 
 export const useSaleForm = () => {
-  const [open, setOpen] = useState(false);
-  const [isMultiItem, setIsMultiItem] = useState(true);
-  
-  // Single item state (legacy)
-  const [newSale, setNewSale] = useState({
-    size: 'Small' as 'Small' | 'Medium',
-    flavor: 'Original',
-    quantity: 1,
-    state: 'Mentah' as 'Mentah' | 'Matang',
-    includeBox: false,
-    customerName: '',
-    notes: ''
-  });
-  
-  // Multi-item state
-  const [customerName, setCustomerName] = useState('');
-  const [notes, setNotes] = useState('');
-  
-  const initialSaleItem = {
-    size: 'Small' as 'Small' | 'Medium',
-    flavor: 'Original',
-    quantity: 1,
-    state: 'Mentah' as 'Mentah' | 'Matang',
-    includeBox: false,
-    sellingPrice: PRICES.SELLING_SMALL_RAW,
-    totalPrice: PRICES.SELLING_SMALL_RAW
-  };
-  
-  const [saleItems, setSaleItems] = useState<PizzaSaleItem[]>([initialSaleItem]);
-  
-  const [sellingPrice, setSellingPrice] = useState(PRICES.SELLING_SMALL_RAW);
-  const [totalPrice, setTotalPrice] = useState(PRICES.SELLING_SMALL_RAW);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Hitung harga jual berdasarkan ukuran dan kondisi
-  const calculateSellingPrice = (size: 'Small' | 'Medium', state: 'Mentah' | 'Matang') => {
-    if (size === 'Small') {
-      return state === 'Mentah' ? PRICES.SELLING_SMALL_RAW : PRICES.SELLING_SMALL_COOKED;
-    } else {
-      return state === 'Mentah' ? PRICES.SELLING_MEDIUM_RAW : PRICES.SELLING_MEDIUM_COOKED;
-    }
-  };
+  const { mutate: createSaleMutation, isLoading: isCreatingSale } = useMutation(
+    async (formData: SaleFormData) => {
+      const { customerName, notes, items } = formData;
 
-  // Hitung harga dus berdasarkan ukuran
-  const calculateBoxPrice = (size: 'Small' | 'Medium', includeBox: boolean) => {
-    if (!includeBox) return 0;
-    return size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX;
-  };
+      // Calculate the total price for the entire transaction
+      const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
 
-  // Perbarui harga saat ukuran, kondisi, atau jumlah berubah
-  const updatePrices = () => {
-    if (isMultiItem) {
-      // For multi-item, update each item's price
-      const updatedItems = saleItems.map(item => {
-        const basePrice = calculateSellingPrice(item.size, item.state);
-        const boxPrice = calculateBoxPrice(item.size, item.includeBox);
-        return {
-          ...item,
-          sellingPrice: basePrice,
-          totalPrice: (basePrice * item.quantity) + (boxPrice * item.quantity)
-        };
+      // Create individual transaction entries for each item
+      const transactionPromises = items.map(async (item) => {
+        return addTransaction({
+          date: new Date().toISOString(),
+          pizzaId: item.pizzaStockId || '',
+          size: item.size,
+          flavor: item.flavor,
+          quantity: item.quantity,
+          state: item.state,
+          includeBox: item.includeBox,
+          sellingPrice: item.sellingPrice,
+          totalPrice: item.totalPrice,
+          customerName: customerName,
+          notes: notes,
+          transactionNumber: '' // Assign transaction number later
+        });
       });
-      
-      setSaleItems(updatedItems);
-      
-      // Calculate total price of all items
-      const total = updatedItems.reduce((sum, item) => sum + item.totalPrice, 0);
-      setTotalPrice(total);
-    } else {
-      // Legacy single-item mode
-      const base = calculateSellingPrice(newSale.size, newSale.state);
-      const boxPrice = calculateBoxPrice(newSale.size, newSale.includeBox);
-      setSellingPrice(base);
-      setTotalPrice((base * newSale.quantity) + (boxPrice * newSale.quantity));
+
+      const transactions = await Promise.all(transactionPromises);
+
+      // Check if all transactions were successful
+      const successfulTransactions = transactions.every(transaction => transaction !== null);
+
+      if (!successfulTransactions) {
+        throw new Error('Failed to create one or more transactions');
+      }
+
+      return { customerName, notes, items };
+    },
+    {
+      onSuccess: async (data) => {
+        const { customerName, notes, items } = data;
+
+        try {
+          // Use the new transaction number format
+          const transactionNumber = await generateTransactionNumber();
+          
+          // Update the transaction number for each transaction
+          const updatePromises = items.map(async (item) => {
+            const transaction = await addTransaction({
+              date: new Date().toISOString(),
+              pizzaId: item.pizzaStockId || '',
+              size: item.size,
+              flavor: item.flavor,
+              quantity: item.quantity,
+              state: item.state,
+              includeBox: item.includeBox,
+              sellingPrice: item.sellingPrice,
+              totalPrice: item.totalPrice,
+              customerName: customerName,
+              notes: notes,
+              transactionNumber: transactionNumber // Assign transaction number
+            });
+            return transaction;
+          });
+
+          await Promise.all(updatePromises);
+
+          // Update stock quantities
+          const stockUpdatePromises = items.map(async (item) => {
+            if (item.pizzaStockId) {
+              // Optimistically update the stock item
+              queryClient.setQueryData(['stockItems'], (old: any) => {
+                if (!old) return old;
+                const updatedStockItems = old.map((stockItem: any) => {
+                  if (stockItem.id === item.pizzaStockId) {
+                    return { ...stockItem, quantity: stockItem.quantity - item.quantity };
+                  }
+                  return stockItem;
+                });
+                return updatedStockItems;
+              });
+
+              // Call the updatePizzaStock function
+              return updatePizzaStock({
+                id: item.pizzaStockId,
+                size: item.size,
+                flavor: item.flavor,
+                quantity: item.quantity,
+                purchaseDate: new Date().toISOString(),
+                costPrice: 0,
+                updatedAt: new Date().toISOString()
+              });
+            }
+            return Promise.resolve(true);
+          });
+
+          await Promise.all(stockUpdatePromises);
+
+          // Update box stock quantities
+          const boxStockUpdatePromises = items.map(async (item) => {
+            if (item.includeBox && item.boxStockId) {
+              // Optimistically update the box stock item
+              queryClient.setQueryData(['boxStock'], (old: any) => {
+                if (!old) return old;
+                const updatedBoxStock = old.map((boxStockItem: any) => {
+                  if (boxStockItem.id === item.boxStockId) {
+                    return { ...boxStockItem, quantity: boxStockItem.quantity - item.quantity };
+                  }
+                  return boxStockItem;
+                });
+                return updatedBoxStock;
+              });
+
+              // Call the updateBoxStock function
+              return updateBoxStock({
+                id: item.boxStockId,
+                size: item.size,
+                quantity: item.quantity,
+                purchaseDate: new Date().toISOString(),
+                costPrice: 0,
+                updatedAt: new Date().toISOString()
+              });
+            }
+            return Promise.resolve(true);
+          });
+
+          await Promise.all(boxStockUpdatePromises);
+
+          // Invalidate queries to update data
+          await queryClient.invalidateQueries(['transactions']);
+          await queryClient.invalidateQueries(['stockItems']);
+          await queryClient.invalidateQueries(['boxStock']);
+
+          toast({
+            title: 'Penjualan Berhasil!',
+            description: 'Transaksi telah berhasil disimpan.',
+          });
+
+          setIsDialogOpen(false);
+        } catch (error: any) {
+          toast({
+            variant: 'destructive',
+            title: 'Gagal Membuat Penjualan',
+            description: error.message || 'Terjadi kesalahan saat menyimpan transaksi.',
+          });
+        }
+      },
+      onError: (error: any) => {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Membuat Penjualan',
+          description: error.message || 'Terjadi kesalahan saat menyimpan transaksi.',
+        });
+      },
     }
-  };
+  );
 
-  useEffect(() => {
-    updatePrices();
-  }, [newSale.size, newSale.state, newSale.quantity, newSale.includeBox, isMultiItem, saleItems]);
-
-  // Handle perubahan ukuran
-  const handleSizeChange = (value: string) => {
-    setNewSale({ ...newSale, size: value as 'Small' | 'Medium' });
-  };
-
-  // Handle perubahan rasa
-  const handleFlavorChange = (value: string) => {
-    setNewSale({ ...newSale, flavor: value });
-  };
-
-  // Handle perubahan kondisi
-  const handleStateChange = (value: string) => {
-    setNewSale({ ...newSale, state: value as 'Mentah' | 'Matang' });
-  };
-
-  // Handle item changes for multi-item form
-  const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    const newItems = [...saleItems];
-    // Update item
-    newItems[index] = updatedItem;
-    
-    // Recalculate price
-    const basePrice = calculateSellingPrice(updatedItem.size, updatedItem.state);
-    const boxPrice = calculateBoxPrice(updatedItem.size, updatedItem.includeBox);
-    newItems[index].sellingPrice = basePrice;
-    newItems[index].totalPrice = (basePrice * updatedItem.quantity) + (boxPrice * updatedItem.quantity);
-    
-    setSaleItems(newItems);
-  };
-
-  // Add a new item to the multi-item form
-  const handleAddItem = () => {
-    setSaleItems([...saleItems, initialSaleItem]);
-  };
-
-  // Remove an item from the multi-item form
-  const handleRemoveItem = (index: number) => {
-    if (saleItems.length <= 1) return; // Always keep at least one item
-    const newItems = saleItems.filter((_, i) => i !== index);
-    setSaleItems(newItems);
-  };
-
-  // Reset form to initial state
-  const resetForm = () => {
-    if (isMultiItem) {
-      setSaleItems([initialSaleItem]);
-      setCustomerName('');
-      setNotes('');
-    } else {
-      setNewSale({
-        size: 'Small',
-        flavor: 'Original',
-        quantity: 1,
-        state: 'Mentah',
-        includeBox: false,
-        customerName: '',
-        notes: ''
-      });
-    }
-  };
+  const openDialog = () => setIsDialogOpen(true);
+  const closeDialog = () => setIsDialogOpen(false);
 
   return {
-    open,
-    setOpen,
-    isMultiItem,
-    setIsMultiItem,
-    newSale,
-    setNewSale,
-    customerName,
-    setCustomerName,
-    notes,
-    setNotes,
-    saleItems,
-    setSaleItems,
-    sellingPrice,
-    totalPrice,
-    calculateSellingPrice,
-    calculateBoxPrice,
-    handleSizeChange,
-    handleFlavorChange,
-    handleStateChange,
-    handleItemChange,
-    handleAddItem,
-    handleRemoveItem,
-    resetForm
+    createSale: createSaleMutation,
+    isCreatingSale,
+    isDialogOpen,
+    openDialog,
+    closeDialog,
   };
 };
-
-export default useSaleForm;

@@ -86,3 +86,31 @@ export interface ReportData {
   sales: number;
   profit: number;
 }
+
+// New type for expense categories
+export type ExpenseCategory = 
+  | 'Belanja Bahan' 
+  | 'Gaji Pemilik' 
+  | 'Iuran' 
+  | 'Maintenance' 
+  | 'Marketing' 
+  | 'Upah Karyawan'
+  | 'Lainnya';
+
+// New interface for expenses
+export interface Expense {
+  id: string;
+  category: ExpenseCategory;
+  date: string;
+  amount: number;
+  description: string;
+  createdAt: string;
+}
+
+// New interface for cash summary
+export interface CashSummary {
+  period: string;
+  income: number;
+  expense: number;
+  balance: number;
+}

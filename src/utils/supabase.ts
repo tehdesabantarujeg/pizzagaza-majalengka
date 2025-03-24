@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
-import { PizzaStock, BoxStock, Transaction, Customer } from './types';
+import { PizzaStock, BoxStock, Transaction, Customer, Expense, CashSummary, ExpenseCategory } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, formatTransactionNumber } from '@/utils/constants';
+import { format } from 'date-fns';
 
 export const setupSupabaseTables = async (): Promise<void> => {
   return Promise.resolve();
@@ -519,4 +520,287 @@ export const updateBoxStockCostPrice = async (id: string, costPrice: number): Pr
     console.error('Error updating box stock cost price:', error);
     throw error;
   }
+};
+
+// Expenses related functions
+export const fetchExpenses = async (): Promise<Expense[]> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*')
+    .order('date', { ascending: false });
+    
+  if (error) {
+    console.error('Error fetching expenses:', error);
+    return [];
+  }
+  
+  return (data || []).map(item => ({
+    id: item.id,
+    category: item.category as ExpenseCategory,
+    date: item.date || new Date().toISOString(),
+    amount: item.amount,
+    description: item.description || '',
+    createdAt: item.created_at || new Date().toISOString()
+  }));
+};
+
+export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
+  const dbItem = {
+    category: expense.category,
+    date: expense.date,
+    amount: expense.amount,
+    description: expense.description
+  };
+
+  const { data, error } = await supabase
+    .from('expenses')
+    .insert([dbItem])
+    .select()
+    .single();
+    
+  if (error) {
+    console.error('Error adding expense:', error);
+    return null;
+  }
+  
+  return {
+    id: data.id,
+    category: data.category as ExpenseCategory,
+    date: data.date || new Date().toISOString(),
+    amount: data.amount,
+    description: data.description || '',
+    createdAt: data.created_at || new Date().toISOString()
+  };
+};
+
+export const updateExpense = async (expense: Expense): Promise<boolean> => {
+  const dbItem = {
+    category: expense.category,
+    date: expense.date,
+    amount: expense.amount,
+    description: expense.description
+  };
+
+  const { error } = await supabase
+    .from('expenses')
+    .update(dbItem)
+    .eq('id', expense.id);
+    
+  if (error) {
+    console.error('Error updating expense:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+export const deleteExpense = async (id: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .eq('id', id);
+    
+  if (error) {
+    console.error('Error deleting expense:', error);
+    return false;
+  }
+  
+  return true;
+};
+
+// Cash summary functions
+export const fetchCashSummary = async (period: 'day' | 'week' | 'month' | 'year', startDate: string, endDate: string): Promise<CashSummary[]> => {
+  const [salesData, expensesData] = await Promise.all([
+    fetchSalesReportData(startDate, endDate),
+    fetchExpensesByDateRange(startDate, endDate)
+  ]);
+  
+  // Format data according to the period
+  const formattedData = formatCashSummaryByPeriod(salesData, expensesData, period);
+  
+  return formattedData;
+};
+
+export const fetchExpensesByDateRange = async (startDate: string, endDate: string): Promise<any[]> => {
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('date, amount, category')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: true });
+    
+  if (error) {
+    console.error('Error fetching expenses by date range:', error);
+    return [];
+  }
+  
+  return data || [];
+};
+
+export const getCurrentMonthTotalExpenses = async (): Promise<number> => {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString();
+
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('amount')
+    .gte('date', firstDay)
+    .lte('date', lastDay);
+    
+  if (error) {
+    console.error('Error fetching current month expenses:', error);
+    return 0;
+  }
+  
+  return (data || []).reduce((sum, item) => sum + item.amount, 0);
+};
+
+const formatCashSummaryByPeriod = (salesData: any[], expensesData: any[], period: 'day' | 'week' | 'month' | 'year'): CashSummary[] => {
+  const salesByPeriod: {[key: string]: number} = {};
+  const expensesByPeriod: {[key: string]: number} = {};
+  
+  // Group sales data by period
+  salesData.forEach(sale => {
+    const date = new Date(sale.date);
+    let formattedDate;
+    
+    switch(period) {
+      case 'day':
+        formattedDate = format(date, 'yyyy-MM-dd');
+        break;
+      case 'week':
+        // Use ISO week (starting Monday)
+        formattedDate = `${format(date, 'yyyy')}-W${format(date, 'ww')}`;
+        break;
+      case 'month':
+        formattedDate = format(date, 'yyyy-MM');
+        break;
+      case 'year':
+        formattedDate = format(date, 'yyyy');
+        break;
+      default:
+        formattedDate = format(date, 'yyyy-MM-dd');
+    }
+    
+    if (!salesByPeriod[formattedDate]) {
+      salesByPeriod[formattedDate] = 0;
+    }
+    salesByPeriod[formattedDate] += sale.total_price || 0;
+  });
+  
+  // Group expense data by period
+  expensesData.forEach(expense => {
+    const date = new Date(expense.date);
+    let formattedDate;
+    
+    switch(period) {
+      case 'day':
+        formattedDate = format(date, 'yyyy-MM-dd');
+        break;
+      case 'week':
+        formattedDate = `${format(date, 'yyyy')}-W${format(date, 'ww')}`;
+        break;
+      case 'month':
+        formattedDate = format(date, 'yyyy-MM');
+        break;
+      case 'year':
+        formattedDate = format(date, 'yyyy');
+        break;
+      default:
+        formattedDate = format(date, 'yyyy-MM-dd');
+    }
+    
+    if (!expensesByPeriod[formattedDate]) {
+      expensesByPeriod[formattedDate] = 0;
+    }
+    expensesByPeriod[formattedDate] += expense.amount || 0;
+  });
+  
+  // Combine data and calculate balance
+  const allPeriods = new Set([...Object.keys(salesByPeriod), ...Object.keys(expensesByPeriod)]);
+  const result: CashSummary[] = Array.from(allPeriods).map(period => {
+    const income = salesByPeriod[period] || 0;
+    const expense = expensesByPeriod[period] || 0;
+    const balance = income - expense;
+    
+    // Format period for display
+    let displayPeriod;
+    switch(period.length) {
+      case 7: // yyyy-MM format
+        displayPeriod = format(new Date(period + '-01'), 'MMM yyyy');
+        break;
+      case 4: // yyyy format
+        displayPeriod = period;
+        break;
+      case 8: // yyyy-Www format (ISO week)
+        const [year, week] = period.split('-W');
+        displayPeriod = `Week ${week}, ${year}`;
+        break;
+      default: // yyyy-MM-dd format
+        displayPeriod = format(new Date(period), 'dd MMM yyyy');
+    }
+    
+    return {
+      period: displayPeriod,
+      income,
+      expense,
+      balance
+    };
+  }).sort((a, b) => {
+    // Sort by the original period key, not the display format
+    const periodA = Object.keys(salesByPeriod).find(k => 
+      format(new Date(k.includes('W') ? k.replace('W', '-') : (k.length === 7 ? k + '-01' : k)), 'MMM yyyy') === a.period
+    ) || '';
+    const periodB = Object.keys(salesByPeriod).find(k => 
+      format(new Date(k.includes('W') ? k.replace('W', '-') : (k.length === 7 ? k + '-01' : k)), 'MMM yyyy') === b.period
+    ) || '';
+    
+    return periodA.localeCompare(periodB);
+  });
+  
+  return result;
+};
+
+// Update the transaction number format to GZM-YYMMXXXX
+export const generateTransactionNumber = async (): Promise<string> => {
+  const now = new Date();
+  const yearPart = now.getFullYear().toString().substr(2, 2); // YY
+  const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
+  
+  // Get the current month's transactions to determine the sequence number
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+  
+  const { count, error } = await supabase
+    .from('transactions')
+    .select('transaction_number', { count: 'exact', head: true })
+    .gte('date', firstDayOfMonth)
+    .lte('date', lastDayOfMonth);
+    
+  if (error) {
+    console.error('Error counting monthly transactions:', error);
+    return `GZM-${yearPart}${monthPart}0001`;
+  }
+  
+  // Start from 1 for the first transaction of the month
+  const sequenceNumber = (count ? count + 1 : 1).toString().padStart(4, '0'); // XXXX
+  
+  return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
+};
+
+export const fetchSalesReportData = async (startDate: string, endDate: string): Promise<any> => {
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('date, selling_price, total_price, quantity, flavor, size, state, include_box, transaction_number')
+    .gte('date', startDate)
+    .lte('date', endDate)
+    .order('date', { ascending: true });
+    
+  if (error) {
+    console.error('Error fetching report data:', error);
+    return [];
+  }
+  
+  return data || [];
 };
