@@ -41,7 +41,7 @@ const RevenueVsExpensesChart: React.FC<RevenueVsExpensesChartProps> = ({ data, i
   const isMobile = useIsMobile();
 
   return (
-    <Card className="col-span-full lg:col-span-12 overflow-hidden">
+    <Card className="col-span-full">
       <CardHeader>
         <CardTitle>Pendapatan vs Pengeluaran</CardTitle>
         <CardDescription>

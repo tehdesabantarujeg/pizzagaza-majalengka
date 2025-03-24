@@ -1,183 +1,128 @@
-import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addTransaction, updatePizzaStock, updateBoxStock, generateTransactionNumber } from '@/utils/supabase';
-import { PizzaSaleItem } from '@/utils/types';
-import { useToast } from '@/components/ui/use-toast';
 
-interface SaleFormData {
+import { useState } from 'react';
+import { PizzaSaleItem } from '@/utils/types';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
+
+export interface SaleFormData {
   customerName: string;
   notes: string;
   items: PizzaSaleItem[];
 }
 
 export const useSaleForm = () => {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [formData, setFormData] = useState<SaleFormData>({
+    customerName: '',
+    notes: '',
+    items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
+  });
+  
   const queryClient = useQueryClient();
-  const { toast } = useToast();
+  
+  const handleSubmit = async (formData: SaleFormData) => {
+    // Process form data and return it
+    return {
+      customerName: formData.customerName,
+      notes: formData.notes,
+      items: formData.items
+    };
+  };
 
-  const { mutate: createSaleMutation, isLoading: isCreatingSale } = useMutation(
-    async (formData: SaleFormData) => {
-      const { customerName, notes, items } = formData;
-
-      // Calculate the total price for the entire transaction
-      const totalPrice = items.reduce((sum, item) => sum + item.totalPrice, 0);
-
-      // Create individual transaction entries for each item
-      const transactionPromises = items.map(async (item) => {
-        return addTransaction({
-          date: new Date().toISOString(),
-          pizzaId: item.pizzaStockId || '',
-          size: item.size,
-          flavor: item.flavor,
-          quantity: item.quantity,
-          state: item.state,
-          includeBox: item.includeBox,
-          sellingPrice: item.sellingPrice,
-          totalPrice: item.totalPrice,
-          customerName: customerName,
-          notes: notes,
-          transactionNumber: '' // Assign transaction number later
-        });
+  // Using useMutation with proper type configuration
+  const submitMutation = useMutation({
+    mutationFn: handleSubmit,
+    onSuccess: () => {
+      // Reset the form
+      setFormData({
+        customerName: '',
+        notes: '',
+        items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
       });
-
-      const transactions = await Promise.all(transactionPromises);
-
-      // Check if all transactions were successful
-      const successfulTransactions = transactions.every(transaction => transaction !== null);
-
-      if (!successfulTransactions) {
-        throw new Error('Failed to create one or more transactions');
-      }
-
-      return { customerName, notes, items };
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['stockItems'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      
+      // Show success message
+      toast({
+        title: 'Penjualan Berhasil',
+        description: 'Data penjualan telah disimpan',
+      });
     },
-    {
-      onSuccess: async (data) => {
-        const { customerName, notes, items } = data;
-
-        try {
-          // Use the new transaction number format
-          const transactionNumber = await generateTransactionNumber();
-          
-          // Update the transaction number for each transaction
-          const updatePromises = items.map(async (item) => {
-            const transaction = await addTransaction({
-              date: new Date().toISOString(),
-              pizzaId: item.pizzaStockId || '',
-              size: item.size,
-              flavor: item.flavor,
-              quantity: item.quantity,
-              state: item.state,
-              includeBox: item.includeBox,
-              sellingPrice: item.sellingPrice,
-              totalPrice: item.totalPrice,
-              customerName: customerName,
-              notes: notes,
-              transactionNumber: transactionNumber // Assign transaction number
-            });
-            return transaction;
-          });
-
-          await Promise.all(updatePromises);
-
-          // Update stock quantities
-          const stockUpdatePromises = items.map(async (item) => {
-            if (item.pizzaStockId) {
-              // Optimistically update the stock item
-              queryClient.setQueryData(['stockItems'], (old: any) => {
-                if (!old) return old;
-                const updatedStockItems = old.map((stockItem: any) => {
-                  if (stockItem.id === item.pizzaStockId) {
-                    return { ...stockItem, quantity: stockItem.quantity - item.quantity };
-                  }
-                  return stockItem;
-                });
-                return updatedStockItems;
-              });
-
-              // Call the updatePizzaStock function
-              return updatePizzaStock({
-                id: item.pizzaStockId,
-                size: item.size,
-                flavor: item.flavor,
-                quantity: item.quantity,
-                purchaseDate: new Date().toISOString(),
-                costPrice: 0,
-                updatedAt: new Date().toISOString()
-              });
-            }
-            return Promise.resolve(true);
-          });
-
-          await Promise.all(stockUpdatePromises);
-
-          // Update box stock quantities
-          const boxStockUpdatePromises = items.map(async (item) => {
-            if (item.includeBox && item.boxStockId) {
-              // Optimistically update the box stock item
-              queryClient.setQueryData(['boxStock'], (old: any) => {
-                if (!old) return old;
-                const updatedBoxStock = old.map((boxStockItem: any) => {
-                  if (boxStockItem.id === item.boxStockId) {
-                    return { ...boxStockItem, quantity: boxStockItem.quantity - item.quantity };
-                  }
-                  return boxStockItem;
-                });
-                return updatedBoxStock;
-              });
-
-              // Call the updateBoxStock function
-              return updateBoxStock({
-                id: item.boxStockId,
-                size: item.size,
-                quantity: item.quantity,
-                purchaseDate: new Date().toISOString(),
-                costPrice: 0,
-                updatedAt: new Date().toISOString()
-              });
-            }
-            return Promise.resolve(true);
-          });
-
-          await Promise.all(boxStockUpdatePromises);
-
-          // Invalidate queries to update data
-          await queryClient.invalidateQueries(['transactions']);
-          await queryClient.invalidateQueries(['stockItems']);
-          await queryClient.invalidateQueries(['boxStock']);
-
-          toast({
-            title: 'Penjualan Berhasil!',
-            description: 'Transaksi telah berhasil disimpan.',
-          });
-
-          setIsDialogOpen(false);
-        } catch (error: any) {
-          toast({
-            variant: 'destructive',
-            title: 'Gagal Membuat Penjualan',
-            description: error.message || 'Terjadi kesalahan saat menyimpan transaksi.',
-          });
-        }
-      },
-      onError: (error: any) => {
-        toast({
-          variant: 'destructive',
-          title: 'Gagal Membuat Penjualan',
-          description: error.message || 'Terjadi kesalahan saat menyimpan transaksi.',
-        });
-      },
+    onError: (error) => {
+      console.error('Error submitting sale:', error);
+      toast({
+        title: 'Gagal Menyimpan',
+        description: 'Terjadi kesalahan saat menyimpan data penjualan',
+        variant: 'destructive'
+      });
     }
-  );
+  });
 
-  const openDialog = () => setIsDialogOpen(true);
-  const closeDialog = () => setIsDialogOpen(false);
+  const handleCustomerNameChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      customerName: value
+    }));
+  };
+
+  const handleNotesChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      notes: value
+    }));
+  };
+
+  const handleItemChange = (index: number, field: keyof PizzaSaleItem, value: any) => {
+    setFormData(prev => {
+      const updatedItems = [...prev.items];
+      updatedItems[index] = {
+        ...updatedItems[index],
+        [field]: value
+      };
+      
+      // Recalculate total price when quantity or selling price changes
+      if (field === 'quantity' || field === 'sellingPrice') {
+        updatedItems[index].totalPrice = updatedItems[index].quantity * updatedItems[index].sellingPrice;
+      }
+      
+      return {
+        ...prev,
+        items: updatedItems
+      };
+    });
+  };
+
+  const addItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        { size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }
+      ]
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    if (formData.items.length === 1) return; // Don't remove the last item
+    
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }));
+  };
 
   return {
-    createSale: createSaleMutation,
-    isCreatingSale,
-    isDialogOpen,
-    openDialog,
-    closeDialog,
+    formData,
+    handleCustomerNameChange,
+    handleNotesChange,
+    handleItemChange,
+    addItem,
+    removeItem,
+    isSubmitting: submitMutation.isPending,
+    submitSale: () => submitMutation.mutate(formData)
   };
 };
+
+export default useSaleForm;
