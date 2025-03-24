@@ -21,6 +21,11 @@ interface SaleItemFormProps {
 
 const SaleItemForm: React.FC<SaleItemFormProps> = ({ item, index, onChange }) => {
   const handleChange = (field: keyof PizzaSaleItem, value: any) => {
+    // Special handling for state field to ensure "Mentah" is converted to "Frozen Food"
+    if (field === 'state' && value === 'Mentah') {
+      value = 'Frozen Food';
+    }
+    
     onChange({ ...item, [field]: value });
   };
 
@@ -78,7 +83,7 @@ const SaleItemForm: React.FC<SaleItemFormProps> = ({ item, index, onChange }) =>
         </Label>
         <Select 
           value={item.state} 
-          onValueChange={(value) => handleChange('state', value as 'Mentah' | 'Matang')}
+          onValueChange={(value) => handleChange('state', value as 'Frozen Food' | 'Matang')}
         >
           <SelectTrigger id={`state-${index}`}>
             <SelectValue placeholder="Pilih kondisi" />

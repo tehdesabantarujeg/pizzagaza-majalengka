@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { PizzaSaleItem } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
@@ -76,6 +77,7 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
+      // Fix this line to handle the state conversion properly
       const stateValue = value === 'Mentah' ? 'Frozen Food' : value as 'Frozen Food' | 'Matang';
       const updatedSale = { ...prev, state: stateValue };
       return updatedSale;
@@ -104,7 +106,8 @@ const useTransactionForm = () => {
   };
 
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    if (updatedItem.state === 'Mentah') {
+    // Handle state conversion here
+    if (typeof updatedItem.state === 'string' && updatedItem.state === 'Mentah') {
       updatedItem.state = 'Frozen Food';
     }
     

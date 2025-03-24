@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { 
@@ -96,10 +97,14 @@ export const useSaleManagement = () => {
       }
       
       // Ensure state is always "Frozen Food" or "Matang"
-      const updatedSaleItems = saleItems.map(item => ({
-        ...item,
-        state: item.state === 'Mentah' ? 'Frozen Food' : item.state
-      }));
+      const updatedSaleItems = saleItems.map(item => {
+        // Check for string type before comparison
+        const state = typeof item.state === 'string' && item.state === 'Mentah' ? 'Frozen Food' : item.state;
+        return {
+          ...item,
+          state
+        };
+      });
       
       await createTransaction(updatedSaleItems, customerName, notes);
       
@@ -112,7 +117,8 @@ export const useSaleManagement = () => {
       }
       
       // Update state from "Mentah" to "Frozen Food" if needed
-      const state = newSale.state === 'Mentah' ? 'Frozen Food' : newSale.state;
+      // Check for string type before comparison
+      const state = typeof newSale.state === 'string' && newSale.state === 'Mentah' ? 'Frozen Food' : newSale.state;
       
       const saleItem: PizzaSaleItem = {
         size: newSale.size,
