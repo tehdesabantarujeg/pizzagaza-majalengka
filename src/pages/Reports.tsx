@@ -23,6 +23,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { DateRange } from 'react-day-picker';
 
 // Report components
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
@@ -113,6 +114,16 @@ const Reports = () => {
     });
   };
 
+  // Handle DateRange selection and ensure 'to' is set
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    if (range?.from) {
+      setDateRange({
+        from: range.from,
+        to: range.to || range.from // If 'to' is undefined, set it to the same as 'from'
+      });
+    }
+  };
+
   return (
     <Layout>
       <Header
@@ -172,8 +183,11 @@ const Reports = () => {
                   initialFocus
                   mode="range"
                   defaultMonth={dateRange?.from}
-                  selected={dateRange}
-                  onSelect={(range) => range && setDateRange(range)}
+                  selected={{
+                    from: dateRange.from,
+                    to: dateRange.to
+                  }}
+                  onSelect={handleDateRangeChange}
                   numberOfMonths={2}
                 />
               </PopoverContent>
@@ -183,19 +197,29 @@ const Reports = () => {
         
         <div className="grid gap-6">
           <ReportSummaryCards 
-            totalSales={data?.totalSales || 0}
-            totalExpenses={data?.totalExpenses || 0}
+            totalRevenue={data?.totalSales || 0}
+            totalCost={data?.totalExpenses || 0}
             totalProfit={(data?.totalSales || 0) - (data?.totalExpenses || 0)}
-            totalQuantity={data?.totalQuantity || 0}
+            transactionCount={data?.totalQuantity || 0}
             isLoading={isLoading}
           />
           
           <div className="grid grid-cols-1 gap-6">
             <RevenueVsExpensesChart 
-              salesData={data?.salesData || []}
-              expensesData={data?.expensesData || []}
+              data={
+                data ? [
+                  {
+                    period: format(dateRange.from, "dd MMM yyyy") + 
+                            (dateRange.from.toDateString() !== dateRange.to.toDateString() 
+                              ? " - " + format(dateRange.to, "dd MMM yyyy") 
+                              : ""),
+                    revenue: data.totalSales || 0,
+                    expenses: data.totalExpenses || 0,
+                    profit: (data.totalSales || 0) - (data.totalExpenses || 0)
+                  }
+                ] : []
+              }
               isLoading={isLoading}
-              reportType={reportType}
             />
             
             <BestSellingProductsChart 
