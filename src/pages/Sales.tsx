@@ -49,9 +49,10 @@ const Sales = () => {
   } = useSaleManagement();
 
   // Handle saving edited transaction
-  const handleSaveEditedTransaction = (updatedTransaction: any) => {
-    updateExistingTransaction(updatedTransaction);
-    setEditingTransaction(null);
+  const handleSaveEditedTransaction = (updatedTransactions: Transaction[]) => {
+    // Update all transactions in the group
+    Promise.all(updatedTransactions.map(transaction => updateExistingTransaction(transaction)))
+      .then(() => setEditingTransaction([]));
   };
 
   return (
@@ -113,11 +114,11 @@ const Sales = () => {
       </div>
 
       {/* Edit Transaction Dialog */}
-      {editingTransaction && (
-        <Dialog open={!!editingTransaction} onOpenChange={(open) => !open && setEditingTransaction(null)}>
+      {editingTransaction && editingTransaction.length > 0 && (
+        <Dialog open={editingTransaction.length > 0} onOpenChange={(open) => !open && setEditingTransaction([])}>
           <EditTransactionForm
-            transaction={editingTransaction}
-            onCancel={() => setEditingTransaction(null)}
+            transactions={editingTransaction}
+            onCancel={() => setEditingTransaction([])}
             onSave={handleSaveEditedTransaction}
           />
         </Dialog>

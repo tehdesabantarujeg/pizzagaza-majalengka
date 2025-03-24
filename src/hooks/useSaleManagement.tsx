@@ -22,7 +22,7 @@ export const useSaleManagement = () => {
   const [isPrinting, setIsPrinting] = useState(false);
   const [open, setOpen] = useState(false);
   const [isMultiItem, setIsMultiItem] = useState(true);
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction[]>([]);
   const { toast } = useToast();
   
   // Form state from the extracted hook
@@ -68,7 +68,12 @@ export const useSaleManagement = () => {
     setIsLoading(true);
     try {
       const data = await fetchTransactions();
-      setTransactions(data);
+      // Replace all occurrences of "Mentah" with "Frozen Food"
+      const updatedData = data.map(transaction => ({
+        ...transaction,
+        state: transaction.state === 'Mentah' ? 'Frozen Food' : transaction.state
+      }));
+      setTransactions(updatedData);
     } catch (error) {
       console.error("Error loading transactions:", error);
       toast({
@@ -91,7 +96,13 @@ export const useSaleManagement = () => {
         return;
       }
       
-      await createTransaction(saleItems, customerName, notes);
+      // Replace "Mentah" with "Frozen Food" before saving
+      const updatedSaleItems = saleItems.map(item => ({
+        ...item,
+        state: item.state === 'Mentah' ? 'Frozen Food' : item.state
+      }));
+      
+      await createTransaction(updatedSaleItems, customerName, notes);
       
       resetForm();
       setOpen(false);
@@ -101,11 +112,14 @@ export const useSaleManagement = () => {
         return;
       }
       
+      // Update state from "Mentah" to "Frozen Food"
+      const state = newSale.state === 'Mentah' ? 'Frozen Food' : newSale.state;
+      
       const saleItem: PizzaSaleItem = {
         size: newSale.size,
         flavor: newSale.flavor,
         quantity: newSale.quantity,
-        state: newSale.state,
+        state,
         includeBox: newSale.includeBox,
         sellingPrice,
         totalPrice
@@ -117,7 +131,7 @@ export const useSaleManagement = () => {
         size: 'Small',
         flavor: '',
         quantity: 1,
-        state: 'Mentah',
+        state: 'Frozen Food',
         includeBox: false,
         customerName: '',
         notes: ''
@@ -133,8 +147,9 @@ export const useSaleManagement = () => {
     setIsPrinting(false);
   };
 
-  const handleEditTransaction = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
+  const handleEditTransaction = (transactions: Transaction[]) => {
+    // Set the entire transaction group for editing
+    setEditingTransaction(transactions);
   };
   
   return {

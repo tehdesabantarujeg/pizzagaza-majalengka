@@ -8,7 +8,7 @@ const useTransactionForm = () => {
     size: 'Small' as 'Small' | 'Medium',
     flavor: '',
     quantity: 1,
-    state: 'Mentah' as 'Mentah' | 'Matang',
+    state: 'Frozen Food' as 'Frozen Food' | 'Matang',
     includeBox: false,
     customerName: '',
     notes: ''
@@ -19,10 +19,10 @@ const useTransactionForm = () => {
       size: 'Small', 
       flavor: '', 
       quantity: 1, 
-      state: 'Mentah', 
+      state: 'Frozen Food', 
       includeBox: false, 
-      sellingPrice: calculateSellingPrice('Small', 'Mentah', false), 
-      totalPrice: calculateSellingPrice('Small', 'Mentah', false) 
+      sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
+      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
     }
   ]);
   
@@ -30,13 +30,13 @@ const useTransactionForm = () => {
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   
-  function calculateSellingPrice(size: 'Small' | 'Medium', state: 'Mentah' | 'Matang', includeBox: boolean): number {
+  function calculateSellingPrice(size: 'Small' | 'Medium', state: 'Frozen Food' | 'Matang', includeBox: boolean): number {
     let basePrice = 0;
     
     if (size === 'Small') {
-      basePrice = state === 'Mentah' ? PRICES.SELLING_SMALL_RAW : PRICES.SELLING_SMALL_COOKED;
+      basePrice = state === 'Frozen Food' ? PRICES.SELLING_SMALL_RAW : PRICES.SELLING_SMALL_COOKED;
     } else {
-      basePrice = state === 'Mentah' ? PRICES.SELLING_MEDIUM_RAW : PRICES.SELLING_MEDIUM_COOKED;
+      basePrice = state === 'Frozen Food' ? PRICES.SELLING_MEDIUM_RAW : PRICES.SELLING_MEDIUM_COOKED;
     }
     
     if (includeBox) {
@@ -78,7 +78,7 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
-      const updatedSale = { ...prev, state: value as 'Mentah' | 'Matang' };
+      const updatedSale = { ...prev, state: value as 'Frozen Food' | 'Matang' };
       return updatedSale;
     });
   };
@@ -90,10 +90,10 @@ const useTransactionForm = () => {
         size: 'Small', 
         flavor: '', 
         quantity: 1, 
-        state: 'Mentah', 
+        state: 'Frozen Food', 
         includeBox: false, 
-        sellingPrice: calculateSellingPrice('Small', 'Mentah', false), 
-        totalPrice: calculateSellingPrice('Small', 'Mentah', false) 
+        sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
+        totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
       }
     ]);
   };
@@ -124,10 +124,10 @@ const useTransactionForm = () => {
       size: 'Small', 
       flavor: '', 
       quantity: 1, 
-      state: 'Mentah', 
+      state: 'Frozen Food', 
       includeBox: false, 
-      sellingPrice: calculateSellingPrice('Small', 'Mentah', false), 
-      totalPrice: calculateSellingPrice('Small', 'Mentah', false) 
+      sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
+      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
     }]);
     setCustomerName('');
     setNotes('');

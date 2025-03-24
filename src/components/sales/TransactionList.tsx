@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Transaction } from '@/utils/types';
 import { formatDateShort, formatCurrency } from '@/utils/constants';
@@ -22,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 interface TransactionListProps {
   transactions: Transaction[];
   setOpen?: (open: boolean) => void;
-  onEdit?: (transaction: Transaction) => void;
+  onEdit?: (transaction: Transaction[]) => void;
   onDelete?: (transactionId: string) => void;
 }
 
@@ -38,12 +37,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Handle search input
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
   
-  // Handle column sorting
   const handleSort = (field: keyof Transaction | 'date') => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -53,7 +50,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
   
-  // Handle receipt reprint
   const handleReprintReceipt = async (transactionId: string) => {
     try {
       await reprintTransactionReceipt(transactionId);
@@ -71,21 +67,16 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
   
-  // Handle edit transaction
   const handleEdit = (transactions: Transaction[]) => {
     if (onEdit && transactions.length > 0) {
-      // Pass the first transaction as representative of the group
       onEdit(transactions[0]);
     }
   };
   
-  // Handle delete transaction
   const handleDelete = (transactionId: string) => {
     if (onDelete) {
-      // Open confirmation dialog
       setTransactionToDelete(transactionId);
     } else {
-      // Default delete behavior if no handler provided
       toast({
         title: "Fitur belum tersedia",
         description: "Fitur hapus transaksi belum diimplementasikan",
@@ -94,7 +85,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
-  // Confirm delete transaction
   const confirmDelete = () => {
     if (transactionToDelete && onDelete) {
       onDelete(transactionToDelete);
@@ -102,7 +92,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
 
-  // Group transactions by transaction number
   const groupTransactionsByNumber = (transactions: Transaction[]) => {
     const groups: { [key: string]: Transaction[] } = {};
     
@@ -117,7 +106,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return Object.values(groups);
   };
   
-  // Filter transactions
   const filteredTransactions = transactions
     .filter(transaction => 
       transaction.flavor.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -127,12 +115,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
       transaction.transactionNumber?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-  // Group filtered transactions by transaction number
   const groupedTransactions = groupTransactionsByNumber(filteredTransactions);
   
-  // Sort grouped transactions
   const sortedGroups = [...groupedTransactions].sort((a, b) => {
-    // Use the first transaction in each group for sorting
     const transA = a[0];
     const transB = b[0];
     
@@ -147,14 +132,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return 0;
   });
 
-  // Format multiple items for display
-  const formatMultipleItems = (transactions: Transaction[], field: keyof Transaction) => {
-    return transactions.map(t => String(t[field])).join(', ');
+  const formatMultipleItemsWithLineBreaks = (transactions: Transaction[], field: keyof Transaction) => {
+    return transactions.map(t => String(t[field])).join('\n');
   };
 
-  // Calculate total quantities, prices, etc.
   const calculateTotals = (transactions: Transaction[]) => {
-    const totalBoxes = transactions.filter(t => t.includeBox).length;
+    const totalBoxes = transactions.reduce((sum, t) => sum + (t.includeBox ? t.quantity : 0), 0);
     const totalPrice = transactions.reduce((sum, t) => sum + t.totalPrice, 0);
     return { totalBoxes, totalPrice };
   };
@@ -219,11 +202,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     <TableCell className="font-medium">{group[0].transactionNumber || '-'}</TableCell>
                     <TableCell>{formatDateShort(group[0].date)}</TableCell>
                     <TableCell>{group[0].customerName || 'Umum'}</TableCell>
-                    <TableCell>{formatMultipleItems(group, 'flavor')}</TableCell>
-                    <TableCell>{formatMultipleItems(group, 'size')}</TableCell>
-                    <TableCell>{formatMultipleItems(group, 'state')}</TableCell>
-                    <TableCell>{group.map(t => t.quantity).join(', ')}</TableCell>
-                    <TableCell>{totalBoxes > 0 ? totalBoxes : 'Tidak'}</TableCell>
+                    <TableCell className="whitespace-pre-line">{formatMultipleItemsWithLineBreaks(group, 'flavor')}</TableCell>
+                    <TableCell className="whitespace-pre-line">{formatMultipleItemsWithLineBreaks(group, 'size')}</TableCell>
+                    <TableCell className="whitespace-pre-line">{formatMultipleItemsWithLineBreaks(group, 'state')}</TableCell>
+                    <TableCell className="whitespace-pre-line">{group.map(t => t.quantity).join('\n')}</TableCell>
+                    <TableCell className="whitespace-pre-line">
+                      {group.map(t => t.includeBox ? t.quantity : 'Tidak').join('\n')}
+                    </TableCell>
                     <TableCell className="font-medium">{formatCurrency(totalPrice)}</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">
@@ -247,8 +232,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            // For simplicity, we'll delete the first transaction's ID
-                            // In a real app, you might want to delete all transactions in the group
                             handleDelete(group[0].id);
                           }}
                           title="Hapus Transaksi"
@@ -273,7 +256,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </Table>
       </div>
       
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

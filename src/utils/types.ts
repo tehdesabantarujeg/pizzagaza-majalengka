@@ -1,4 +1,3 @@
-
 export interface Pizza {
   id?: string;
   size: 'Small' | 'Medium';
@@ -31,23 +30,21 @@ export interface PizzaSaleItem {
   size: 'Small' | 'Medium';
   flavor: string;
   quantity: number;
-  state: 'Mentah' | 'Matang';
+  state: 'Frozen Food' | 'Matang';
   includeBox: boolean;
   sellingPrice: number;
   totalPrice: number;
   pizzaStockId?: string;
-  boxStockId?: string;
 }
 
-// Tipe data untuk transaksi penjualan
 export interface Transaction {
   id: string;
   date: string;
-  pizzaId: string;
+  pizzaId?: string | null;
   size: 'Small' | 'Medium';
   flavor: string;
   quantity: number;
-  state: 'Mentah' | 'Matang';
+  state: 'Frozen Food' | 'Matang';
   includeBox: boolean;
   sellingPrice: number;
   totalPrice: number;
@@ -87,7 +84,6 @@ export interface ReportData {
   profit: number;
 }
 
-// New type for expense categories
 export type ExpenseCategory = 
   | 'Belanja Bahan' 
   | 'Gaji Pemilik' 
@@ -97,7 +93,6 @@ export type ExpenseCategory =
   | 'Upah Karyawan'
   | 'Lainnya';
 
-// New interface for expenses
 export interface Expense {
   id: string;
   category: ExpenseCategory;
@@ -107,7 +102,6 @@ export interface Expense {
   createdAt: string;
 }
 
-// New interface for cash summary
 export interface CashSummary {
   period: string;
   income: number;
