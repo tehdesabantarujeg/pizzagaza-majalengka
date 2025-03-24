@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Transaction } from '@/utils/types';
 import { formatDateShort, formatCurrency } from '@/utils/constants';
@@ -69,7 +70,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   
   const handleEdit = (transactions: Transaction[]) => {
     if (onEdit && transactions.length > 0) {
-      onEdit(transactions[0]);
+      onEdit(transactions);
     }
   };
   

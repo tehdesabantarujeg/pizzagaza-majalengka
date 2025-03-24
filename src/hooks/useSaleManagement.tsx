@@ -96,7 +96,7 @@ export const useSaleManagement = () => {
         return;
       }
       
-      // Replace "Mentah" with "Frozen Food" before saving
+      // Ensure state is always "Frozen Food" or "Matang"
       const updatedSaleItems = saleItems.map(item => ({
         ...item,
         state: item.state === 'Mentah' ? 'Frozen Food' : item.state
@@ -112,14 +112,14 @@ export const useSaleManagement = () => {
         return;
       }
       
-      // Update state from "Mentah" to "Frozen Food"
+      // Update state from "Mentah" to "Frozen Food" if needed
       const state = newSale.state === 'Mentah' ? 'Frozen Food' : newSale.state;
       
       const saleItem: PizzaSaleItem = {
         size: newSale.size,
         flavor: newSale.flavor,
         quantity: newSale.quantity,
-        state,
+        state: state,
         includeBox: newSale.includeBox,
         sellingPrice,
         totalPrice

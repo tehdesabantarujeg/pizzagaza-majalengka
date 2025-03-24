@@ -14,6 +14,7 @@ import MultiItemSaleForm from '@/components/sales/MultiItemSaleForm';
 import TransactionList from '@/components/sales/TransactionList';
 import EditTransactionForm from '@/components/sales/EditTransactionForm';
 import useSaleManagement from '@/hooks/useSaleManagement';
+import { Transaction } from '@/utils/types';
 
 const Sales = () => {
   const {

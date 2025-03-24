@@ -78,7 +78,9 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
-      const updatedSale = { ...prev, state: value as 'Frozen Food' | 'Matang' };
+      // Ensure value is one of our allowed states
+      const stateValue = value === 'Mentah' ? 'Frozen Food' : value as 'Frozen Food' | 'Matang';
+      const updatedSale = { ...prev, state: stateValue };
       return updatedSale;
     });
   };
@@ -105,6 +107,11 @@ const useTransactionForm = () => {
   };
 
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
+    // Ensure state is always one of our allowed states
+    if (updatedItem.state === 'Mentah') {
+      updatedItem.state = 'Frozen Food';
+    }
+    
     const sellingPrice = calculateSellingPrice(
       updatedItem.size, 
       updatedItem.state, 

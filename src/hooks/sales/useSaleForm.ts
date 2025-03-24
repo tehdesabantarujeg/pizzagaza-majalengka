@@ -14,7 +14,7 @@ export const useSaleForm = () => {
   const [formData, setFormData] = useState<SaleFormData>({
     customerName: '',
     notes: '',
-    items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
+    items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Frozen Food', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
   });
   
   const queryClient = useQueryClient();
@@ -42,7 +42,7 @@ export const useSaleForm = () => {
       setFormData({
         customerName: '',
         notes: '',
-        items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
+        items: [{ size: 'Small', flavor: '', quantity: 1, state: 'Frozen Food', includeBox: false, sellingPrice: 0, totalPrice: 0 }]
       });
       
       // Invalidate queries to refresh data
@@ -105,7 +105,7 @@ export const useSaleForm = () => {
       ...prev,
       items: [
         ...prev.items,
-        { size: 'Small', flavor: '', quantity: 1, state: 'Mentah', includeBox: false, sellingPrice: 0, totalPrice: 0 }
+        { size: 'Small', flavor: '', quantity: 1, state: 'Frozen Food', includeBox: false, sellingPrice: 0, totalPrice: 0 }
       ]
     }));
   };

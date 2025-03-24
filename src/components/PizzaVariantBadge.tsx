@@ -6,7 +6,7 @@ import { Pizza } from 'lucide-react';
 interface PizzaVariantBadgeProps {
   size: 'Small' | 'Medium';
   flavor: string;
-  state?: 'Mentah' | 'Matang'; // Updated from 'Raw' | 'Cooked' to 'Mentah' | 'Matang'
+  state?: 'Frozen Food' | 'Matang'; 
   className?: string;
 }
 
@@ -19,7 +19,7 @@ const PizzaVariantBadge: React.FC<PizzaVariantBadgeProps> = ({
   return (
     <div className={cn(
       "inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-xs font-medium",
-      state === 'Mentah' 
+      state === 'Frozen Food' 
         ? "bg-blue-100 text-blue-700" 
         : state === 'Matang'
           ? "bg-green-100 text-green-700"

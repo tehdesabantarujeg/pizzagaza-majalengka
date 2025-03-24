@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer, Expense, CashSummary, ExpenseCategory } from './types';
 import { supabase } from '@/integrations/supabase/client';
@@ -208,7 +209,7 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
     size: item.size as 'Small' | 'Medium',
     flavor: item.flavor,
     quantity: item.quantity,
-    state: item.state as 'Mentah' | 'Matang',
+    state: item.state === 'Mentah' ? 'Frozen Food' : item.state as 'Frozen Food' | 'Matang',
     includeBox: item.include_box || false,
     sellingPrice: item.selling_price,
     totalPrice: item.total_price,
@@ -234,13 +235,16 @@ export const getTransactionCount = async (): Promise<number> => {
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
+  // Convert 'Frozen Food' to 'Mentah' for database storage
+  const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
+  
   const dbItem = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
     size: transaction.size,
     flavor: transaction.flavor,
     quantity: transaction.quantity,
-    state: transaction.state,
+    state: state,
     include_box: transaction.includeBox,
     selling_price: transaction.sellingPrice,
     total_price: transaction.totalPrice,
@@ -267,7 +271,7 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
     size: data.size as 'Small' | 'Medium',
     flavor: data.flavor,
     quantity: data.quantity,
-    state: data.state as 'Mentah' | 'Matang',
+    state: data.state === 'Mentah' ? 'Frozen Food' : data.state as 'Frozen Food' | 'Matang',
     includeBox: data.include_box || false,
     sellingPrice: data.selling_price,
     totalPrice: data.total_price,
@@ -292,13 +296,16 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
 };
 
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
+  // Convert 'Frozen Food' to 'Mentah' for database storage
+  const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
+  
   const dbItem = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
     size: transaction.size,
     flavor: transaction.flavor,
     quantity: transaction.quantity,
-    state: transaction.state,
+    state: state,
     include_box: transaction.includeBox,
     selling_price: transaction.sellingPrice,
     total_price: transaction.totalPrice,
@@ -342,7 +349,7 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
       size: data.size as 'Small' | 'Medium',
       flavor: data.flavor,
       quantity: data.quantity,
-      state: data.state as 'Mentah' | 'Matang',
+      state: data.state === 'Mentah' ? 'Frozen Food' : data.state as 'Frozen Food' | 'Matang',
       includeBox: data.include_box || false,
       sellingPrice: data.selling_price,
       totalPrice: data.total_price,
@@ -374,7 +381,7 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
     size: item.size as 'Small' | 'Medium',
     flavor: item.flavor,
     quantity: item.quantity,
-    state: item.state as 'Mentah' | 'Matang',
+    state: item.state === 'Mentah' ? 'Frozen Food' : item.state as 'Frozen Food' | 'Matang',
     includeBox: item.include_box || false,
     sellingPrice: item.selling_price,
     totalPrice: item.total_price,
