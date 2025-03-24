@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PizzaStock } from '@/utils/types';
 import { Button } from '@/components/ui/button';
@@ -34,12 +33,10 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
   const [deleteItem, setDeleteItem] = useState<PizzaStock | null>(null);
   const [quantity, setQuantity] = useState(0);
   
-  // Handle search input
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
   
-  // Handle column sorting
   const handleSort = (field: keyof PizzaStock) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -49,7 +46,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
     }
   };
   
-  // Filter and sort stockItems
   const filteredItems = stockItems
     .filter(stock => 
       stock.flavor.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,7 +57,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
       return 0;
     });
   
-  // Handle edit quantity save
   const handleSaveEdit = async () => {
     if (!editItem) return;
     
@@ -79,7 +74,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
           description: `${updatedStock.flavor} ${updatedStock.size} berhasil diperbarui.`
         });
         
-        // Refresh stock data
         if (loadStockData) loadStockData();
       } else {
         toast({
@@ -100,7 +94,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
     setEditItem(null);
   };
   
-  // Handle delete confirmation
   const handleConfirmDelete = async () => {
     if (!deleteItem) return;
     
@@ -113,7 +106,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
           description: `${deleteItem.flavor} ${deleteItem.size} berhasil dihapus dari stok.`
         });
         
-        // Refresh stock data
         if (loadStockData) loadStockData();
       } else {
         toast({
@@ -203,7 +195,7 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
                   <TableRow key={stock.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
-                        <PizzaVariantBadge flavor={stock.flavor} size={stock.size} state="Mentah" />
+                        <PizzaVariantBadge flavor={stock.flavor} size={stock.size} state="Frozen Food" />
                         {stock.flavor}
                       </div>
                     </TableCell>
@@ -254,7 +246,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
         </div>
       )}
       
-      {/* Edit Dialog */}
       {editItem && (
         <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
           <DialogContent>
@@ -290,7 +281,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
         </Dialog>
       )}
       
-      {/* Delete Confirmation Dialog */}
       {deleteItem && (
         <Dialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
           <DialogContent>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { PizzaSaleItem } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
@@ -50,7 +49,6 @@ const useTransactionForm = () => {
     return sellingPrice * quantity;
   }
   
-  // Update sellingPrice and totalPrice when newSale state changes
   useEffect(() => {
     setSaleItems(items => items.map((item, index) => {
       const price = calculateSellingPrice(item.size, item.state, item.includeBox);
@@ -78,7 +76,6 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
-      // Ensure value is one of our allowed states
       const stateValue = value === 'Mentah' ? 'Frozen Food' : value as 'Frozen Food' | 'Matang';
       const updatedSale = { ...prev, state: stateValue };
       return updatedSale;
@@ -107,7 +104,6 @@ const useTransactionForm = () => {
   };
 
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    // Ensure state is always one of our allowed states
     if (updatedItem.state === 'Mentah') {
       updatedItem.state = 'Frozen Food';
     }

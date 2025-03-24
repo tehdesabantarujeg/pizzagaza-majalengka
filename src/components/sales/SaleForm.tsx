@@ -28,7 +28,7 @@ interface SaleFormProps {
     size: 'Small' | 'Medium';
     flavor: string;
     quantity: number;
-    state: 'Mentah' | 'Matang';
+    state: 'Frozen Food' | 'Matang'; // Updated from 'Mentah' to 'Frozen Food'
     includeBox: boolean;
     customerName: string;
     notes: string;
@@ -37,7 +37,7 @@ interface SaleFormProps {
     size: 'Small' | 'Medium';
     flavor: string;
     quantity: number;
-    state: 'Mentah' | 'Matang';
+    state: 'Frozen Food' | 'Matang'; // Updated from 'Mentah' to 'Frozen Food'
     includeBox: boolean;
     customerName: string;
     notes: string;

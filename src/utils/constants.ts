@@ -41,8 +41,8 @@ export const PIZZA_FLAVORS = [
 // Ukuran pizza
 export const PIZZA_SIZES = ['Small', 'Medium'] as const;
 
-// Kondisi pizza
-export const PIZZA_STATES = ['Mentah', 'Matang'] as const;
+// Kondisi pizza - Updated "Mentah" to "Frozen Food"
+export const PIZZA_STATES = ['Frozen Food', 'Matang'] as const;
 
 // Format mata uang ke Rupiah Indonesia
 export const formatCurrency = (amount: number): string => {
