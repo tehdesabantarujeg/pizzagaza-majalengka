@@ -13,9 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { formatCurrency } from '@/utils/constants';
+import { formatCurrency, PRICES } from '@/utils/constants';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Minus } from 'lucide-react';
+import useStockItems from '@/hooks/sales/useStockItems';
+import { useToast } from '@/hooks/use-toast';
 
 interface EditTransactionFormProps {
   transactions: Transaction[];
@@ -33,6 +35,18 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     transactions.map(t => ({...t}))
   );
   
+  // Get stock information
+  const { 
+    stockItems, 
+    boxItems, 
+    error, 
+    setError,
+    isPizzaStockAvailable, 
+    isBoxStockAvailable 
+  } = useStockItems();
+  
+  const { toast } = useToast();
+  
   // Shared fields that should be the same for all items in the transaction
   const [customerName, setCustomerName] = useState<string>(transactions[0]?.customerName || '');
   const [notes, setNotes] = useState<string>(transactions[0]?.notes || '');
@@ -48,6 +62,23 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     );
   }, [customerName, notes]);
 
+  // Calculate the selling price based on product attributes
+  const calculateSellingPrice = (size: 'Small' | 'Medium', state: 'Frozen Food' | 'Matang', includeBox: boolean): number => {
+    let basePrice = 0;
+    
+    if (size === 'Small') {
+      basePrice = state === 'Frozen Food' ? PRICES.SELLING_SMALL_RAW : PRICES.SELLING_SMALL_COOKED;
+    } else {
+      basePrice = state === 'Frozen Food' ? PRICES.SELLING_MEDIUM_RAW : PRICES.SELLING_MEDIUM_COOKED;
+    }
+    
+    if (includeBox) {
+      basePrice += size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX;
+    }
+    
+    return basePrice;
+  };
+
   // Update a specific transaction's quantity or includeBox
   const handleUpdateTransaction = (index: number, field: 'quantity' | 'includeBox', value: any) => {
     setEditedTransactions(prev => {
@@ -59,10 +90,17 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
         [field]: value
       };
       
-      // Recalculate totalPrice if quantity changes
-      if (field === 'quantity') {
-        updated[index].totalPrice = updated[index].sellingPrice * value;
+      // Recalculate sellingPrice if includeBox changes
+      if (field === 'includeBox') {
+        updated[index].sellingPrice = calculateSellingPrice(
+          updated[index].size, 
+          updated[index].state, 
+          value
+        );
       }
+      
+      // Recalculate totalPrice based on the new values
+      updated[index].totalPrice = updated[index].sellingPrice * updated[index].quantity;
       
       return updated;
     });
@@ -71,8 +109,59 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
   // Calculate total price of all items
   const totalPrice = editedTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
 
+  // Check if stock is available for the updated quantities
+  const checkStockAvailability = () => {
+    // Skip stock check for existing items if quantities aren't increased
+    for (let i = 0; i < editedTransactions.length; i++) {
+      const editedItem = editedTransactions[i];
+      const originalItem = transactions[i];
+      
+      // Only check stock if quantity has increased
+      if (editedItem.quantity > originalItem.quantity) {
+        const additionalQuantity = editedItem.quantity - originalItem.quantity;
+        
+        // Create a PizzaSaleItem to check stock
+        const checkItem: PizzaSaleItem = {
+          size: editedItem.size,
+          flavor: editedItem.flavor,
+          quantity: additionalQuantity,
+          state: editedItem.state,
+          includeBox: editedItem.includeBox,
+          sellingPrice: editedItem.sellingPrice,
+          totalPrice: editedItem.totalPrice
+        };
+        
+        // Check pizza stock
+        const pizzaStockResult = isPizzaStockAvailable(checkItem);
+        if (!pizzaStockResult) {
+          return false;
+        }
+        
+        // Check box stock if needed and if box usage has increased
+        if (editedItem.includeBox && (!originalItem.includeBox || editedItem.quantity > originalItem.quantity)) {
+          const boxStockResult = isBoxStockAvailable(checkItem);
+          if (!boxStockResult) {
+            return false;
+          }
+        }
+      }
+    }
+    
+    return true;
+  };
+
   // Save all transaction changes
   const handleSave = () => {
+    // Check if stock is available for the updated quantities
+    if (!checkStockAvailability()) {
+      toast({
+        title: "Stok Tidak Cukup",
+        description: error || "Stok pizza atau dus tidak mencukupi untuk jumlah yang ditambahkan",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     onSave(editedTransactions);
   };
 

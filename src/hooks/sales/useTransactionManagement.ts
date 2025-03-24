@@ -17,7 +17,7 @@ const useTransactionManagement = ({
   loadTransactions
 }: UseTransactionManagementProps) => {
   
-  const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string) => {
+  const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
       const transactionNumber = await generateTransactionNumber();
@@ -53,12 +53,14 @@ const useTransactionManagement = ({
           title: "Berhasil",
           description: "Transaksi berhasil disimpan",
         });
+        return true;
       } else {
         toast({
           title: "Error",
           description: "Gagal membuat transaksi",
           variant: "destructive"
         });
+        return false;
       }
     } catch (error) {
       console.error("Error creating transaction:", error);
@@ -67,12 +69,13 @@ const useTransactionManagement = ({
         description: "Gagal membuat transaksi",
         variant: "destructive"
       });
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const updateExistingTransaction = async (updatedTransaction: Transaction) => {
+  const updateExistingTransaction = async (updatedTransaction: Transaction): Promise<boolean> => {
     try {
       const success = await updateTransaction(updatedTransaction);
       if (success) {
@@ -81,12 +84,14 @@ const useTransactionManagement = ({
           title: "Berhasil",
           description: "Transaksi berhasil diperbarui",
         });
+        return true;
       } else {
         toast({
           title: "Error",
           description: "Gagal memperbarui transaksi",
           variant: "destructive"
         });
+        return false;
       }
     } catch (error) {
       console.error("Error updating transaction:", error);
@@ -95,10 +100,11 @@ const useTransactionManagement = ({
         description: "Gagal memperbarui transaksi",
         variant: "destructive"
       });
+      return false;
     }
   };
 
-  const handleDeleteTransaction = async (transactionId: string) => {
+  const handleDeleteTransaction = async (transactionId: string): Promise<boolean> => {
     try {
       const success = await deleteTransaction(transactionId);
       if (success) {
@@ -107,12 +113,14 @@ const useTransactionManagement = ({
           title: "Berhasil",
           description: "Transaksi berhasil dihapus",
         });
+        return true;
       } else {
         toast({
           title: "Error",
           description: "Gagal menghapus transaksi",
           variant: "destructive"
         });
+        return false;
       }
     } catch (error) {
       console.error("Error deleting transaction:", error);
@@ -121,6 +129,7 @@ const useTransactionManagement = ({
         description: "Gagal menghapus transaksi",
         variant: "destructive"
       });
+      return false;
     }
   };
 

@@ -77,8 +77,11 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
-      // Fix this line to handle the state conversion properly
-      const stateValue = value === 'Mentah' ? 'Frozen Food' : value as 'Frozen Food' | 'Matang';
+      // Convert "Mentah" to "Frozen Food" for display purposes
+      const stateValue = value === 'Mentah' 
+        ? 'Frozen Food' as const 
+        : value as 'Frozen Food' | 'Matang';
+      
       const updatedSale = { ...prev, state: stateValue };
       return updatedSale;
     });
@@ -106,22 +109,26 @@ const useTransactionForm = () => {
   };
 
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    // Handle state conversion here
+    // Convert "Mentah" to "Frozen Food" if needed
+    let safeState = updatedItem.state;
     if (typeof updatedItem.state === 'string' && updatedItem.state === 'Mentah') {
-      updatedItem.state = 'Frozen Food';
+      safeState = 'Frozen Food';
     }
     
     const sellingPrice = calculateSellingPrice(
       updatedItem.size, 
-      updatedItem.state, 
+      safeState, 
       updatedItem.includeBox
     );
     
-    updatedItem.sellingPrice = sellingPrice;
-    updatedItem.totalPrice = sellingPrice * updatedItem.quantity;
-    
     const newItems = [...saleItems];
-    newItems[index] = updatedItem;
+    newItems[index] = {
+      ...updatedItem,
+      state: safeState,
+      sellingPrice: sellingPrice,
+      totalPrice: sellingPrice * updatedItem.quantity
+    };
+    
     setSaleItems(newItems);
   };
   

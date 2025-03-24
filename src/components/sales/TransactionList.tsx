@@ -68,9 +68,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
     }
   };
   
-  const handleEdit = (transactions: Transaction[]) => {
-    if (onEdit && transactions.length > 0) {
-      onEdit(transactions);
+  const handleEdit = (transactionGroup: Transaction[]) => {
+    if (onEdit && transactionGroup.length > 0) {
+      onEdit(transactionGroup);
     }
   };
   

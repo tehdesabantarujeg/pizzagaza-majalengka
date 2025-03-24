@@ -25,6 +25,19 @@ export const useSaleManagement = () => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction[]>([]);
   const { toast } = useToast();
   
+  // Get the stock hooks to check inventory
+  const {
+    stockItems,
+    boxItems,
+    error: stockError,
+    setError: setStockError,
+    isPizzaStockAvailable,
+    isBoxStockAvailable,
+    updateStockItemQuantity,
+    updateBoxStockQuantity,
+    loadStockData
+  } = useStockItems();
+  
   // Form state from the extracted hook
   const { 
     newSale, 
@@ -86,9 +99,58 @@ export const useSaleManagement = () => {
     }
   }
 
+  // Check if stock is available for all items in a transaction
+  const checkStockAvailability = (items: PizzaSaleItem[]): boolean => {
+    for (const item of items) {
+      // Check pizza stock
+      const pizzaStockResult = isPizzaStockAvailable(item);
+      if (!pizzaStockResult) {
+        return false;
+      }
+      
+      // Check box stock if needed
+      if (item.includeBox) {
+        const boxStockResult = isBoxStockAvailable(item);
+        if (!boxStockResult) {
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  };
+  
+  // Update stock levels after a successful transaction
+  const updateStockLevels = async (items: PizzaSaleItem[]): Promise<boolean> => {
+    try {
+      for (const item of items) {
+        // Update pizza stock
+        const pizzaStockResult = isPizzaStockAvailable(item);
+        if (pizzaStockResult && typeof pizzaStockResult !== 'boolean') {
+          await updateStockItemQuantity(pizzaStockResult);
+        }
+        
+        // Update box stock if needed
+        if (item.includeBox) {
+          const boxStockResult = isBoxStockAvailable(item);
+          if (boxStockResult && typeof boxStockResult !== 'boolean') {
+            await updateBoxStockQuantity(boxStockResult);
+          }
+        }
+      }
+      
+      await loadStockData(); // Refresh stock data
+      return true;
+    } catch (error) {
+      console.error("Error updating stock levels:", error);
+      return false;
+    }
+  };
+
   const handleSaveOnly = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setStockError('');
     
     if (isMultiItem) {
       if (!saleItems.some(item => item.flavor)) {
@@ -98,50 +160,90 @@ export const useSaleManagement = () => {
       
       // Ensure state is always "Frozen Food" or "Matang"
       const updatedSaleItems = saleItems.map(item => {
-        // Check for string type before comparison
-        const state = typeof item.state === 'string' && item.state === 'Mentah' ? 'Frozen Food' : item.state;
+        // Convert "Mentah" to "Frozen Food" if needed
+        let safeState = item.state;
+        if (typeof item.state === 'string' && item.state === 'Mentah') {
+          safeState = 'Frozen Food';
+        }
+        
         return {
           ...item,
-          state
+          state: safeState
         };
       });
       
-      await createTransaction(updatedSaleItems, customerName, notes);
+      // Check stock availability before proceeding
+      if (!checkStockAvailability(updatedSaleItems)) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: stockError || "Stok pizza atau dus tidak mencukupi",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      resetForm();
-      setOpen(false);
+      // Create the transaction
+      const success = await createTransaction(updatedSaleItems, customerName, notes);
+      
+      if (success) {
+        // Update stock levels
+        await updateStockLevels(updatedSaleItems);
+        
+        // Reset form after successful transaction
+        resetForm();
+        setOpen(false);
+      }
     } else {
       if (!newSale.flavor) {
         setError('Please select a pizza flavor');
         return;
       }
       
-      // Update state from "Mentah" to "Frozen Food" if needed
-      // Check for string type before comparison
-      const state = typeof newSale.state === 'string' && newSale.state === 'Mentah' ? 'Frozen Food' : newSale.state;
+      // Convert "Mentah" to "Frozen Food" if needed
+      let safeState = newSale.state;
+      if (typeof newSale.state === 'string' && newSale.state === 'Mentah') {
+        safeState = 'Frozen Food';
+      }
       
       const saleItem: PizzaSaleItem = {
         size: newSale.size,
         flavor: newSale.flavor,
         quantity: newSale.quantity,
-        state: state,
+        state: safeState,
         includeBox: newSale.includeBox,
         sellingPrice,
         totalPrice
       };
       
-      await createTransaction([saleItem], newSale.customerName, newSale.notes);
+      // Check stock availability before proceeding
+      if (!checkStockAvailability([saleItem])) {
+        toast({
+          title: "Stok Tidak Cukup",
+          description: stockError || "Stok pizza atau dus tidak mencukupi",
+          variant: "destructive"
+        });
+        return;
+      }
       
-      setNewSale({
-        size: 'Small',
-        flavor: '',
-        quantity: 1,
-        state: 'Frozen Food',
-        includeBox: false,
-        customerName: '',
-        notes: ''
-      });
-      setOpen(false);
+      // Create the transaction
+      const success = await createTransaction([saleItem], newSale.customerName, newSale.notes);
+      
+      if (success) {
+        // Update stock levels
+        await updateStockLevels([saleItem]);
+        
+        // Reset form after successful transaction
+        setNewSale({
+          size: 'Small',
+          flavor: '',
+          quantity: 1,
+          state: 'Frozen Food',
+          includeBox: false,
+          customerName: '',
+          notes: ''
+        });
+        setOpen(false);
+      }
     }
   };
 
@@ -190,7 +292,9 @@ export const useSaleManagement = () => {
     handleDeleteTransaction,
     editingTransaction,
     setEditingTransaction,
-    updateExistingTransaction
+    updateExistingTransaction,
+    checkStockAvailability,
+    updateStockLevels
   };
 };
 
