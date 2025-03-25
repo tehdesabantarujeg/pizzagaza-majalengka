@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { 
@@ -65,7 +64,7 @@ export const useSaleManagement = () => {
   // Transaction management functionality from extracted hook
   const {
     createTransaction,
-    updateExistingTransaction,
+    updateExistingTransactions,
     handleDeleteTransaction
   } = useTransactionManagement({ 
     setTransactions, 
@@ -347,7 +346,7 @@ export const useSaleManagement = () => {
     handleDeleteTransaction,
     editingTransaction,
     setEditingTransaction,
-    updateExistingTransaction,
+    updateExistingTransactions,
     checkStockAvailability,
     updateStockLevels
   };

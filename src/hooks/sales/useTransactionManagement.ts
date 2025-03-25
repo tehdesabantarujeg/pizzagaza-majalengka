@@ -75,26 +75,58 @@ const useTransactionManagement = ({
     }
   };
 
-  const updateExistingTransaction = async (updatedTransaction: Transaction): Promise<boolean> => {
+  // Updated function to handle both existing and new transactions in a group
+  const updateExistingTransactions = async (updatedTransactions: Transaction[]): Promise<boolean> => {
     try {
-      const success = await updateTransaction(updatedTransaction);
-      if (success) {
-        await loadTransactions();
-        toast({
-          title: "Berhasil",
-          description: "Transaksi berhasil diperbarui",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Error",
-          description: "Gagal memperbarui transaksi",
-          variant: "destructive"
-        });
-        return false;
+      // Separate existing transactions from new ones
+      const existingTransactions = updatedTransactions.filter(t => 
+        t.id && !t.id.startsWith('temp-') && t.id.trim() !== ''
+      );
+      
+      const newTransactions = updatedTransactions.filter(t => 
+        !t.id || t.id.startsWith('temp-') || t.id.trim() === ''
+      );
+      
+      // First update existing transactions
+      if (existingTransactions.length > 0) {
+        await Promise.all(existingTransactions.map(async (transaction) => {
+          return updateTransaction(transaction);
+        }));
       }
+      
+      // Then create new transactions with the same transaction number
+      if (newTransactions.length > 0 && updatedTransactions.length > 0) {
+        // Use the transaction number from the existing group
+        const transactionNumber = updatedTransactions[0].transactionNumber;
+        
+        await Promise.all(newTransactions.map(async (transaction) => {
+          const newTransactionData: Omit<Transaction, 'id'> = {
+            date: transaction.date || new Date().toISOString(),
+            pizzaId: transaction.pizzaId || null,
+            size: transaction.size,
+            flavor: transaction.flavor,
+            quantity: transaction.quantity,
+            state: transaction.state,
+            includeBox: transaction.includeBox,
+            sellingPrice: transaction.sellingPrice,
+            totalPrice: transaction.totalPrice,
+            customerName: transaction.customerName,
+            notes: transaction.notes,
+            transactionNumber
+          };
+          
+          return addTransaction(newTransactionData);
+        }));
+      }
+      
+      await loadTransactions();
+      toast({
+        title: "Berhasil",
+        description: "Transaksi berhasil diperbarui",
+      });
+      return true;
     } catch (error) {
-      console.error("Error updating transaction:", error);
+      console.error("Error updating transactions:", error);
       toast({
         title: "Error",
         description: "Gagal memperbarui transaksi",
@@ -135,7 +167,7 @@ const useTransactionManagement = ({
 
   return {
     createTransaction,
-    updateExistingTransaction,
+    updateExistingTransactions,
     handleDeleteTransaction
   };
 };

@@ -14,6 +14,18 @@ const Index = () => {
     <Layout>
       <div className="container px-4 md:px-6 py-8 max-w-5xl mx-auto">
         <FadeIn className="text-center mb-12 max-w-3xl mx-auto">
+          <div className="flex justify-center mb-6">
+            <img 
+              src="/pizza-hero.jpg" 
+              alt="Pizza Gaza" 
+              className="rounded-lg shadow-lg max-w-full h-auto max-h-[300px] object-cover"
+              onError={(e) => {
+                // Fallback if image doesn't exist
+                const target = e.target as HTMLImageElement;
+                target.src = "/placeholder.svg";
+              }}
+            />
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
             Pizza Gaza
           </h1>

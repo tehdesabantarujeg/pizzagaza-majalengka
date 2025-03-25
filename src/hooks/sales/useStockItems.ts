@@ -40,12 +40,29 @@ export const useStockItems = () => {
     );
     
     if (!stockItem) {
-      setError(`Tidak ada stok untuk pizza ${item.flavor} ${item.size}`);
+      // Get available flavors for this size
+      const availableFlavors = getAvailablePizzaFlavors(item.size);
+      
+      // Create a message with available flavors
+      if (availableFlavors.length > 0) {
+        const message = `Stock Pizza ${item.flavor} ${item.size} 0\nStock Pizza ukuran ${item.size.toLowerCase()} yang tersedia adalah:\n${availableFlavors.join(', ')}`;
+        setError(message);
+      } else {
+        setError(`Tidak ada stok untuk pizza ${item.flavor} ${item.size}`);
+      }
       return false;
     }
     
     if (stockItem.quantity < item.quantity) {
-      setError(`Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok`);
+      // Get available flavors for this size as alternatives
+      const availableFlavors = getAvailablePizzaFlavors(item.size);
+      
+      if (availableFlavors.length > 0) {
+        const message = `Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok\nStock Pizza ukuran ${item.size.toLowerCase()} yang tersedia adalah:\n${availableFlavors.join(', ')}`;
+        setError(message);
+      } else {
+        setError(`Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok`);
+      }
       return false;
     }
     

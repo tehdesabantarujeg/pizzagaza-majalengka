@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -46,13 +45,13 @@ const Sales = () => {
     handleDeleteTransaction,
     editingTransaction,
     setEditingTransaction,
-    updateExistingTransaction
+    updateExistingTransactions
   } = useSaleManagement();
 
   // Handle saving edited transaction
   const handleSaveEditedTransaction = (updatedTransactions: Transaction[]) => {
     // Update all transactions in the group
-    Promise.all(updatedTransactions.map(transaction => updateExistingTransaction(transaction)))
+    updateExistingTransactions(updatedTransactions)
       .then(() => setEditingTransaction([]));
   };
 
