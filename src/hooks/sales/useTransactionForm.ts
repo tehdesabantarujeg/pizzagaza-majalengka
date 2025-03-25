@@ -80,10 +80,11 @@ const useTransactionForm = () => {
       // Convert any input value to the expected type
       let stateValue: 'Frozen Food' | 'Matang';
       
-      // Handle the specific case conversion
-      if (value === 'Mentah') {
+      // Handle the specific case conversion using string comparison 
+      // instead of type comparison
+      if (value && value.toString() === 'Mentah') {
         stateValue = 'Frozen Food';
-      } else if (value === 'Matang') {
+      } else if (value && value.toString() === 'Matang') {
         stateValue = 'Matang';
       } else {
         // Default fallback, but should be either 'Frozen Food' or 'Matang'
@@ -119,11 +120,11 @@ const useTransactionForm = () => {
     // Ensure state is always one of the allowed values
     let safeState: 'Frozen Food' | 'Matang';
     
-    // Use type-safe comparison
+    // Use string comparison instead of type comparison
     if (typeof updatedItem.state === 'string') {
-      if (updatedItem.state === 'Mentah') {
+      if (updatedItem.state.toString() === 'Mentah') {
         safeState = 'Frozen Food';
-      } else if (updatedItem.state === 'Matang') {
+      } else if (updatedItem.state.toString() === 'Matang') {
         safeState = 'Matang';
       } else {
         // Default to 'Frozen Food' if it's neither

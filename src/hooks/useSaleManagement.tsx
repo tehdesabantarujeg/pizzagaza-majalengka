@@ -87,9 +87,10 @@ export const useSaleManagement = () => {
         let safeState: 'Frozen Food' | 'Matang';
         
         if (typeof transaction.state === 'string') {
-          if (transaction.state === 'Mentah') {
+          // Use string comparison instead of type comparison
+          if (transaction.state.toString() === 'Mentah') {
             safeState = 'Frozen Food';
-          } else if (transaction.state === 'Matang') {
+          } else if (transaction.state.toString() === 'Matang') {
             safeState = 'Matang';
           } else {
             // Fallback
@@ -183,9 +184,10 @@ export const useSaleManagement = () => {
         let safeState: 'Frozen Food' | 'Matang';
         
         if (typeof item.state === 'string') {
-          if (item.state === 'Mentah') {
+          // Use string comparison instead of type comparison
+          if (item.state.toString() === 'Mentah') {
             safeState = 'Frozen Food';
-          } else if (item.state === 'Matang') {
+          } else if (item.state.toString() === 'Matang') {
             safeState = 'Matang';
           } else {
             // For other values, default to 'Frozen Food'
@@ -232,9 +234,10 @@ export const useSaleManagement = () => {
       let safeState: 'Frozen Food' | 'Matang';
       
       if (typeof newSale.state === 'string') {
-        if (newSale.state === 'Mentah') {
+        // Use string comparison instead of type comparison
+        if (newSale.state.toString() === 'Mentah') {
           safeState = 'Frozen Food';
-        } else if (newSale.state === 'Matang') {
+        } else if (newSale.state.toString() === 'Matang') {
           safeState = 'Matang';
         } else {
           // Default to 'Frozen Food'
