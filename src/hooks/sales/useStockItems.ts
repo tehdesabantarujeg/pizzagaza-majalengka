@@ -26,6 +26,13 @@ export const useStockItems = () => {
     }
   };
 
+  // Get available pizza flavors for a given size
+  const getAvailablePizzaFlavors = (size: 'Small' | 'Medium'): string[] => {
+    return stockItems
+      .filter(item => item.size === size && item.quantity > 0)
+      .map(item => item.flavor);
+  };
+
   // Periksa apakah stok pizza tersedia
   const isPizzaStockAvailable = (item: PizzaSaleItem) => {
     const stockItem = stockItems.find(
@@ -89,7 +96,8 @@ export const useStockItems = () => {
     isPizzaStockAvailable,
     isBoxStockAvailable,
     updateStockItemQuantity,
-    updateBoxStockQuantity
+    updateBoxStockQuantity,
+    getAvailablePizzaFlavors
   };
 };
 

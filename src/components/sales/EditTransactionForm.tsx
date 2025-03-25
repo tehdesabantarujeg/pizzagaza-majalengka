@@ -13,9 +13,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { formatCurrency, PRICES } from '@/utils/constants';
+import { formatCurrency, PRICES, PIZZA_FLAVORS, PIZZA_SIZES, PIZZA_STATES } from '@/utils/constants';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Minus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Minus, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import useStockItems from '@/hooks/sales/useStockItems';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,7 +44,8 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     error, 
     setError,
     isPizzaStockAvailable, 
-    isBoxStockAvailable 
+    isBoxStockAvailable,
+    getAvailablePizzaFlavors
   } = useStockItems();
   
   const { toast } = useToast();
@@ -79,10 +82,19 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     return basePrice;
   };
 
-  // Update a specific transaction's quantity or includeBox
-  const handleUpdateTransaction = (index: number, field: 'quantity' | 'includeBox', value: any) => {
+  // Update a specific transaction field
+  const handleUpdateTransaction = (index: number, field: keyof Transaction, value: any) => {
     setEditedTransactions(prev => {
       const updated = [...prev];
+      
+      // Special handling for state field to ensure proper values
+      if (field === 'state') {
+        if (value && typeof value === 'string' && value.toLowerCase() === 'mentah') {
+          value = 'Frozen Food';
+        } else if (value && typeof value === 'string' && value.toLowerCase() !== 'matang') {
+          value = 'Frozen Food';
+        }
+      }
       
       // Update the specific field
       updated[index] = {
@@ -90,12 +102,12 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
         [field]: value
       };
       
-      // Recalculate sellingPrice if includeBox changes
-      if (field === 'includeBox') {
+      // Recalculate sellingPrice if size, state, or includeBox changes
+      if (field === 'size' || field === 'state' || field === 'includeBox') {
         updated[index].sellingPrice = calculateSellingPrice(
-          updated[index].size, 
-          updated[index].state, 
-          value
+          updated[index].size as 'Small' | 'Medium', 
+          updated[index].state as 'Frozen Food' | 'Matang', 
+          updated[index].includeBox || false
         );
       }
       
@@ -106,6 +118,39 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     });
   };
 
+  // Add a new transaction item
+  const handleAddTransaction = () => {
+    if (editedTransactions.length === 0) return;
+    
+    // Use the first transaction as a template
+    const template = editedTransactions[0];
+    const newTransaction: Transaction = {
+      ...template,
+      id: `temp-${Date.now()}`, // Temporary ID, will be replaced on save
+      flavor: '',
+      quantity: 1,
+      sellingPrice: calculateSellingPrice(
+        template.size as 'Small' | 'Medium',
+        'Frozen Food', 
+        false
+      ),
+      totalPrice: calculateSellingPrice(
+        template.size as 'Small' | 'Medium',
+        'Frozen Food', 
+        false
+      )
+    };
+    
+    setEditedTransactions([...editedTransactions, newTransaction]);
+  };
+
+  // Remove a transaction
+  const handleRemoveTransaction = (index: number) => {
+    if (editedTransactions.length <= 1) return;
+    
+    setEditedTransactions(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Calculate total price of all items
   const totalPrice = editedTransactions.reduce((sum, t) => sum + t.totalPrice, 0);
 
@@ -114,19 +159,16 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
     // Skip stock check for existing items if quantities aren't increased
     for (let i = 0; i < editedTransactions.length; i++) {
       const editedItem = editedTransactions[i];
-      const originalItem = transactions[i];
+      const originalItem = transactions.find(t => t.id === editedItem.id);
       
-      // Only check stock if quantity has increased
-      if (editedItem.quantity > originalItem.quantity) {
-        const additionalQuantity = editedItem.quantity - originalItem.quantity;
-        
-        // Create a PizzaSaleItem to check stock
+      if (!originalItem) {
+        // This is a new item, check full quantity
         const checkItem: PizzaSaleItem = {
-          size: editedItem.size,
+          size: editedItem.size as 'Small' | 'Medium',
           flavor: editedItem.flavor,
-          quantity: additionalQuantity,
-          state: editedItem.state,
-          includeBox: editedItem.includeBox,
+          quantity: editedItem.quantity,
+          state: editedItem.state as 'Frozen Food' | 'Matang',
+          includeBox: editedItem.includeBox || false,
           sellingPrice: editedItem.sellingPrice,
           totalPrice: editedItem.totalPrice
         };
@@ -137,11 +179,41 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
           return false;
         }
         
-        // Check box stock if needed and if box usage has increased
-        if (editedItem.includeBox && (!originalItem.includeBox || editedItem.quantity > originalItem.quantity)) {
+        // Check box stock if needed
+        if (editedItem.includeBox) {
           const boxStockResult = isBoxStockAvailable(checkItem);
           if (!boxStockResult) {
             return false;
+          }
+        }
+      } else {
+        // Only check stock if quantity has increased
+        if (editedItem.quantity > originalItem.quantity) {
+          const additionalQuantity = editedItem.quantity - originalItem.quantity;
+          
+          // Create a PizzaSaleItem to check stock
+          const checkItem: PizzaSaleItem = {
+            size: editedItem.size as 'Small' | 'Medium',
+            flavor: editedItem.flavor,
+            quantity: additionalQuantity,
+            state: editedItem.state as 'Frozen Food' | 'Matang',
+            includeBox: editedItem.includeBox || false,
+            sellingPrice: editedItem.sellingPrice,
+            totalPrice: editedItem.totalPrice
+          };
+          
+          // Check pizza stock
+          const pizzaStockResult = isPizzaStockAvailable(checkItem);
+          if (!pizzaStockResult) {
+            return false;
+          }
+          
+          // Check box stock if needed and if box usage has increased
+          if (editedItem.includeBox && (!originalItem.includeBox || editedItem.quantity > originalItem.quantity)) {
+            const boxStockResult = isBoxStockAvailable(checkItem);
+            if (!boxStockResult) {
+              return false;
+            }
           }
         }
       }
@@ -152,6 +224,17 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
 
   // Save all transaction changes
   const handleSave = () => {
+    // Validate all transactions have flavors
+    const invalidTransaction = editedTransactions.find(t => !t.flavor);
+    if (invalidTransaction) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Semua item harus memiliki rasa (flavor)",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Check if stock is available for the updated quantities
     if (!checkStockAvailability()) {
       toast({
@@ -186,32 +269,91 @@ const EditTransactionForm: React.FC<EditTransactionFormProps> = ({
         </div>
 
         <div className="space-y-4">
-          <h3 className="font-medium text-sm">Daftar Item</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium text-sm">Daftar Item</h3>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={handleAddTransaction}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Tambah Item
+            </Button>
+          </div>
           
           {editedTransactions.map((transaction, index) => (
-            <div key={index} className="border rounded-md p-4 space-y-4">
+            <div key={index} className="border rounded-md p-4 space-y-4 relative">
+              {editedTransactions.length > 1 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 text-destructive"
+                  onClick={() => handleRemoveTransaction(index)}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              )}
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Produk</Label>
-                  <div className="py-2 px-3 bg-muted rounded-md">
-                    {transaction.flavor}
-                  </div>
+                  <Select
+                    value={transaction.flavor}
+                    onValueChange={(value) => handleUpdateTransaction(index, 'flavor', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih rasa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIZZA_FLAVORS.map((flavor) => (
+                        <SelectItem key={flavor} value={flavor}>
+                          {flavor}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">
                   <Label>Ukuran</Label>
-                  <div className="py-2 px-3 bg-muted rounded-md">
-                    {transaction.size}
-                  </div>
+                  <Select
+                    value={transaction.size}
+                    onValueChange={(value) => handleUpdateTransaction(index, 'size', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih ukuran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIZZA_SIZES.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Kondisi</Label>
-                  <div className="py-2 px-3 bg-muted rounded-md">
-                    {transaction.state}
-                  </div>
+                  <Select
+                    value={transaction.state}
+                    onValueChange={(value) => handleUpdateTransaction(index, 'state', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih kondisi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIZZA_STATES.map((state) => (
+                        <SelectItem key={state} value={state}>
+                          {state}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">

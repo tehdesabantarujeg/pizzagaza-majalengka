@@ -35,7 +35,8 @@ export const useSaleManagement = () => {
     isBoxStockAvailable,
     updateStockItemQuantity,
     updateBoxStockQuantity,
-    loadStockData
+    loadStockData,
+    getAvailablePizzaFlavors
   } = useStockItems();
   
   // Form state from the extracted hook
@@ -126,6 +127,15 @@ export const useSaleManagement = () => {
       // Check pizza stock
       const pizzaStockResult = isPizzaStockAvailable(item);
       if (!pizzaStockResult) {
+        // Get available flavors for this size
+        const availableFlavors = getAvailablePizzaFlavors(item.size);
+        
+        // Create a message with available flavors
+        if (availableFlavors.length > 0) {
+          const message = `Stock Pizza ${item.flavor} ${item.size} 0\nStock Pizza ukuran ${item.size.toLowerCase()} yang tersedia adalah:\n${availableFlavors.join(', ')}`;
+          setStockError(message);
+        }
+        
         return false;
       }
       

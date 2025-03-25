@@ -80,8 +80,8 @@ const useTransactionForm = () => {
       // Convert any input value to the expected type
       let stateValue: 'Frozen Food' | 'Matang';
       
-      // Handle the specific case conversion using string comparison 
-      // instead of type comparison
+      // Handle the specific case using string toLowerCase comparison 
+      // instead of direct type comparison
       if (value && typeof value === 'string' && value.toLowerCase() === 'mentah') {
         stateValue = 'Frozen Food';
       } else if (value && typeof value === 'string' && value.toLowerCase() === 'matang') {

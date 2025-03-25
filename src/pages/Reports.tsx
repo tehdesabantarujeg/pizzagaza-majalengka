@@ -1,18 +1,20 @@
-
-import React, { useState } from 'react';
-import { format, subDays, startOfMonth } from 'date-fns';
+import React, { useState, useEffect } from 'react';
+import { format, subDays, startOfMonth, startOfWeek, startOfYear, subMonths, subYears } from 'date-fns';
 import { 
   CalendarIcon, 
   ArrowRightIcon, 
   LineChartIcon, 
   BarChartIcon,
-  PieChartIcon
+  PieChartIcon,
+  SearchIcon,
+  FilterIcon,
+  ArrowUpDown
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Tabs,
@@ -24,6 +26,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { DateRange } from 'react-day-picker';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ExpenseCategory } from '@/utils/types';
+import { formatCurrency } from '@/utils/constants';
 
 // Report components
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
@@ -45,7 +51,41 @@ const Reports = () => {
     to: new Date(),
   });
   
-  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'ascending' | 'descending';
+  } | null>(null);
+
+  // Handle predefined date ranges
+  const handleSetDateRange = (type: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
+    setReportType(type);
+    
+    const today = new Date();
+    let fromDate;
+    
+    switch (type) {
+      case 'weekly':
+        fromDate = startOfWeek(today);
+        break;
+      case 'monthly':
+        fromDate = startOfMonth(today);
+        break;
+      case 'yearly':
+        fromDate = startOfYear(today);
+        break;
+      case 'daily':
+      default:
+        fromDate = subDays(today, 1);
+        break;
+    }
+    
+    setDateRange({
+      from: fromDate,
+      to: today
+    });
+  };
 
   // Fetch report data
   const { data, isLoading } = useQuery({
@@ -79,9 +119,28 @@ const Reports = () => {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, 5);
       
+      // Group expenses by category
+      const expensesByCategory: Record<string, { category: string, amount: number, count: number }> = {};
+      
+      expensesData.forEach((expense: any) => {
+        if (!expensesByCategory[expense.category]) {
+          expensesByCategory[expense.category] = {
+            category: expense.category,
+            amount: 0,
+            count: 0
+          };
+        }
+        
+        expensesByCategory[expense.category].amount += expense.amount || 0;
+        expensesByCategory[expense.category].count += 1;
+      });
+      
+      const categorizedExpenses = Object.values(expensesByCategory);
+      
       return {
         salesData,
         expensesData,
+        categorizedExpenses,
         bestSellingProducts,
         totalSales: salesData.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0),
         totalExpenses: expensesData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0),
@@ -89,31 +148,6 @@ const Reports = () => {
       };
     }
   });
-
-  const handleSetDateRange = (type: 'daily' | 'weekly' | 'monthly') => {
-    setReportType(type);
-    
-    const today = new Date();
-    let fromDate;
-    
-    switch (type) {
-      case 'weekly':
-        fromDate = subDays(today, 7);
-        break;
-      case 'monthly':
-        fromDate = startOfMonth(today);
-        break;
-      case 'daily':
-      default:
-        fromDate = subDays(today, 1);
-        break;
-    }
-    
-    setDateRange({
-      from: fromDate,
-      to: today
-    });
-  };
 
   // Handle DateRange selection and ensure 'to' is set
   const handleDateRangeChange = (range: DateRange | undefined) => {
@@ -125,6 +159,43 @@ const Reports = () => {
     }
   };
 
+  // Filter and sort expenses by category
+  const getFilteredExpenses = () => {
+    if (!data?.categorizedExpenses) return [];
+    
+    const filtered = data.categorizedExpenses.filter((expense: any) => 
+      expense.category.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    if (sortConfig !== null) {
+      filtered.sort((a: any, b: any) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    return filtered;
+  };
+
+  // Handle sorting
+  const requestSort = (key: string) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    
+    setSortConfig({ key, direction });
+  };
+
+  // Calculate total expenses
+  const totalExpenses = getFilteredExpenses().reduce((sum, expense: any) => sum + expense.amount, 0);
+
   return (
     <Layout>
       <Header
@@ -134,7 +205,7 @@ const Reports = () => {
       
       <div className="container px-4 py-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <Tabs defaultValue="daily" className="w-full sm:w-auto">
+          <Tabs defaultValue={reportType} className="w-full sm:w-auto">
             <TabsList>
               <TabsTrigger 
                 value="daily" 
@@ -153,6 +224,12 @@ const Reports = () => {
                 onClick={() => handleSetDateRange('monthly')}
               >
                 Bulanan
+              </TabsTrigger>
+              <TabsTrigger 
+                value="yearly" 
+                onClick={() => handleSetDateRange('yearly')}
+              >
+                Tahunan
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -228,7 +305,106 @@ const Reports = () => {
               isLoading={isLoading}
             />
             
-            {/* Add Expense Summary Table */}
+            {/* Enhanced Expense Summary Table with filtering and sorting */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex justify-between items-center">
+                  <span>Rekap Pengeluaran Berdasarkan Kategori</span>
+                  <div className="flex gap-2 items-center">
+                    <div className="relative">
+                      <SearchIcon className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cari kategori..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 h-8 w-[200px]"
+                      />
+                    </div>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-accent"
+                        onClick={() => requestSort('category')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Kategori
+                          <ArrowUpDown size={14} />
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-right cursor-pointer hover:bg-accent"
+                        onClick={() => requestSort('count')}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          Jumlah Transaksi
+                          <ArrowUpDown size={14} />
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="text-right cursor-pointer hover:bg-accent"
+                        onClick={() => requestSort('amount')}
+                      >
+                        <div className="flex items-center justify-end gap-1">
+                          Total Pengeluaran
+                          <ArrowUpDown size={14} />
+                        </div>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!isLoading && getFilteredExpenses().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                          Tidak ada data pengeluaran pada periode ini
+                        </TableCell>
+                      </TableRow>
+                    ) : isLoading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="h-4 w-16 bg-muted animate-pulse rounded ml-auto" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="h-4 w-24 bg-muted animate-pulse rounded ml-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      getFilteredExpenses().map((expense: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{expense.category}</TableCell>
+                          <TableCell className="text-right">{expense.count}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                    
+                    {/* Grand Total Row */}
+                    {!isLoading && getFilteredExpenses().length > 0 && (
+                      <TableRow className="border-t-2">
+                        <TableCell className="font-bold">Grand Total</TableCell>
+                        <TableCell className="text-right font-bold">
+                          {getFilteredExpenses().reduce((sum, expense: any) => sum + expense.count, 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-bold">
+                          {formatCurrency(totalExpenses)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            
+            {/* Keep the original expense summary table */}
             <ExpenseSummaryTable 
               expenses={data?.expensesData || []}
               isLoading={isLoading}
