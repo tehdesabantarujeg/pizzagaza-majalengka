@@ -16,6 +16,7 @@ import EditTransactionForm from '@/components/sales/EditTransactionForm';
 import useSaleManagement from '@/hooks/useSaleManagement';
 import { Transaction } from '@/utils/types';
 import StockAvailabilityBox from '@/components/sales/StockAvailabilityBox';
+import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
 import useStockItems from '@/hooks/sales/useStockItems';
 
 const Sales = () => {
@@ -52,7 +53,7 @@ const Sales = () => {
   } = useSaleManagement();
 
   // Get stock items for the availability box
-  const { stockItems } = useStockItems();
+  const { stockItems, boxItems } = useStockItems();
   
   // Handle saving edited transaction
   const handleSaveEditedTransaction = (updatedTransactions: Transaction[]) => {
@@ -111,19 +112,21 @@ const Sales = () => {
       </Header>
 
       <div className="container px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-3">
-            <TransactionList 
-              transactions={transactions} 
-              setOpen={setOpen}
-              onEdit={handleEditTransaction}
-              onDelete={handleDeleteTransaction}
-            />
-          </div>
-          <div className="md:col-span-1">
             <StockAvailabilityBox stockItems={stockItems} />
           </div>
+          <div className="md:col-span-1">
+            <BoxAvailabilityBox boxItems={boxItems} />
+          </div>
         </div>
+        
+        <TransactionList 
+          transactions={transactions} 
+          setOpen={setOpen}
+          onEdit={handleEditTransaction}
+          onDelete={handleDeleteTransaction}
+        />
       </div>
 
       {/* Edit Transaction Dialog */}

@@ -16,7 +16,7 @@ const Index = () => {
         <FadeIn className="text-center mb-12 max-w-3xl mx-auto">
           <div className="flex justify-center mb-6">
             <img 
-              src="/pizza-hero.jpg" 
+              src="/lovable-uploads/170e029a-3299-463e-a9a1-5646488ebb2f.png" 
               alt="Pizza Gaza" 
               className="rounded-lg shadow-lg max-w-full h-auto max-h-[300px] object-cover"
               onError={(e) => {

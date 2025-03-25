@@ -27,25 +27,24 @@ const StockAvailabilityBox: React.FC<StockAvailabilityBoxProps> = ({ stockItems 
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Ketersediaan Stock Pizza</CardTitle>
       </CardHeader>
-      <CardContent className="max-h-[400px] overflow-y-auto">
+      <CardContent>
         {sortedFlavors.length > 0 ? (
-          <div className="space-y-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {sortedFlavors.map((flavor) => (
-              <div key={flavor} className="space-y-1">
-                <h3 className="font-medium">{flavor}</h3>
-                <div className="grid grid-cols-2 gap-2 pl-2">
+              <div key={flavor} className="border rounded-md p-2">
+                <h3 className="font-medium text-sm border-b pb-1 mb-1">{flavor}</h3>
+                <div className="space-y-1">
                   {groupedByFlavor[flavor]
                     .sort((a, b) => (a.size > b.size ? 1 : -1))
                     .map((item) => (
                       <div key={`${item.flavor}-${item.size}`} className="flex items-center justify-between">
-                        <span className="text-sm">{item.size}</span>
-                        <Badge variant={item.quantity <= 0 ? "destructive" : item.quantity < 5 ? "outline" : "secondary"}>
+                        <span className="text-xs">{item.size}</span>
+                        <Badge variant={item.quantity <= 0 ? "destructive" : item.quantity < 5 ? "outline" : "secondary"} className="text-xs">
                           {item.quantity}
                         </Badge>
                       </div>
                     ))}
                 </div>
-                <Separator className="mt-2" />
               </div>
             ))}
           </div>
