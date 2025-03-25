@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -14,6 +15,8 @@ import TransactionList from '@/components/sales/TransactionList';
 import EditTransactionForm from '@/components/sales/EditTransactionForm';
 import useSaleManagement from '@/hooks/useSaleManagement';
 import { Transaction } from '@/utils/types';
+import StockAvailabilityBox from '@/components/sales/StockAvailabilityBox';
+import useStockItems from '@/hooks/sales/useStockItems';
 
 const Sales = () => {
   const {
@@ -48,6 +51,9 @@ const Sales = () => {
     updateExistingTransactions
   } = useSaleManagement();
 
+  // Get stock items for the availability box
+  const { stockItems } = useStockItems();
+  
   // Handle saving edited transaction
   const handleSaveEditedTransaction = (updatedTransactions: Transaction[]) => {
     // Update all transactions in the group
@@ -105,12 +111,19 @@ const Sales = () => {
       </Header>
 
       <div className="container px-4 py-6">
-        <TransactionList 
-          transactions={transactions} 
-          setOpen={setOpen}
-          onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="md:col-span-3">
+            <TransactionList 
+              transactions={transactions} 
+              setOpen={setOpen}
+              onEdit={handleEditTransaction}
+              onDelete={handleDeleteTransaction}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <StockAvailabilityBox stockItems={stockItems} />
+          </div>
+        </div>
       </div>
 
       {/* Edit Transaction Dialog */}

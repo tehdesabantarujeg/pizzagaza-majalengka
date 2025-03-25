@@ -7,12 +7,14 @@ export const useStockItems = () => {
   const [stockItems, setStockItems] = useState<PizzaStock[]>([]);
   const [boxItems, setBoxItems] = useState<BoxStock[]>([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     loadStockData();
   }, []);
 
   const loadStockData = async () => {
+    setLoading(true);
     try {
       const [pizzaStock, boxStock] = await Promise.all([
         fetchStockItems(),
@@ -23,6 +25,8 @@ export const useStockItems = () => {
       setBoxItems(boxStock);
     } catch (error) {
       console.error("Error loading stock data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -107,6 +111,7 @@ export const useStockItems = () => {
   return {
     stockItems,
     boxItems,
+    loading,
     error,
     setError,
     loadStockData,
