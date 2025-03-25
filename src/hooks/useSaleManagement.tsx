@@ -82,10 +82,29 @@ export const useSaleManagement = () => {
     try {
       const data = await fetchTransactions();
       // Replace all occurrences of "Mentah" with "Frozen Food"
-      const updatedData = data.map(transaction => ({
-        ...transaction,
-        state: transaction.state === 'Mentah' ? 'Frozen Food' : transaction.state
-      }));
+      const updatedData = data.map(transaction => {
+        // Ensure state is one of the allowed values
+        let safeState: 'Frozen Food' | 'Matang';
+        
+        if (typeof transaction.state === 'string') {
+          if (transaction.state === 'Mentah') {
+            safeState = 'Frozen Food';
+          } else if (transaction.state === 'Matang') {
+            safeState = 'Matang';
+          } else {
+            // Fallback
+            safeState = 'Frozen Food';
+          }
+        } else {
+          safeState = 'Frozen Food';
+        }
+        
+        return {
+          ...transaction,
+          state: safeState
+        };
+      });
+      
       setTransactions(updatedData);
     } catch (error) {
       console.error("Error loading transactions:", error);
@@ -160,9 +179,19 @@ export const useSaleManagement = () => {
       
       // Ensure state is always "Frozen Food" or "Matang"
       const updatedSaleItems = saleItems.map(item => {
-        // Convert "Mentah" to "Frozen Food" if needed
-        let safeState = item.state;
-        if (typeof item.state === 'string' && item.state === 'Mentah') {
+        // Handle state properly
+        let safeState: 'Frozen Food' | 'Matang';
+        
+        if (typeof item.state === 'string') {
+          if (item.state === 'Mentah') {
+            safeState = 'Frozen Food';
+          } else if (item.state === 'Matang') {
+            safeState = 'Matang';
+          } else {
+            // For other values, default to 'Frozen Food'
+            safeState = 'Frozen Food';
+          }
+        } else {
           safeState = 'Frozen Food';
         }
         
@@ -199,9 +228,19 @@ export const useSaleManagement = () => {
         return;
       }
       
-      // Convert "Mentah" to "Frozen Food" if needed
-      let safeState = newSale.state;
-      if (typeof newSale.state === 'string' && newSale.state === 'Mentah') {
+      // Handle state conversion properly
+      let safeState: 'Frozen Food' | 'Matang';
+      
+      if (typeof newSale.state === 'string') {
+        if (newSale.state === 'Mentah') {
+          safeState = 'Frozen Food';
+        } else if (newSale.state === 'Matang') {
+          safeState = 'Matang';
+        } else {
+          // Default to 'Frozen Food'
+          safeState = 'Frozen Food';
+        }
+      } else {
         safeState = 'Frozen Food';
       }
       

@@ -77,13 +77,20 @@ const useTransactionForm = () => {
 
   const handleStateChange = (value: string) => {
     setNewSale(prev => {
-      // Convert "Mentah" to "Frozen Food" for display purposes
-      const stateValue = value === 'Mentah' 
-        ? 'Frozen Food' as const 
-        : value as 'Frozen Food' | 'Matang';
+      // Convert any input value to the expected type
+      let stateValue: 'Frozen Food' | 'Matang';
       
-      const updatedSale = { ...prev, state: stateValue };
-      return updatedSale;
+      // Handle the specific case conversion
+      if (value === 'Mentah') {
+        stateValue = 'Frozen Food';
+      } else if (value === 'Matang') {
+        stateValue = 'Matang';
+      } else {
+        // Default fallback, but should be either 'Frozen Food' or 'Matang'
+        stateValue = 'Frozen Food';
+      }
+      
+      return { ...prev, state: stateValue };
     });
   };
 
@@ -109,9 +116,21 @@ const useTransactionForm = () => {
   };
 
   const handleItemChange = (index: number, updatedItem: PizzaSaleItem) => {
-    // Convert "Mentah" to "Frozen Food" if needed
-    let safeState = updatedItem.state;
-    if (typeof updatedItem.state === 'string' && updatedItem.state === 'Mentah') {
+    // Ensure state is always one of the allowed values
+    let safeState: 'Frozen Food' | 'Matang';
+    
+    // Use type-safe comparison
+    if (typeof updatedItem.state === 'string') {
+      if (updatedItem.state === 'Mentah') {
+        safeState = 'Frozen Food';
+      } else if (updatedItem.state === 'Matang') {
+        safeState = 'Matang';
+      } else {
+        // Default to 'Frozen Food' if it's neither
+        safeState = 'Frozen Food';
+      }
+    } else {
+      // Default fallback
       safeState = 'Frozen Food';
     }
     
