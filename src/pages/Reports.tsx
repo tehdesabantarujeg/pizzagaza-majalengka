@@ -30,6 +30,7 @@ import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
 import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart';
 import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
 import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
+import ExpenseSummaryTable from '@/components/reports/ExpenseSummaryTable';
 
 // Data helpers
 import { fetchSalesReportData, fetchExpensesByDateRange } from '@/utils/supabase';
@@ -224,6 +225,12 @@ const Reports = () => {
             
             <BestSellingProductsChart 
               products={data?.bestSellingProducts || []}
+              isLoading={isLoading}
+            />
+            
+            {/* Add Expense Summary Table */}
+            <ExpenseSummaryTable 
+              expenses={data?.expensesData || []}
               isLoading={isLoading}
             />
           </div>

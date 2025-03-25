@@ -82,9 +82,9 @@ const useTransactionForm = () => {
       
       // Handle the specific case conversion using string comparison 
       // instead of type comparison
-      if (value && value.toString() === 'Mentah') {
+      if (value && typeof value === 'string' && value.toLowerCase() === 'mentah') {
         stateValue = 'Frozen Food';
-      } else if (value && value.toString() === 'Matang') {
+      } else if (value && typeof value === 'string' && value.toLowerCase() === 'matang') {
         stateValue = 'Matang';
       } else {
         // Default fallback, but should be either 'Frozen Food' or 'Matang'
@@ -122,9 +122,10 @@ const useTransactionForm = () => {
     
     // Use string comparison instead of type comparison
     if (typeof updatedItem.state === 'string') {
-      if (updatedItem.state.toString() === 'Mentah') {
+      const stateStr = updatedItem.state.toLowerCase();
+      if (stateStr === 'mentah') {
         safeState = 'Frozen Food';
-      } else if (updatedItem.state.toString() === 'Matang') {
+      } else if (stateStr === 'matang') {
         safeState = 'Matang';
       } else {
         // Default to 'Frozen Food' if it's neither
