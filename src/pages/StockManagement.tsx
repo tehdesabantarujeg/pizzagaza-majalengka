@@ -223,15 +223,23 @@ const StockManagement = () => {
           
           <TabsContent value="pizza">
             <PizzaStockList 
-              data={pizzaStocks} 
-              isLoading={isLoadingPizzaStocks} 
+              stockItems={pizzaStocks}
+              isLoading={isLoadingPizzaStocks}
+              setOpenPizza={setIsOpenPizzaForm}
+              loadStockData={() => {
+                queryClient.invalidateQueries({ queryKey: ['pizzaStocks'] });
+              }}
             />
           </TabsContent>
           
           <TabsContent value="box">
             <BoxStockList 
-              data={boxStocks} 
-              isLoading={isLoadingBoxStocks} 
+              boxItems={boxStocks}
+              isLoading={isLoadingBoxStocks}
+              setOpenBox={setIsOpenBoxForm}
+              loadStockData={() => {
+                queryClient.invalidateQueries({ queryKey: ['boxStocks'] });
+              }}
             />
           </TabsContent>
         </Tabs>
