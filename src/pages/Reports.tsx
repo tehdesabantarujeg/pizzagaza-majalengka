@@ -243,8 +243,8 @@ const Reports = () => {
             profit: data.revenue - data.expenses
           };
         }).sort((a, b) => {
-          const dateA = new Date(date);
-          const dateB = new Date(date);
+          const dateA = new Date(dateA);
+          const dateB = new Date(dateA);
           return dateA.getTime() - dateB.getTime();
         });
       } else if (reportType === 'yearly') {
