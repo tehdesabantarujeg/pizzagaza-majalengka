@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -31,7 +30,6 @@ const StockManagement = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch pizza stocks
   const { 
     data: pizzaStocks = [], 
     isLoading: isLoadingPizzaStocks 
@@ -40,7 +38,6 @@ const StockManagement = () => {
     queryFn: fetchStockItems
   });
 
-  // Fetch box stocks
   const { 
     data: boxStocks = [], 
     isLoading: isLoadingBoxStocks 
@@ -49,7 +46,6 @@ const StockManagement = () => {
     queryFn: fetchBoxStock
   });
 
-  // Add pizza stock mutation
   const addPizzaStockMutation = useMutation({
     mutationFn: (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => addStockItem(newStock),
     onSuccess: () => {
@@ -70,7 +66,6 @@ const StockManagement = () => {
     }
   });
 
-  // Add multiple pizza stock mutation
   const addMultiplePizzaStockMutation = useMutation({
     mutationFn: (newStocks: Omit<PizzaStock, 'id' | 'updatedAt'>[]) => addMultiplePizzaStock(newStocks),
     onSuccess: () => {
@@ -91,7 +86,6 @@ const StockManagement = () => {
     }
   });
 
-  // Add box stock mutation
   const addBoxStockMutation = useMutation({
     mutationFn: (newStock: Omit<BoxStock, 'id' | 'updatedAt'>) => addBoxStock(newStock),
     onSuccess: () => {
@@ -112,7 +106,6 @@ const StockManagement = () => {
     }
   });
 
-  // Handle adding a new pizza stock
   const handleAddPizzaStock = async (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => {
     addPizzaStockMutation.mutate({
       ...newStock,
@@ -120,7 +113,6 @@ const StockManagement = () => {
     });
   };
 
-  // Handle adding multiple pizza stocks
   const handleAddMultiplePizzaStock = async (newStocks: Array<{
     size: 'Small' | 'Medium';
     flavor: string;
@@ -135,7 +127,6 @@ const StockManagement = () => {
     );
   };
 
-  // Handle adding a new box stock
   const handleAddBoxStock = async (newStock: Omit<BoxStock, 'id' | 'updatedAt'>) => {
     addBoxStockMutation.mutate({
       ...newStock,
@@ -224,7 +215,6 @@ const StockManagement = () => {
           <TabsContent value="pizza">
             <PizzaStockList 
               stockItems={pizzaStocks}
-              isLoading={isLoadingPizzaStocks}
               setOpenPizza={setIsOpenPizzaForm}
               loadStockData={() => {
                 queryClient.invalidateQueries({ queryKey: ['pizzaStocks'] });
@@ -235,7 +225,6 @@ const StockManagement = () => {
           <TabsContent value="box">
             <BoxStockList 
               boxItems={boxStocks}
-              isLoading={isLoadingBoxStocks}
               setOpenBox={setIsOpenBoxForm}
               loadStockData={() => {
                 queryClient.invalidateQueries({ queryKey: ['boxStocks'] });
