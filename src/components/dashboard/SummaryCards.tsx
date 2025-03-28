@@ -17,9 +17,31 @@ interface SummaryData {
 
 interface SummaryCardsProps {
   data: SummaryData;
+  isLoading?: boolean;
 }
 
-const SummaryCards: React.FC<SummaryCardsProps> = ({ data }) => {
+const SummaryCards: React.FC<SummaryCardsProps> = ({ data, isLoading = false }) => {
+  if (isLoading) {
+    return (
+      <>
+        {[...Array(4)].map((_, index) => (
+          <FadeIn key={index} delay={index * 50}>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-4 bg-gray-200 rounded-full w-4"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-6 bg-gray-200 rounded w-2/3 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          </FadeIn>
+        ))}
+      </>
+    );
+  }
+  
   return (
     <>
       <FadeIn>

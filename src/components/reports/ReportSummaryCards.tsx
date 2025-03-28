@@ -2,53 +2,45 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/constants';
-import { Wallet, TrendingUp, CircleDollarSign, Receipt } from 'lucide-react';
+import { Wallet, Receipt, Package2 } from 'lucide-react';
 
 interface ReportSummaryCardsProps {
   totalRevenue: number;
-  totalProfit: number;
-  totalCost: number;
   transactionCount: number;
+  totalProductsSold: number;
   isLoading?: boolean;
 }
 
 const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({
   totalRevenue,
-  totalProfit,
-  totalCost,
   transactionCount,
+  totalProductsSold,
   isLoading = false
 }) => {
   const items = [
     {
-      title: 'Total Pendapatan',
+      title: 'Total Penjualan',
       value: formatCurrency(totalRevenue),
       icon: <Wallet className="h-5 w-5 text-blue-500" />,
       className: 'bg-blue-50'
-    },
-    {
-      title: 'Total Keuntungan',
-      value: formatCurrency(totalProfit),
-      icon: <TrendingUp className="h-5 w-5 text-green-500" />,
-      className: 'bg-green-50'
-    },
-    {
-      title: 'Total Modal',
-      value: formatCurrency(totalCost),
-      icon: <CircleDollarSign className="h-5 w-5 text-purple-500" />,
-      className: 'bg-purple-50'
     },
     {
       title: 'Jumlah Transaksi',
       value: transactionCount.toString(),
       icon: <Receipt className="h-5 w-5 text-amber-500" />,
       className: 'bg-amber-50'
+    },
+    {
+      title: 'Jumlah Produk Terjual',
+      value: totalProductsSold.toString(),
+      icon: <Package2 className="h-5 w-5 text-green-500" />,
+      className: 'bg-green-50'
     }
   ];
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {items.map((_, index) => (
           <Card key={index} className="overflow-hidden">
             <CardContent className="p-6">
@@ -64,7 +56,7 @@ const ReportSummaryCards: React.FC<ReportSummaryCardsProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {items.map((item, index) => (
         <Card key={index} className="overflow-hidden">
           <CardContent className="p-6">

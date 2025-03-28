@@ -41,7 +41,7 @@ import RecentTransactionsList from '@/components/reports/RecentTransactionsList'
 import ExpenseSummaryTable from '@/components/reports/ExpenseSummaryTable';
 
 // Data helpers
-import { fetchSalesReportData, fetchExpensesByDateRange, getTransactionCount } from '@/utils/supabase';
+import { fetchSalesReportData, fetchExpensesByDateRange, fetchTransactions } from '@/utils/supabase';
 import { PIZZA_FLAVORS } from '@/utils/constants';
 
 // Indonesian month names
@@ -125,6 +125,12 @@ const Reports = () => {
     }
   }, [selectedMonth, selectedYear, reportType]);
 
+  // Fetch transactions to get accurate counts
+  const { data: allTransactions = [], isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ['allTransactions'],
+    queryFn: fetchTransactions
+  });
+
   // Fetch report data
   const { data, isLoading } = useQuery({
     queryKey: ['reportData', dateRange.from, dateRange.to],
@@ -132,10 +138,9 @@ const Reports = () => {
       const startDate = format(dateRange.from, 'yyyy-MM-dd');
       const endDate = format(dateRange.to, 'yyyy-MM-dd');
       
-      const [salesData, expensesData, transactionCount] = await Promise.all([
+      const [salesData, expensesData] = await Promise.all([
         fetchSalesReportData(startDate, endDate),
-        fetchExpensesByDateRange(startDate, endDate),
-        getTransactionCount() // Get unique transaction count
+        fetchExpensesByDateRange(startDate, endDate)
       ]);
       
       // Process sales data for best selling products
@@ -145,11 +150,15 @@ const Reports = () => {
         revenue: 0
       }));
       
+      // Calculate total products sold
+      let totalProductsQty = 0;
+      
       salesData.forEach((sale: any) => {
         const index = productSales.findIndex(p => p.name === sale.flavor);
         if (index !== -1) {
           productSales[index].quantity += sale.quantity || 0;
           productSales[index].revenue += sale.total_price || 0;
+          totalProductsQty += sale.quantity || 0;
         }
       });
       
@@ -176,6 +185,14 @@ const Reports = () => {
       
       const categorizedExpenses = Object.values(expensesByCategory);
       
+      // Get unique transaction numbers
+      const uniqueTransactionNumbers = new Set();
+      salesData.forEach((sale: any) => {
+        if (sale.transaction_number) {
+          uniqueTransactionNumbers.add(sale.transaction_number);
+        }
+      });
+      
       return {
         salesData,
         expensesData,
@@ -183,7 +200,8 @@ const Reports = () => {
         bestSellingProducts,
         totalSales: salesData.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0),
         totalExpenses: expensesData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0),
-        transactionCount: transactionCount, // Use the actual transaction count
+        transactionCount: uniqueTransactionNumbers.size,
+        totalProductsSold: totalProductsQty
       };
     }
   });
@@ -221,9 +239,6 @@ const Reports = () => {
     
     setSortConfig({ key, direction });
   };
-
-  // Calculate total expenses
-  const totalExpenses = getFilteredExpenses().reduce((sum, expense: any) => sum + expense.amount, 0);
 
   useEffect(() => {
     // Set initial date range when component mounts
@@ -322,9 +337,8 @@ const Reports = () => {
         <div className="grid gap-6">
           <ReportSummaryCards 
             totalRevenue={data?.totalSales || 0}
-            totalCost={data?.totalExpenses || 0}
-            totalProfit={(data?.totalSales || 0) - (data?.totalExpenses || 0)}
             transactionCount={data?.transactionCount || 0}
+            totalProductsSold={data?.totalProductsSold || 0}
             isLoading={isLoading}
           />
           
@@ -334,7 +348,6 @@ const Reports = () => {
               isLoading={isLoading}
             />
             
-            {/* Only use one expense summary table */}
             <ExpenseSummaryTable 
               expenses={data?.expensesData || []}
               isLoading={isLoading}
