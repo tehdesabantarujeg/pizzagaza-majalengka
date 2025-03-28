@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { format, subMonths, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
+import { format, subMonths, startOfMonth, startOfWeek, startOfYear, setMonth, getYear, setYear } from 'date-fns';
+import { id } from 'date-fns/locale';
 import { 
   CalendarIcon, 
   BarChartIcon,
@@ -24,6 +26,13 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ExpenseCategory } from '@/utils/types';
 import { formatCurrency } from '@/utils/constants';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '@/components/ui/select';
 
 // Report components
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
@@ -35,6 +44,15 @@ import ExpenseSummaryTable from '@/components/reports/ExpenseSummaryTable';
 import { fetchSalesReportData, fetchExpensesByDateRange, getTransactionCount } from '@/utils/supabase';
 import { PIZZA_FLAVORS } from '@/utils/constants';
 
+// Indonesian month names
+const INDONESIAN_MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
+// Generate years for the selector (last 5 years)
+const YEARS = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+
 const Reports = () => {
   const [dateRange, setDateRange] = useState<{
     from: Date;
@@ -45,6 +63,8 @@ const Reports = () => {
   });
   
   const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth().toString());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -63,11 +83,15 @@ const Reports = () => {
         fromDate = startOfWeek(today);
         break;
       case 'yearly':
-        fromDate = startOfYear(today);
+        fromDate = startOfYear(setYear(today, parseInt(selectedYear)));
         break;
       case 'monthly':
       default:
-        fromDate = startOfMonth(today);
+        // Set to first day of selected month
+        const monthDate = new Date();
+        monthDate.setMonth(parseInt(selectedMonth));
+        monthDate.setFullYear(parseInt(selectedYear));
+        fromDate = startOfMonth(monthDate);
         break;
     }
     
@@ -76,6 +100,30 @@ const Reports = () => {
       to: today
     });
   };
+
+  // Update date range when month or year changes
+  useEffect(() => {
+    if (reportType === 'monthly') {
+      const monthDate = new Date();
+      monthDate.setMonth(parseInt(selectedMonth));
+      monthDate.setFullYear(parseInt(selectedYear));
+      const fromDate = startOfMonth(monthDate);
+      
+      setDateRange({
+        from: fromDate,
+        to: new Date()
+      });
+    } else if (reportType === 'yearly') {
+      const yearDate = new Date();
+      yearDate.setFullYear(parseInt(selectedYear));
+      const fromDate = startOfYear(yearDate);
+      
+      setDateRange({
+        from: fromDate,
+        to: new Date()
+      });
+    }
+  }, [selectedMonth, selectedYear, reportType]);
 
   // Fetch report data
   const { data, isLoading } = useQuery({
@@ -191,7 +239,7 @@ const Reports = () => {
       
       <div className="container px-4 py-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <Tabs defaultValue={reportType} className="w-full sm:w-auto">
+          <Tabs defaultValue={reportType} className="w-full">
             <TabsList>
               <TabsTrigger 
                 value="weekly" 
@@ -212,6 +260,62 @@ const Reports = () => {
                 Tahunan
               </TabsTrigger>
             </TabsList>
+            
+            <div className="flex mt-4 gap-2">
+              {reportType === 'monthly' && (
+                <>
+                  <Select 
+                    value={selectedMonth}
+                    onValueChange={setSelectedMonth}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Pilih Bulan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDONESIAN_MONTHS.map((month, index) => (
+                        <SelectItem key={index} value={index.toString()}>
+                          {month}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select 
+                    value={selectedYear}
+                    onValueChange={setSelectedYear}
+                  >
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Pilih Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {YEARS.map(year => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
+              
+              {reportType === 'yearly' && (
+                <Select 
+                  value={selectedYear}
+                  onValueChange={setSelectedYear}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Pilih Tahun" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map(year => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </Tabs>
         </div>
         

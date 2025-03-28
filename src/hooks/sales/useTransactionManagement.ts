@@ -1,6 +1,6 @@
 
-import { Transaction, PizzaSaleItem } from '@/utils/types';
-import { addTransaction, updateTransaction, deleteTransaction, generateTransactionNumber } from '@/utils/supabase';
+import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
+import { addTransaction, updateTransaction, deleteTransaction, generateTransactionNumber, fetchStockItems, updateStockItem, fetchBoxStock, updateBoxStock } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
 
 interface UseTransactionManagementProps {
@@ -16,6 +16,51 @@ const useTransactionManagement = ({
   setIsLoading,
   loadTransactions
 }: UseTransactionManagementProps) => {
+  
+  // Helper function to update stock levels after a successful transaction
+  const updateStockLevels = async (items: PizzaSaleItem[]): Promise<boolean> => {
+    try {
+      const pizzaStockItems = await fetchStockItems();
+      const boxStockItems = await fetchBoxStock();
+      
+      for (const item of items) {
+        // Update pizza stock
+        const matchingPizzaStock = pizzaStockItems.find(
+          stock => stock.size === item.size && stock.flavor === item.flavor
+        );
+        
+        if (matchingPizzaStock) {
+          const updatedStock: PizzaStock = {
+            ...matchingPizzaStock,
+            quantity: Math.max(0, matchingPizzaStock.quantity - item.quantity)
+          };
+          
+          await updateStockItem(updatedStock);
+        }
+        
+        // Update box stock if needed
+        if (item.includeBox) {
+          const matchingBoxStock = boxStockItems.find(
+            stock => stock.size === item.size
+          );
+          
+          if (matchingBoxStock) {
+            const updatedBoxStock: BoxStock = {
+              ...matchingBoxStock,
+              quantity: Math.max(0, matchingBoxStock.quantity - item.quantity)
+            };
+            
+            await updateBoxStock(updatedBoxStock);
+          }
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating stock levels:", error);
+      return false;
+    }
+  };
   
   const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string): Promise<boolean> => {
     setIsLoading(true);
@@ -47,6 +92,9 @@ const useTransactionManagement = ({
       const successfulTransactions = transactions.filter((t): t is Transaction => t !== null);
       
       if (successfulTransactions.length > 0) {
+        // Update stock levels after successful transaction
+        await updateStockLevels(items);
+        
         printReceipt(successfulTransactions);
         await loadTransactions();
         toast({
@@ -98,6 +146,21 @@ const useTransactionManagement = ({
       if (newTransactions.length > 0 && updatedTransactions.length > 0) {
         // Use the transaction number from the existing group
         const transactionNumber = updatedTransactions[0].transactionNumber;
+        
+        // Convert to PizzaSaleItem for stock update
+        const newItems: PizzaSaleItem[] = newTransactions.map(t => ({
+          size: t.size,
+          flavor: t.flavor,
+          quantity: t.quantity,
+          state: t.state,
+          includeBox: t.includeBox,
+          sellingPrice: t.sellingPrice,
+          totalPrice: t.totalPrice,
+          date: t.date
+        }));
+        
+        // Update stock for new items
+        await updateStockLevels(newItems);
         
         await Promise.all(newTransactions.map(async (transaction) => {
           const newTransactionData: Omit<Transaction, 'id'> = {
@@ -168,7 +231,8 @@ const useTransactionManagement = ({
   return {
     createTransaction,
     updateExistingTransactions,
-    handleDeleteTransaction
+    handleDeleteTransaction,
+    updateStockLevels
   };
 };
 

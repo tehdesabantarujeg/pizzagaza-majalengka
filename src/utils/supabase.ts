@@ -787,3 +787,39 @@ export const generateTransactionNumber = async (): Promise<string> => {
   
   return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
 };
+
+export const addMultiplePizzaStock = async (stockItems: Omit<PizzaStock, 'id' | 'updatedAt'>[]): Promise<PizzaStock[] | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('pizza_stock')
+      .insert(stockItems.map(item => ({
+        size: item.size,
+        flavor: item.flavor,
+        quantity: item.quantity,
+        cost_price: item.costPrice,
+        purchase_date: item.purchaseDate,
+        updated_at: new Date().toISOString()
+      })))
+      .select();
+    
+    if (error) {
+      console.error('Error adding multiple pizza stock:', error);
+      return null;
+    }
+    
+    // Map data back to our PizzaStock type
+    return data.map(item => ({
+      id: item.id,
+      size: item.size,
+      flavor: item.flavor,
+      quantity: item.quantity,
+      costPrice: item.cost_price,
+      purchaseDate: item.purchase_date,
+      updatedAt: item.updated_at
+    }));
+    
+  } catch (error) {
+    console.error('Error adding multiple pizza stock:', error);
+    return null;
+  }
+};
