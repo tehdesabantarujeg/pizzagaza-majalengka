@@ -27,7 +27,7 @@ const useTransactionManagement = ({
         const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
         
         const transaction: Omit<Transaction, 'id'> = {
-          date: new Date().toISOString(),
+          date: item.date || new Date().toISOString(), // Use provided date or default to now
           pizzaId: pizzaId,
           size: item.size,
           flavor: item.flavor,

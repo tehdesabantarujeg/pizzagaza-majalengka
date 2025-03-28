@@ -1,4 +1,3 @@
-
 export interface Pizza {
   id?: string;
   size: 'Small' | 'Medium';
@@ -36,6 +35,7 @@ export interface PizzaSaleItem {
   sellingPrice: number;
   totalPrice: number;
   pizzaStockId?: string;
+  date?: string; // Add date field
 }
 
 export interface Transaction {

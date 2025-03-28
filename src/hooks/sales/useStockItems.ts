@@ -100,12 +100,41 @@ export const useStockItems = () => {
     };
   };
 
+  // Update stock levels after a transaction
   const updateStockItemQuantity = async (stockItem: PizzaStock): Promise<boolean> => {
-    return updateStockItem(stockItem);
+    try {
+      const result = await updateStockItem(stockItem);
+      if (result) {
+        // Update local state
+        setStockItems(prev => 
+          prev.map(item => 
+            item.id === stockItem.id ? stockItem : item
+          )
+        );
+      }
+      return result;
+    } catch (error) {
+      console.error("Error updating pizza stock:", error);
+      return false;
+    }
   };
 
   const updateBoxStockQuantity = async (boxStock: BoxStock): Promise<boolean> => {
-    return updateBoxStock(boxStock);
+    try {
+      const result = await updateBoxStock(boxStock);
+      if (result) {
+        // Update local state
+        setBoxItems(prev => 
+          prev.map(item => 
+            item.id === boxStock.id ? boxStock : item
+          )
+        );
+      }
+      return result;
+    } catch (error) {
+      console.error("Error updating box stock:", error);
+      return false;
+    }
   };
 
   return {

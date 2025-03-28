@@ -1,21 +1,23 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle, 
+  DialogDescription 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Plus, Trash, Printer, Save } from 'lucide-react';
-import { formatCurrency } from '@/utils/constants';
 import { PizzaSaleItem } from '@/utils/types';
+import { formatCurrency } from '@/utils/constants';
+import { Info, Plus, Trash2, CalendarIcon } from 'lucide-react';
 import SaleItemForm from './SaleItemForm';
+import { Separator } from '@/components/ui/separator';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 interface MultiItemSaleFormProps {
   saleItems: PizzaSaleItem[];
@@ -48,109 +50,129 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
   handleRemoveItem,
   handleItemChange
 }) => {
-  // Calculate total price from all items
-  const calculatedTotalPrice = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const [date, setDate] = useState<Date>(new Date());
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    if (newDate) {
+      setDate(newDate);
+      // Update all sale items with the new date
+      setSaleItems(prev => prev.map(item => ({ ...item, date: newDate.toISOString() })));
+    }
+  };
 
   return (
-    <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-      <form onSubmit={handleSavePrint}>
-        <DialogHeader>
-          <DialogTitle>Catat Penjualan Baru</DialogTitle>
-          <DialogDescription>
-            Masukkan detail pizza yang dijual
-          </DialogDescription>
-        </DialogHeader>
-        
+    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Penjualan Baru</DialogTitle>
+        <DialogDescription>
+          Tambahkan beberapa varian pizza dalam satu transaksi
+        </DialogDescription>
+      </DialogHeader>
+      
+      <form onSubmit={handleSaveOnly} className="space-y-6">
         {error && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="bg-destructive/20 p-3 rounded-md flex items-start text-destructive">
+            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm whitespace-pre-line">{error}</p>
+          </div>
         )}
         
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="customerName" className="text-right">
-              Pelanggan
-            </Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="customerName">Nama Pelanggan (Opsional)</Label>
             <Input
               id="customerName"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Nama pelanggan (opsional)"
-              className="col-span-3"
+              placeholder="Contoh: Budi"
             />
           </div>
           
-          <div className="border rounded-md p-4 space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="font-medium">Daftar Item</h3>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={handleAddItem}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Tambah Item
-              </Button>
-            </div>
-            
-            {saleItems.map((item, index) => (
-              <div key={index} className="border-t pt-4 first:border-t-0 first:pt-0 relative">
+          <div className="space-y-2">
+            <Label htmlFor="date">Tanggal Penjualan</Label>
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-4 right-0 text-destructive"
-                  onClick={() => handleRemoveItem(index)}
-                  disabled={saleItems.length === 1}
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
                 >
-                  <Trash className="h-4 w-4" />
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "dd MMMM yyyy") : "Pilih tanggal"}
                 </Button>
-                <SaleItemForm
-                  item={item}
-                  index={index}
-                  onChange={(updatedItem) => handleItemChange(index, updatedItem)}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={handleDateChange}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
                 />
-              </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="notes" className="text-right pt-2">
-              Catatan
-            </Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Opsional"
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4 mt-2">
-            <Label className="text-right">
-              Total
-            </Label>
-            <div className="col-span-3 text-xl font-bold">
-              {formatCurrency(calculatedTotalPrice)}
-            </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
         
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" type="button" onClick={handleSaveOnly}>
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Saja
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Item Penjualan</h3>
+            <Button type="button" onClick={handleAddItem} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-1" /> Tambah Item
+            </Button>
+          </div>
+          
+          {saleItems.map((item, index) => (
+            <div key={index} className="relative border rounded-md p-4">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="absolute right-2 top-2 text-destructive"
+                onClick={() => handleRemoveItem(index)}
+                disabled={saleItems.length <= 1}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              
+              <SaleItemForm
+                item={item}
+                index={index}
+                onChange={(updatedItem) => handleItemChange(index, updatedItem)}
+              />
+            </div>
+          ))}
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="notes">Catatan (Opsional)</Label>
+          <Input
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Tambahkan catatan disini"
+          />
+        </div>
+        
+        <Separator />
+        
+        <div className="py-2">
+          <div className="flex justify-between items-center font-medium text-lg">
+            <span>Total:</span>
+            <span>{formatCurrency(totalPrice)}</span>
+          </div>
+        </div>
+        
+        <div className="flex justify-end space-x-2 pt-2">
+          <Button type="submit" className="w-full">
+            Simpan
           </Button>
-          <Button type="submit">
-            <Printer className="mr-2 h-4 w-4" />
-            Simpan & Cetak Nota
+          <Button type="button" onClick={handleSavePrint} className="w-full" variant="outline">
+            Simpan & Cetak
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </DialogContent>
   );

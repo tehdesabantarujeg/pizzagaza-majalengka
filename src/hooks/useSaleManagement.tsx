@@ -177,6 +177,19 @@ export const useSaleManagement = () => {
     }
   };
 
+  const [newSale, setNewSale] = useState<PizzaSaleItem & { customerName: string; notes: string; date?: string }>({
+    size: 'Small',
+    flavor: '',
+    quantity: 1,
+    state: 'Frozen Food',
+    includeBox: false,
+    sellingPrice: 0,
+    totalPrice: 0,
+    customerName: '',
+    notes: '',
+    date: new Date().toISOString() // Default to today
+  });
+
   const handleSaveOnly = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -266,7 +279,8 @@ export const useSaleManagement = () => {
         state: safeState,
         includeBox: newSale.includeBox,
         sellingPrice,
-        totalPrice
+        totalPrice,
+        date: newSale.date // Include the date field
       };
       
       // Check stock availability before proceeding
@@ -294,7 +308,8 @@ export const useSaleManagement = () => {
           state: 'Frozen Food',
           includeBox: false,
           customerName: '',
-          notes: ''
+          notes: '',
+          date: new Date().toISOString()
         });
         setOpen(false);
       }

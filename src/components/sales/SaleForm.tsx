@@ -1,55 +1,34 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Printer, Save } from 'lucide-react';
-import { PIZZA_FLAVORS, PIZZA_SIZES, PIZZA_STATES, PRICES, formatCurrency } from '@/utils/constants';
+import { PizzaSaleItem } from '@/utils/types';
+import { formatCurrency, PIZZA_FLAVORS, PIZZA_SIZES, PIZZA_STATES } from '@/utils/constants';
+import { CalendarIcon, Info } from 'lucide-react';
+import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface SaleFormProps {
-  newSale: {
-    size: 'Small' | 'Medium';
-    flavor: string;
-    quantity: number;
-    state: 'Frozen Food' | 'Matang'; // Updated from 'Mentah' to 'Frozen Food'
-    includeBox: boolean;
-    customerName: string;
-    notes: string;
-  };
-  setNewSale: React.Dispatch<React.SetStateAction<{
-    size: 'Small' | 'Medium';
-    flavor: string;
-    quantity: number;
-    state: 'Frozen Food' | 'Matang'; // Updated from 'Mentah' to 'Frozen Food'
-    includeBox: boolean;
-    customerName: string;
-    notes: string;
-  }>>;
+  newSale: PizzaSaleItem & { customerName: string; notes: string };
+  setNewSale: React.Dispatch<React.SetStateAction<PizzaSaleItem & { customerName: string; notes: string }>>;
   sellingPrice: number;
   totalPrice: number;
   error: string;
   handleSaveOnly: (e: React.FormEvent) => Promise<void>;
   handleSavePrint: (e: React.FormEvent) => Promise<void>;
-  handleSizeChange: (value: string) => void;
-  handleFlavorChange: (value: string) => void;
-  handleStateChange: (value: string) => void;
+  handleSizeChange: (size: 'Small' | 'Medium') => void;
+  handleFlavorChange: (flavor: string) => void;
+  handleStateChange: (state: 'Frozen Food' | 'Matang') => void;
 }
 
 const SaleForm: React.FC<SaleFormProps> = ({
@@ -64,31 +43,41 @@ const SaleForm: React.FC<SaleFormProps> = ({
   handleFlavorChange,
   handleStateChange
 }) => {
+  const [date, setDate] = useState<Date>(new Date());
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    if (newDate) {
+      setDate(newDate);
+      // Update the sale with the new date
+      setNewSale(prev => ({
+        ...prev,
+        date: newDate.toISOString()
+      }));
+    }
+  };
+
   return (
-    <DialogContent className="sm:max-w-[500px]">
-      <form>
-        <DialogHeader>
-          <DialogTitle>Catat Penjualan Baru</DialogTitle>
-          <DialogDescription>
-            Masukkan detail pizza yang dijual
-          </DialogDescription>
-        </DialogHeader>
-        
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Penjualan Baru</DialogTitle>
+      </DialogHeader>
+      
+      <form onSubmit={handleSaveOnly} className="space-y-4">
         {error && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="bg-destructive/20 p-3 rounded-md flex items-start text-destructive">
+            <Info className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+            <p className="text-sm whitespace-pre-line">{error}</p>
+          </div>
         )}
         
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="size" className="text-right">
-              Ukuran
-            </Label>
-            <Select value={newSale.size} onValueChange={handleSizeChange}>
-              <SelectTrigger className="col-span-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="size">Ukuran</Label>
+            <Select 
+              value={newSale.size} 
+              onValueChange={(value) => handleSizeChange(value as 'Small' | 'Medium')}
+            >
+              <SelectTrigger id="size">
                 <SelectValue placeholder="Pilih ukuran" />
               </SelectTrigger>
               <SelectContent>
@@ -101,12 +90,13 @@ const SaleForm: React.FC<SaleFormProps> = ({
             </Select>
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="flavor" className="text-right">
-              Rasa
-            </Label>
-            <Select value={newSale.flavor} onValueChange={handleFlavorChange}>
-              <SelectTrigger className="col-span-3">
+          <div className="space-y-2">
+            <Label htmlFor="flavor">Rasa</Label>
+            <Select 
+              value={newSale.flavor} 
+              onValueChange={(value) => handleFlavorChange(value)}
+            >
+              <SelectTrigger id="flavor">
                 <SelectValue placeholder="Pilih rasa" />
               </SelectTrigger>
               <SelectContent>
@@ -118,13 +108,16 @@ const SaleForm: React.FC<SaleFormProps> = ({
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="state" className="text-right">
-              Kondisi
-            </Label>
-            <Select value={newSale.state} onValueChange={handleStateChange}>
-              <SelectTrigger className="col-span-3">
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="state">Kondisi</Label>
+            <Select 
+              value={newSale.state} 
+              onValueChange={(value) => handleStateChange(value as 'Frozen Food' | 'Matang')}
+            >
+              <SelectTrigger id="state">
                 <SelectValue placeholder="Pilih kondisi" />
               </SelectTrigger>
               <SelectContent>
@@ -137,100 +130,100 @@ const SaleForm: React.FC<SaleFormProps> = ({
             </Select>
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="quantity" className="text-right">
-              Jumlah
-            </Label>
+          <div className="space-y-2">
+            <Label htmlFor="quantity">Jumlah</Label>
             <Input
               id="quantity"
               type="number"
               min={1}
               value={newSale.quantity}
-              onChange={(e) => setNewSale({ 
-                ...newSale, 
-                quantity: parseInt(e.target.value) || 1 
-              })}
-              className="col-span-3"
+              onChange={(e) => setNewSale({...newSale, quantity: parseInt(e.target.value) || 1})}
             />
           </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="includeBox" className="text-right">
-              Tambah Dus
-            </Label>
-            <div className="col-span-3 flex items-center gap-2">
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="date">Tanggal Penjualan</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, "dd MMMM yyyy") : "Pilih tanggal"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={handleDateChange}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        
+          <div className="space-y-2">
+            <Label htmlFor="includeBox" className="block mb-2">Termasuk Dus?</Label>
+            <div className="flex items-center justify-between">
               <Switch
                 id="includeBox"
                 checked={newSale.includeBox}
-                onCheckedChange={(checked) => setNewSale({ ...newSale, includeBox: checked })}
+                onCheckedChange={(checked) => setNewSale({...newSale, includeBox: checked})}
               />
-              <span className="text-sm">
-                {newSale.includeBox 
-                  ? `Termasuk dus (${formatCurrency(newSale.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX)})` 
-                  : 'Tanpa dus'}
+              <span className="text-sm text-muted-foreground">
+                {newSale.includeBox ? 'Ya' : 'Tidak'}
               </span>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="customerName" className="text-right">
-              Pelanggan
-            </Label>
-            <Input
-              id="customerName"
-              value={newSale.customerName}
-              onChange={(e) => setNewSale({ ...newSale, customerName: e.target.value })}
-              placeholder="Nama pelanggan (opsional)"
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="notes" className="text-right">
-              Catatan
-            </Label>
-            <Textarea
-              id="notes"
-              value={newSale.notes}
-              onChange={(e) => setNewSale({ ...newSale, notes: e.target.value })}
-              placeholder="Opsional"
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">
-              Harga
-            </Label>
-            <div className="col-span-3 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Harga Satuan:</span>
-                <span>{formatCurrency(sellingPrice)}</span>
-              </div>
-              {newSale.includeBox && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Harga Dus:</span>
-                  <span>{formatCurrency(newSale.size === 'Small' ? PRICES.SELLING_SMALL_BOX : PRICES.SELLING_MEDIUM_BOX)} / pcs</span>
-                </div>
-              )}
-              <div className="flex justify-between font-medium">
-                <span>Total Harga:</span>
-                <span>{formatCurrency(totalPrice)}</span>
-              </div>
             </div>
           </div>
         </div>
         
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleSaveOnly}>
-            <Save className="mr-2 h-4 w-4" />
-            Simpan Saja
+        <div className="space-y-2">
+          <Label htmlFor="customerName">Nama Pelanggan (Opsional)</Label>
+          <Input
+            id="customerName"
+            value={newSale.customerName}
+            onChange={(e) => setNewSale({...newSale, customerName: e.target.value})}
+            placeholder="Contoh: Budi"
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="notes">Catatan (Opsional)</Label>
+          <Input
+            id="notes"
+            value={newSale.notes}
+            onChange={(e) => setNewSale({...newSale, notes: e.target.value})}
+            placeholder="Tambahkan catatan disini"
+          />
+        </div>
+        
+        <div className="py-2">
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Harga Satuan:</span>
+            <span>{formatCurrency(sellingPrice)}</span>
+          </div>
+          <div className="flex justify-between items-center font-medium">
+            <span>Total:</span>
+            <span>{formatCurrency(totalPrice)}</span>
+          </div>
+        </div>
+        
+        <div className="flex justify-end space-x-2 pt-2">
+          <Button type="submit" className="w-full">
+            Simpan
           </Button>
-          <Button onClick={handleSavePrint} type="submit">
-            <Printer className="mr-2 h-4 w-4" />
-            Simpan & Cetak Nota
+          <Button type="button" onClick={handleSavePrint} className="w-full" variant="outline">
+            Simpan & Cetak
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </DialogContent>
   );

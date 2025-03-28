@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { format, subDays, startOfMonth, startOfWeek, startOfYear, subMonths, subYears } from 'date-fns';
+import { format, subMonths, startOfMonth, startOfWeek, startOfYear } from 'date-fns';
 import { 
   CalendarIcon, 
-  ArrowRightIcon, 
-  LineChartIcon, 
   BarChartIcon,
   PieChartIcon,
   SearchIcon,
@@ -22,10 +20,6 @@ import {
   TabsList,
   TabsTrigger
 } from '@/components/ui/tabs';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { DateRange } from 'react-day-picker';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ExpenseCategory } from '@/utils/types';
@@ -33,13 +27,12 @@ import { formatCurrency } from '@/utils/constants';
 
 // Report components
 import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
-import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart';
 import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
 import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
 import ExpenseSummaryTable from '@/components/reports/ExpenseSummaryTable';
 
 // Data helpers
-import { fetchSalesReportData, fetchExpensesByDateRange } from '@/utils/supabase';
+import { fetchSalesReportData, fetchExpensesByDateRange, getTransactionCount } from '@/utils/supabase';
 import { PIZZA_FLAVORS } from '@/utils/constants';
 
 const Reports = () => {
@@ -51,7 +44,7 @@ const Reports = () => {
     to: new Date(),
   });
   
-  const [reportType, setReportType] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('daily');
+  const [reportType, setReportType] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -59,7 +52,7 @@ const Reports = () => {
   } | null>(null);
 
   // Handle predefined date ranges
-  const handleSetDateRange = (type: 'daily' | 'weekly' | 'monthly' | 'yearly') => {
+  const handleSetDateRange = (type: 'weekly' | 'monthly' | 'yearly') => {
     setReportType(type);
     
     const today = new Date();
@@ -69,15 +62,12 @@ const Reports = () => {
       case 'weekly':
         fromDate = startOfWeek(today);
         break;
-      case 'monthly':
-        fromDate = startOfMonth(today);
-        break;
       case 'yearly':
         fromDate = startOfYear(today);
         break;
-      case 'daily':
+      case 'monthly':
       default:
-        fromDate = subDays(today, 1);
+        fromDate = startOfMonth(today);
         break;
     }
     
@@ -94,9 +84,10 @@ const Reports = () => {
       const startDate = format(dateRange.from, 'yyyy-MM-dd');
       const endDate = format(dateRange.to, 'yyyy-MM-dd');
       
-      const [salesData, expensesData] = await Promise.all([
+      const [salesData, expensesData, transactionCount] = await Promise.all([
         fetchSalesReportData(startDate, endDate),
-        fetchExpensesByDateRange(startDate, endDate)
+        fetchExpensesByDateRange(startDate, endDate),
+        getTransactionCount() // Get unique transaction count
       ]);
       
       // Process sales data for best selling products
@@ -144,20 +135,10 @@ const Reports = () => {
         bestSellingProducts,
         totalSales: salesData.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0),
         totalExpenses: expensesData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0),
-        totalQuantity: salesData.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0),
+        transactionCount: transactionCount, // Use the actual transaction count
       };
     }
   });
-
-  // Handle DateRange selection and ensure 'to' is set
-  const handleDateRangeChange = (range: DateRange | undefined) => {
-    if (range?.from) {
-      setDateRange({
-        from: range.from,
-        to: range.to || range.from // If 'to' is undefined, set it to the same as 'from'
-      });
-    }
-  };
 
   // Filter and sort expenses by category
   const getFilteredExpenses = () => {
@@ -196,6 +177,11 @@ const Reports = () => {
   // Calculate total expenses
   const totalExpenses = getFilteredExpenses().reduce((sum, expense: any) => sum + expense.amount, 0);
 
+  useEffect(() => {
+    // Set initial date range when component mounts
+    handleSetDateRange('monthly');
+  }, []);
+
   return (
     <Layout>
       <Header
@@ -207,12 +193,6 @@ const Reports = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <Tabs defaultValue={reportType} className="w-full sm:w-auto">
             <TabsList>
-              <TabsTrigger 
-                value="daily" 
-                onClick={() => handleSetDateRange('daily')}
-              >
-                Harian
-              </TabsTrigger>
               <TabsTrigger 
                 value="weekly" 
                 onClick={() => handleSetDateRange('weekly')}
@@ -233,44 +213,6 @@ const Reports = () => {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          
-          <div className="flex items-center space-x-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="justify-start text-left font-normal w-[240px]"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange?.from ? (
-                    dateRange.to ? (
-                      <>
-                        {format(dateRange.from, "dd MMM yyyy")} -{" "}
-                        {format(dateRange.to, "dd MMM yyyy")}
-                      </>
-                    ) : (
-                      format(dateRange.from, "dd MMM yyyy")
-                    )
-                  ) : (
-                    <span>Pilih tanggal</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={dateRange?.from}
-                  selected={{
-                    from: dateRange.from,
-                    to: dateRange.to
-                  }}
-                  onSelect={handleDateRangeChange}
-                  numberOfMonths={2}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
         </div>
         
         <div className="grid gap-6">
@@ -278,28 +220,11 @@ const Reports = () => {
             totalRevenue={data?.totalSales || 0}
             totalCost={data?.totalExpenses || 0}
             totalProfit={(data?.totalSales || 0) - (data?.totalExpenses || 0)}
-            transactionCount={data?.totalQuantity || 0}
+            transactionCount={data?.transactionCount || 0}
             isLoading={isLoading}
           />
           
           <div className="grid grid-cols-1 gap-6">
-            <RevenueVsExpensesChart 
-              data={
-                data ? [
-                  {
-                    period: format(dateRange.from, "dd MMM yyyy") + 
-                            (dateRange.from.toDateString() !== dateRange.to.toDateString() 
-                              ? " - " + format(dateRange.to, "dd MMM yyyy") 
-                              : ""),
-                    revenue: data.totalSales || 0,
-                    expenses: data.totalExpenses || 0,
-                    profit: (data.totalSales || 0) - (data.totalExpenses || 0)
-                  }
-                ] : []
-              }
-              isLoading={isLoading}
-            />
-            
             <BestSellingProductsChart 
               products={data?.bestSellingProducts || []}
               isLoading={isLoading}
