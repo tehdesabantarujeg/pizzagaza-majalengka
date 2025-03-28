@@ -39,6 +39,7 @@ import ReportSummaryCards from '@/components/reports/ReportSummaryCards';
 import BestSellingProductsChart from '@/components/reports/BestSellingProductsChart';
 import RecentTransactionsList from '@/components/reports/RecentTransactionsList';
 import ExpenseSummaryTable from '@/components/reports/ExpenseSummaryTable';
+import RevenueVsExpensesChart from '@/components/reports/RevenueVsExpensesChart';
 
 // Data helpers
 import { fetchSalesReportData, fetchExpensesByDateRange, fetchTransactions } from '@/utils/supabase';
@@ -193,6 +194,145 @@ const Reports = () => {
         }
       });
       
+      // Prepare data for revenue vs expenses chart
+      let revenueVsExpensesData: Array<{ period: string; revenue: number; expenses: number; profit: number }> = [];
+      
+      if (reportType === 'monthly') {
+        // Group by days within the month
+        const dailyData: Record<string, { revenue: number; expenses: number }> = {};
+        
+        // Initialize the days in the selected month
+        const year = parseInt(selectedYear);
+        const month = parseInt(selectedMonth);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+          const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+          dailyData[dateKey] = { revenue: 0, expenses: 0 };
+        }
+        
+        // Fill sales data
+        salesData.forEach((sale: any) => {
+          const saleDate = sale.date ? new Date(sale.date) : null;
+          if (saleDate) {
+            const dateKey = format(saleDate, 'yyyy-MM-dd');
+            if (dailyData[dateKey]) {
+              dailyData[dateKey].revenue += sale.total_price || 0;
+            }
+          }
+        });
+        
+        // Fill expenses data
+        expensesData.forEach((expense: any) => {
+          const expenseDate = expense.date ? new Date(expense.date) : null;
+          if (expenseDate) {
+            const dateKey = format(expenseDate, 'yyyy-MM-dd');
+            if (dailyData[dateKey]) {
+              dailyData[dateKey].expenses += expense.amount || 0;
+            }
+          }
+        });
+        
+        // Convert to array format for chart
+        revenueVsExpensesData = Object.entries(dailyData).map(([date, data]) => {
+          const formattedDate = format(new Date(date), 'd MMM', { locale: id });
+          return {
+            period: formattedDate,
+            revenue: data.revenue,
+            expenses: data.expenses,
+            profit: data.revenue - data.expenses
+          };
+        }).sort((a, b) => {
+          const dateA = new Date(date);
+          const dateB = new Date(date);
+          return dateA.getTime() - dateB.getTime();
+        });
+      } else if (reportType === 'yearly') {
+        // Group by months within the year
+        const monthlyData: Record<string, { revenue: number; expenses: number }> = {};
+        
+        // Initialize all months
+        for (let month = 0; month < 12; month++) {
+          monthlyData[month.toString()] = { revenue: 0, expenses: 0 };
+        }
+        
+        // Fill sales data
+        salesData.forEach((sale: any) => {
+          const saleDate = sale.date ? new Date(sale.date) : null;
+          if (saleDate) {
+            const month = saleDate.getMonth().toString();
+            monthlyData[month].revenue += sale.total_price || 0;
+          }
+        });
+        
+        // Fill expenses data
+        expensesData.forEach((expense: any) => {
+          const expenseDate = expense.date ? new Date(expense.date) : null;
+          if (expenseDate) {
+            const month = expenseDate.getMonth().toString();
+            monthlyData[month].expenses += expense.amount || 0;
+          }
+        });
+        
+        // Convert to array format for chart
+        revenueVsExpensesData = Object.entries(monthlyData).map(([month, data]) => {
+          return {
+            period: INDONESIAN_MONTHS[parseInt(month)],
+            revenue: data.revenue,
+            expenses: data.expenses,
+            profit: data.revenue - data.expenses
+          };
+        });
+      } else {
+        // Weekly reporting - group by days
+        const weeklyData: Record<string, { revenue: number; expenses: number }> = {};
+        
+        // Get the range of days
+        const startDay = dateRange.from;
+        const endDay = dateRange.to;
+        const dayDiff = Math.ceil((endDay.getTime() - startDay.getTime()) / (1000 * 60 * 60 * 24));
+        
+        for (let i = 0; i <= dayDiff; i++) {
+          const currentDate = new Date(startDay);
+          currentDate.setDate(startDay.getDate() + i);
+          const dateKey = format(currentDate, 'yyyy-MM-dd');
+          weeklyData[dateKey] = { revenue: 0, expenses: 0 };
+        }
+        
+        // Fill sales data
+        salesData.forEach((sale: any) => {
+          const saleDate = sale.date ? new Date(sale.date) : null;
+          if (saleDate) {
+            const dateKey = format(saleDate, 'yyyy-MM-dd');
+            if (weeklyData[dateKey]) {
+              weeklyData[dateKey].revenue += sale.total_price || 0;
+            }
+          }
+        });
+        
+        // Fill expenses data
+        expensesData.forEach((expense: any) => {
+          const expenseDate = expense.date ? new Date(expense.date) : null;
+          if (expenseDate) {
+            const dateKey = format(expenseDate, 'yyyy-MM-dd');
+            if (weeklyData[dateKey]) {
+              weeklyData[dateKey].expenses += expense.amount || 0;
+            }
+          }
+        });
+        
+        // Convert to array format for chart
+        revenueVsExpensesData = Object.entries(weeklyData).map(([date, data]) => {
+          const formattedDate = format(new Date(date), 'EEE, d MMM', { locale: id });
+          return {
+            period: formattedDate,
+            revenue: data.revenue,
+            expenses: data.expenses,
+            profit: data.revenue - data.expenses
+          };
+        });
+      }
+      
       return {
         salesData,
         expensesData,
@@ -201,7 +341,8 @@ const Reports = () => {
         totalSales: salesData.reduce((sum: number, item: any) => sum + (item.total_price || 0), 0),
         totalExpenses: expensesData.reduce((sum: number, item: any) => sum + (item.amount || 0), 0),
         transactionCount: uniqueTransactionNumbers.size,
-        totalProductsSold: totalProductsQty
+        totalProductsSold: totalProductsQty,
+        revenueVsExpensesData
       };
     }
   });
@@ -343,6 +484,11 @@ const Reports = () => {
           />
           
           <div className="grid grid-cols-1 gap-6">
+            <RevenueVsExpensesChart
+              data={data?.revenueVsExpensesData || []}
+              isLoading={isLoading}
+            />
+            
             <BestSellingProductsChart 
               products={data?.bestSellingProducts || []}
               isLoading={isLoading}
@@ -351,6 +497,10 @@ const Reports = () => {
             <ExpenseSummaryTable 
               expenses={data?.expensesData || []}
               isLoading={isLoading}
+            />
+            
+            <RecentTransactionsList
+              transactions={allTransactions}
             />
           </div>
         </div>
