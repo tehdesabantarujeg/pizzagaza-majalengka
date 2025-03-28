@@ -4,14 +4,17 @@ import { PizzaSaleItem } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
 
 const useTransactionForm = () => {
-  const [newSale, setNewSale] = useState({
-    size: 'Small' as 'Small' | 'Medium',
+  const [newSale, setNewSale] = useState<PizzaSaleItem & { customerName: string; notes: string; date?: string }>({
+    size: 'Small',
     flavor: '',
     quantity: 1,
-    state: 'Frozen Food' as 'Frozen Food' | 'Matang',
+    state: 'Frozen Food',
     includeBox: false,
+    sellingPrice: 0,
+    totalPrice: 0,
     customerName: '',
-    notes: ''
+    notes: '',
+    date: new Date().toISOString() // Default to today
   });
   
   const [saleItems, setSaleItems] = useState<PizzaSaleItem[]>([
@@ -22,7 +25,8 @@ const useTransactionForm = () => {
       state: 'Frozen Food', 
       includeBox: false, 
       sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
-      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
+      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false),
+      date: new Date().toISOString() 
     }
   ]);
   
@@ -51,6 +55,15 @@ const useTransactionForm = () => {
   }
   
   useEffect(() => {
+    const price = calculateSellingPrice(newSale.size, newSale.state, newSale.includeBox);
+    setNewSale(prev => ({
+      ...prev,
+      sellingPrice: price,
+      totalPrice: price * prev.quantity
+    }));
+  }, [newSale.size, newSale.state, newSale.includeBox, newSale.quantity]);
+  
+  useEffect(() => {
     setSaleItems(items => items.map((item, index) => {
       const price = calculateSellingPrice(item.size, item.state, item.includeBox);
       return {
@@ -59,7 +72,7 @@ const useTransactionForm = () => {
         totalPrice: price * item.quantity
       };
     }));
-  }, [newSale.size, newSale.state, newSale.includeBox, newSale.quantity]);
+  }, []);
   
   const sellingPrice = calculateSellingPrice(newSale.size, newSale.state, newSale.includeBox);
   const totalPrice = sellingPrice * newSale.quantity;
@@ -105,7 +118,8 @@ const useTransactionForm = () => {
         state: 'Frozen Food', 
         includeBox: false, 
         sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
-        totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
+        totalPrice: calculateSellingPrice('Small', 'Frozen Food', false),
+        date: new Date().toISOString()
       }
     ]);
   };
@@ -152,6 +166,22 @@ const useTransactionForm = () => {
     
     setSaleItems(newItems);
   };
+
+  const handleDateChange = (date: string, isMultiItem: boolean = false) => {
+    if (isMultiItem) {
+      // Update all items with the new date
+      setSaleItems(prev => prev.map(item => ({
+        ...item,
+        date
+      })));
+    } else {
+      // Update just the single sale
+      setNewSale(prev => ({
+        ...prev,
+        date
+      }));
+    }
+  };
   
   const resetForm = () => {
     setSaleItems([{ 
@@ -161,10 +191,23 @@ const useTransactionForm = () => {
       state: 'Frozen Food', 
       includeBox: false, 
       sellingPrice: calculateSellingPrice('Small', 'Frozen Food', false), 
-      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false) 
+      totalPrice: calculateSellingPrice('Small', 'Frozen Food', false),
+      date: new Date().toISOString()
     }]);
     setCustomerName('');
     setNotes('');
+    setNewSale({
+      size: 'Small',
+      flavor: '',
+      quantity: 1,
+      state: 'Frozen Food',
+      includeBox: false,
+      sellingPrice: 0,
+      totalPrice: 0,
+      customerName: '',
+      notes: '',
+      date: new Date().toISOString()
+    });
   };
 
   return {
@@ -188,6 +231,7 @@ const useTransactionForm = () => {
     handleAddItem,
     handleRemoveItem,
     handleItemChange,
+    handleDateChange,
     resetForm
   };
 };

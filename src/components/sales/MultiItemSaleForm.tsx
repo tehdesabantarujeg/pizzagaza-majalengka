@@ -33,6 +33,7 @@ interface MultiItemSaleFormProps {
   handleAddItem: () => void;
   handleRemoveItem: (index: number) => void;
   handleItemChange: (index: number, item: PizzaSaleItem) => void;
+  handleDateChange: (date: string, isMultiItem?: boolean) => void;
 }
 
 const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
@@ -48,15 +49,18 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
   handleSavePrint,
   handleAddItem,
   handleRemoveItem,
-  handleItemChange
+  handleItemChange,
+  handleDateChange
 }) => {
-  const [date, setDate] = useState<Date>(new Date());
+  // Find a date from the first sale item or use current date
+  const firstItemDate = saleItems[0]?.date ? new Date(saleItems[0].date) : new Date();
+  const [date, setDate] = useState<Date>(firstItemDate);
 
-  const handleDateChange = (newDate: Date | undefined) => {
+  const onDateChange = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
       // Update all sale items with the new date
-      setSaleItems(prev => prev.map(item => ({ ...item, date: newDate.toISOString() })));
+      handleDateChange(newDate.toISOString(), true);
     }
   };
 
@@ -107,7 +111,7 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={handleDateChange}
+                  onSelect={onDateChange}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
                 />

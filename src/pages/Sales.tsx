@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,7 @@ const Sales = () => {
     handleSizeChange,
     handleFlavorChange,
     handleStateChange,
+    handleDateChange,
     handleSaveOnly,
     handleSavePrint,
     handleAddItem,
@@ -92,6 +93,7 @@ const Sales = () => {
                 handleAddItem={handleAddItem}
                 handleRemoveItem={handleRemoveItem}
                 handleItemChange={handleItemChange}
+                handleDateChange={handleDateChange}
               />
             ) : (
               <SaleForm
@@ -105,6 +107,7 @@ const Sales = () => {
                 handleSizeChange={handleSizeChange}
                 handleFlavorChange={handleFlavorChange}
                 handleStateChange={handleStateChange}
+                handleDateChange={handleDateChange}
               />
             )
           )}

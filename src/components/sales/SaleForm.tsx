@@ -19,16 +19,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
 interface SaleFormProps {
-  newSale: PizzaSaleItem & { customerName: string; notes: string };
-  setNewSale: React.Dispatch<React.SetStateAction<PizzaSaleItem & { customerName: string; notes: string }>>;
+  newSale: PizzaSaleItem & { customerName: string; notes: string; date?: string };
+  setNewSale: React.Dispatch<React.SetStateAction<PizzaSaleItem & { customerName: string; notes: string; date?: string }>>;
   sellingPrice: number;
   totalPrice: number;
   error: string;
   handleSaveOnly: (e: React.FormEvent) => Promise<void>;
   handleSavePrint: (e: React.FormEvent) => Promise<void>;
-  handleSizeChange: (size: 'Small' | 'Medium') => void;
+  handleSizeChange: (size: string) => void;
   handleFlavorChange: (flavor: string) => void;
-  handleStateChange: (state: 'Frozen Food' | 'Matang') => void;
+  handleStateChange: (state: string) => void;
+  handleDateChange: (date: string, isMultiItem?: boolean) => void;
 }
 
 const SaleForm: React.FC<SaleFormProps> = ({
@@ -41,18 +42,19 @@ const SaleForm: React.FC<SaleFormProps> = ({
   handleSavePrint,
   handleSizeChange,
   handleFlavorChange,
-  handleStateChange
+  handleStateChange,
+  handleDateChange
 }) => {
-  const [date, setDate] = useState<Date>(new Date());
+  // Convert ISO date string to Date if it exists
+  const [date, setDate] = useState<Date>(
+    newSale.date ? new Date(newSale.date) : new Date()
+  );
 
-  const handleDateChange = (newDate: Date | undefined) => {
+  const onDateChange = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
       // Update the sale with the new date
-      setNewSale(prev => ({
-        ...prev,
-        date: newDate.toISOString()
-      }));
+      handleDateChange(newDate.toISOString(), false);
     }
   };
 
@@ -75,7 +77,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
             <Label htmlFor="size">Ukuran</Label>
             <Select 
               value={newSale.size} 
-              onValueChange={(value) => handleSizeChange(value as 'Small' | 'Medium')}
+              onValueChange={handleSizeChange}
             >
               <SelectTrigger id="size">
                 <SelectValue placeholder="Pilih ukuran" />
@@ -94,7 +96,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
             <Label htmlFor="flavor">Rasa</Label>
             <Select 
               value={newSale.flavor} 
-              onValueChange={(value) => handleFlavorChange(value)}
+              onValueChange={handleFlavorChange}
             >
               <SelectTrigger id="flavor">
                 <SelectValue placeholder="Pilih rasa" />
@@ -115,7 +117,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
             <Label htmlFor="state">Kondisi</Label>
             <Select 
               value={newSale.state} 
-              onValueChange={(value) => handleStateChange(value as 'Frozen Food' | 'Matang')}
+              onValueChange={handleStateChange}
             >
               <SelectTrigger id="state">
                 <SelectValue placeholder="Pilih kondisi" />
@@ -162,7 +164,7 @@ const SaleForm: React.FC<SaleFormProps> = ({
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={handleDateChange}
+                  onSelect={onDateChange}
                   initialFocus
                   className={cn("p-3 pointer-events-auto")}
                 />

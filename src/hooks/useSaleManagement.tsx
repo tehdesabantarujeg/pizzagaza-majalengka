@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { 
@@ -58,6 +59,7 @@ export const useSaleManagement = () => {
     handleAddItem,
     handleRemoveItem,
     handleItemChange,
+    handleDateChange,
     resetForm
   } = useTransactionForm();
   
@@ -177,19 +179,6 @@ export const useSaleManagement = () => {
     }
   };
 
-  const [newSale, setNewSale] = useState<PizzaSaleItem & { customerName: string; notes: string; date?: string }>({
-    size: 'Small',
-    flavor: '',
-    quantity: 1,
-    state: 'Frozen Food',
-    includeBox: false,
-    sellingPrice: 0,
-    totalPrice: 0,
-    customerName: '',
-    notes: '',
-    date: new Date().toISOString() // Default to today
-  });
-
   const handleSaveOnly = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -278,8 +267,8 @@ export const useSaleManagement = () => {
         quantity: newSale.quantity,
         state: safeState,
         includeBox: newSale.includeBox,
-        sellingPrice,
-        totalPrice,
+        sellingPrice: newSale.sellingPrice,
+        totalPrice: newSale.totalPrice,
         date: newSale.date // Include the date field
       };
       
@@ -301,16 +290,7 @@ export const useSaleManagement = () => {
         await updateStockLevels([saleItem]);
         
         // Reset form after successful transaction
-        setNewSale({
-          size: 'Small',
-          flavor: '',
-          quantity: 1,
-          state: 'Frozen Food',
-          includeBox: false,
-          customerName: '',
-          notes: '',
-          date: new Date().toISOString()
-        });
+        resetForm();
         setOpen(false);
       }
     }
@@ -357,6 +337,7 @@ export const useSaleManagement = () => {
     handleAddItem,
     handleRemoveItem,
     handleItemChange,
+    handleDateChange,
     handleEditTransaction,
     handleDeleteTransaction,
     editingTransaction,
