@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -32,6 +31,7 @@ const BoxStockStatusChart: React.FC<BoxStockStatusChartProps> = ({ boxItems }) =
         .sort((a: any, b: any) => b.value - a.value)
     : [];
 
+  
   return (
     <Card>
       <CardHeader>

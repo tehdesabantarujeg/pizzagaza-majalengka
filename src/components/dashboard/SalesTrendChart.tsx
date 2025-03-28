@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,9 +13,9 @@ import {
 } from 'recharts';
 
 interface SalesTrendChartProps {
-  salesTrend: Array<{ period: string; amount: number }>;
+  salesData: Array<{ period: string; amount: number }>;
+  isLoading: boolean;
   timeframe: string;
-  setTimeframe: (value: string) => void;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -36,9 +35,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ 
-  salesTrend, 
-  timeframe, 
-  setTimeframe 
+  salesData, 
+  isLoading,
+  timeframe
 }) => {
   // Get title based on timeframe
   const getTimeframeTitle = () => {
@@ -60,25 +59,13 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
             {getTimeframeTitle()}
           </CardDescription>
         </div>
-        <Tabs 
-          value={timeframe} 
-          onValueChange={setTimeframe}
-          className="w-fit"
-        >
-          <TabsList className="grid w-fit grid-cols-4">
-            <TabsTrigger value="day">Hari</TabsTrigger>
-            <TabsTrigger value="week">Minggu</TabsTrigger>
-            <TabsTrigger value="month">Bulan</TabsTrigger>
-            <TabsTrigger value="year">Tahun</TabsTrigger>
-          </TabsList>
-        </Tabs>
       </CardHeader>
       <CardContent className="p-0">
         <div className="h-96">
-          {salesTrend.length > 0 ? (
+          {!isLoading && salesData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
-                data={salesTrend}
+                data={salesData}
                 margin={{
                   top: 20,
                   right: 30,
@@ -103,7 +90,11 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center">
-              Belum ada data penjualan
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              ) : (
+                "Belum ada data penjualan"
+              )}
             </div>
           )}
         </div>

@@ -26,7 +26,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts }) => {
       </CardHeader>
       <CardContent>
         <div className="h-80">
-          {topProducts.length > 0 ? (
+          {topProducts && topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={topProducts}

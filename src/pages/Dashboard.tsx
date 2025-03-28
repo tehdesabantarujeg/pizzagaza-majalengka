@@ -52,32 +52,29 @@ const Dashboard = () => {
           <TabsContent value="week" className="mt-6">
             <SummaryCards 
               data={summarySales}
-              isLoading={isLoading} 
             />
           </TabsContent>
           
           <TabsContent value="month" className="mt-6">
             <SummaryCards 
               data={summarySales}
-              isLoading={isLoading} 
             />
           </TabsContent>
           
           <TabsContent value="year" className="mt-6">
             <SummaryCards 
               data={summarySales}
-              isLoading={isLoading} 
             />
           </TabsContent>
         </Tabs>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="md:col-span-2">
-            <SalesTrendChart salesData={salesTrend} isLoading={isLoading} timeRange={timeRange} />
+            <SalesTrendChart salesData={salesTrend} isLoading={isLoading} timeframe={timeRange} />
           </div>
           
           <div className="md:col-span-1">
-            <TopProductsChart data={topProducts} />
+            <TopProductsChart topProducts={topProducts} />
           </div>
           
           <div className="md:col-span-2">
@@ -85,11 +82,11 @@ const Dashboard = () => {
           </div>
           
           <div className="md:col-span-1">
-            <BoxStockStatusChart data={stockItems} isLoading={isLoading} />
+            <BoxStockStatusChart boxItems={stockItems} />
           </div>
           
           <div className="md:col-span-3">
-            <RecentTransactions data={recentTransactions} />
+            <RecentTransactions transactions={recentTransactions} />
           </div>
         </div>
       </div>

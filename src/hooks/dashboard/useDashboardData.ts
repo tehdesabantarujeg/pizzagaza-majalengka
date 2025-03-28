@@ -10,6 +10,7 @@ export const useDashboardData = () => {
   const [timeframe, setTimeframe] = useState('week');
   const [salesTrend, setSalesTrend] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [stockItems, setStockItems] = useState<any[]>([]);
   const [summarySales, setSummarySales] = useState({
     total: 0,
     today: 0,
@@ -37,6 +38,11 @@ export const useDashboardData = () => {
     try {
       const data = await fetchDashboardData();
       setDashboardData(data);
+      
+      // Set stockItems from dashboardData
+      if (data && data.stockItems) {
+        setStockItems(data.stockItems);
+      }
       
       // Process data for different visualizations
       processData(data);
@@ -306,6 +312,7 @@ export const useDashboardData = () => {
     topProducts,
     summarySales,
     recentTransactions,
+    stockItems,
     loadDashboardData
   };
 };
