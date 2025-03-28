@@ -1,7 +1,11 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { PizzaStock, BoxStock, Transaction, Customer, Expense, CashSummary, ExpenseCategory } from './types';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  PizzaStockRow, BoxStockRow, TransactionRow, CustomerRow, ExpenseRow,
+  PizzaStockInsert, BoxStockInsert, TransactionInsert, CustomerInsert, ExpenseInsert,
+  PizzaStockUpdate, BoxStockUpdate, TransactionUpdate, CustomerUpdate, ExpenseUpdate
+} from '@/integrations/supabase/database.types';
 import { formatCurrency, formatTransactionNumber } from '@/utils/constants';
 import { format } from 'date-fns';
 
@@ -32,7 +36,7 @@ export const fetchStockItems = async (): Promise<PizzaStock[]> => {
 };
 
 export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt'>): Promise<PizzaStock | null> => {
-  const dbItem = {
+  const dbItem: PizzaStockInsert = {
     size: stockItem.size,
     flavor: stockItem.flavor,
     quantity: stockItem.quantity,
@@ -64,7 +68,7 @@ export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt
 };
 
 export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
-  const dbItem = {
+  const dbItem: PizzaStockUpdate = {
     size: stockItem.size,
     flavor: stockItem.flavor,
     quantity: stockItem.quantity,
@@ -126,7 +130,7 @@ export const fetchBoxStock = async (): Promise<BoxStock[]> => {
 };
 
 export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>): Promise<BoxStock | null> => {
-  const dbItem = {
+  const dbItem: BoxStockInsert = {
     size: boxStock.size,
     quantity: boxStock.quantity,
     purchase_date: boxStock.purchaseDate,
@@ -156,7 +160,7 @@ export const addBoxStock = async (boxStock: Omit<BoxStock, 'id' | 'updatedAt'>):
 };
 
 export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
-  const dbItem = {
+  const dbItem: BoxStockUpdate = {
     size: boxStock.size,
     quantity: boxStock.quantity,
     purchase_date: boxStock.purchaseDate,
@@ -238,7 +242,7 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   // Convert 'Frozen Food' to 'Mentah' for database storage
   const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
   
-  const dbItem = {
+  const dbItem: TransactionInsert = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
     size: transaction.size,
@@ -299,7 +303,7 @@ export const updateTransaction = async (transaction: Transaction): Promise<boole
   // Convert 'Frozen Food' to 'Mentah' for database storage
   const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
   
-  const dbItem = {
+  const dbItem: TransactionUpdate = {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
     size: transaction.size,
@@ -417,7 +421,7 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
 };
 
 export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Customer | null> => {
-  const dbItem = {
+  const dbItem: CustomerInsert = {
     name: customer.name,
     purchases: customer.purchases,
     last_purchase: customer.lastPurchase
@@ -443,7 +447,7 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<Custo
 };
 
 export const updateCustomer = async (customer: Customer): Promise<boolean> => {
-  const dbItem = {
+  const dbItem: CustomerUpdate = {
     name: customer.name,
     purchases: customer.purchases,
     last_purchase: customer.lastPurchase
@@ -551,7 +555,7 @@ export const fetchExpenses = async (): Promise<Expense[]> => {
 };
 
 export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
-  const dbItem = {
+  const dbItem: ExpenseInsert = {
     category: expense.category,
     date: expense.date,
     amount: expense.amount,
@@ -580,7 +584,7 @@ export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Pr
 };
 
 export const updateExpense = async (expense: Expense): Promise<boolean> => {
-  const dbItem = {
+  const dbItem: ExpenseUpdate = {
     category: expense.category,
     date: expense.date,
     amount: expense.amount,
