@@ -13,16 +13,16 @@ import MultiPizzaStockForm from '@/components/stock/MultiPizzaStockForm';
 import BoxStockList from '@/components/stock/BoxStockList';
 import BoxStockForm from '@/components/stock/BoxStockForm';
 import { 
-  fetchPizzaStocks, 
-  fetchBoxStocks, 
-  addPizzaStock,
+  fetchStockItems, 
+  fetchBoxStock, 
+  addStockItem,
   addMultiplePizzaStock,
   addBoxStock 
 } from '@/utils/supabase';
 import { PizzaStock, BoxStock } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
-import StockAvailabilityTable from '@/components/stock/StockAvailabilityTable';
+import StockAvailabilityTable from '@/components/dashboard/StockAvailabilityTable';
 
 const StockManagement = () => {
   const [isOpenPizzaForm, setIsOpenPizzaForm] = useState(false);
@@ -37,7 +37,7 @@ const StockManagement = () => {
     isLoading: isLoadingPizzaStocks 
   } = useQuery({
     queryKey: ['pizzaStocks'],
-    queryFn: fetchPizzaStocks
+    queryFn: fetchStockItems
   });
 
   // Fetch box stocks
@@ -46,12 +46,12 @@ const StockManagement = () => {
     isLoading: isLoadingBoxStocks 
   } = useQuery({
     queryKey: ['boxStocks'],
-    queryFn: fetchBoxStocks
+    queryFn: fetchBoxStock
   });
 
   // Add pizza stock mutation
   const addPizzaStockMutation = useMutation({
-    mutationFn: (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => addPizzaStock(newStock),
+    mutationFn: (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => addStockItem(newStock),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pizzaStocks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
@@ -186,9 +186,22 @@ const StockManagement = () => {
               </Button>
             </DialogTrigger>
             <BoxStockForm
-              onSave={handleAddBoxStock}
-              onCancel={() => setIsOpenBoxForm(false)}
-              isLoading={addBoxStockMutation.isPending}
+              newBoxStock={{
+                size: 'Small',
+                quantity: 1,
+                costPrice: PRICES.COST_SMALL_BOX
+              }}
+              setNewBoxStock={() => {}}
+              handleBoxSubmit={async (e) => {
+                e.preventDefault();
+                await handleAddBoxStock({
+                  size: 'Small',
+                  quantity: 1,
+                  costPrice: PRICES.COST_SMALL_BOX,
+                  purchaseDate: new Date().toISOString()
+                });
+              }}
+              handleBoxSizeChange={() => {}}
             />
           </Dialog>
         </div>
@@ -197,8 +210,7 @@ const StockManagement = () => {
       <div className="container px-4 py-6">
         <div className="mb-8">
           <StockAvailabilityTable 
-            pizzaStocks={pizzaStocks} 
-            boxStocks={boxStocks}
+            stockItems={pizzaStocks} 
             isLoading={isLoadingPizzaStocks || isLoadingBoxStocks} 
           />
         </div>
@@ -211,14 +223,14 @@ const StockManagement = () => {
           
           <TabsContent value="pizza">
             <PizzaStockList 
-              stocks={pizzaStocks} 
+              data={pizzaStocks} 
               isLoading={isLoadingPizzaStocks} 
             />
           </TabsContent>
           
           <TabsContent value="box">
             <BoxStockList 
-              stocks={boxStocks} 
+              data={boxStocks} 
               isLoading={isLoadingBoxStocks} 
             />
           </TabsContent>

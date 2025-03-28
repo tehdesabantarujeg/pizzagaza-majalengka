@@ -53,7 +53,7 @@ const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({
     size: 'Small',
     flavor: '',
     quantity: 1,
-    costPrice: PRICES.COST_SMALL
+    costPrice: PRICES.COST_SMALL_PIZZA
   }]);
   const [error, setError] = useState('');
 
@@ -62,7 +62,7 @@ const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({
       size: 'Small',
       flavor: '',
       quantity: 1,
-      costPrice: PRICES.COST_SMALL
+      costPrice: PRICES.COST_SMALL_PIZZA
     }]);
   };
 
@@ -77,7 +77,7 @@ const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({
     if (field === 'size') {
       // Update cost price when size changes
       const newSize = value as 'Small' | 'Medium';
-      const newCostPrice = newSize === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM;
+      const newCostPrice = newSize === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA;
       
       newItems[index] = {
         ...newItems[index],
@@ -234,7 +234,7 @@ const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({
                     onChange={(e) => handleItemChange(index, 'costPrice', parseFloat(e.target.value) || 0)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Default: {formatCurrency(item.size === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM)}
+                    Default: {formatCurrency(item.size === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA)}
                   </p>
                 </div>
               </div>

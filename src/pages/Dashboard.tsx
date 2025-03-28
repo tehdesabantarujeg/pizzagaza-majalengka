@@ -19,15 +19,13 @@ const Dashboard = () => {
   const { toast } = useToast();
   
   const { 
-    salesData, 
-    stockData, 
+    salesTrend,
+    stockItems, 
     recentTransactions, 
     topProducts, 
     isLoading,
-    totalRevenue,
-    totalExpenses,
-    transactionCount,
-  } = useDashboardData(timeRange);
+    summarySales,
+  } = useDashboardData();
 
   return (
     <Layout>
@@ -53,30 +51,21 @@ const Dashboard = () => {
           
           <TabsContent value="week" className="mt-6">
             <SummaryCards 
-              totalRevenue={totalRevenue} 
-              totalExpenses={totalExpenses} 
-              profit={totalRevenue - totalExpenses} 
-              transactionCount={transactionCount}
+              data={summarySales}
               isLoading={isLoading} 
             />
           </TabsContent>
           
           <TabsContent value="month" className="mt-6">
             <SummaryCards 
-              totalRevenue={totalRevenue} 
-              totalExpenses={totalExpenses} 
-              profit={totalRevenue - totalExpenses} 
-              transactionCount={transactionCount}
+              data={summarySales}
               isLoading={isLoading} 
             />
           </TabsContent>
           
           <TabsContent value="year" className="mt-6">
             <SummaryCards 
-              totalRevenue={totalRevenue} 
-              totalExpenses={totalExpenses} 
-              profit={totalRevenue - totalExpenses} 
-              transactionCount={transactionCount}
+              data={summarySales}
               isLoading={isLoading} 
             />
           </TabsContent>
@@ -84,23 +73,23 @@ const Dashboard = () => {
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div className="md:col-span-2">
-            <SalesTrendChart data={salesData} isLoading={isLoading} timeRange={timeRange} />
+            <SalesTrendChart salesData={salesTrend} isLoading={isLoading} timeRange={timeRange} />
           </div>
           
           <div className="md:col-span-1">
-            <TopProductsChart topProducts={topProducts} />
+            <TopProductsChart data={topProducts} />
           </div>
           
           <div className="md:col-span-2">
-            <StockAvailabilityTable stockItems={stockData.pizzaStocks} isLoading={isLoading} />
+            <StockAvailabilityTable stockItems={stockItems} isLoading={isLoading} />
           </div>
           
           <div className="md:col-span-1">
-            <BoxStockStatusChart stockItems={stockData.boxStocks} isLoading={isLoading} />
+            <BoxStockStatusChart data={stockItems} isLoading={isLoading} />
           </div>
           
           <div className="md:col-span-3">
-            <RecentTransactions transactions={recentTransactions} isLoading={isLoading} />
+            <RecentTransactions data={recentTransactions} />
           </div>
         </div>
       </div>

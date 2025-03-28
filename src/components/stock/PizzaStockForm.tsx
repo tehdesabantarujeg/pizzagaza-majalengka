@@ -43,14 +43,14 @@ const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
   const [size, setSize] = useState<'Small' | 'Medium'>('Small');
   const [flavor, setFlavor] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [costPrice, setCostPrice] = useState(PRICES.COST_SMALL);
+  const [costPrice, setCostPrice] = useState(PRICES.COST_SMALL_PIZZA);
   const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
   const [error, setError] = useState('');
 
   const handleSizeChange = (value: 'Small' | 'Medium') => {
     setSize(value);
     // Update cost price based on size
-    setCostPrice(value === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM);
+    setCostPrice(value === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA);
   };
 
   const handleSubmit = async () => {
@@ -157,7 +157,7 @@ const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
               onChange={(e) => setCostPrice(parseFloat(e.target.value) || 0)}
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Default: Rp {size === 'Small' ? PRICES.COST_SMALL.toLocaleString('id-ID') : PRICES.COST_MEDIUM.toLocaleString('id-ID')}
+              Default: Rp {size === 'Small' ? PRICES.COST_SMALL_PIZZA.toLocaleString('id-ID') : PRICES.COST_MEDIUM_PIZZA.toLocaleString('id-ID')}
             </p>
           </div>
         </div>
