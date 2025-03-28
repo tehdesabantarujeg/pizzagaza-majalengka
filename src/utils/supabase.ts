@@ -239,7 +239,6 @@ export const getTransactionCount = async (): Promise<number> => {
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
-  // Convert 'Frozen Food' to 'Mentah' for database storage
   const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
   
   const dbItem: TransactionInsert = {
@@ -300,7 +299,6 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
 };
 
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
-  // Convert 'Frozen Food' to 'Mentah' for database storage
   const state = transaction.state === 'Frozen Food' ? 'Mentah' : transaction.state;
   
   const dbItem: TransactionUpdate = {
@@ -807,10 +805,9 @@ export const addMultiplePizzaStock = async (stockItems: Omit<PizzaStock, 'id' | 
       return null;
     }
     
-    // Map data back to our PizzaStock type
     return data.map(item => ({
       id: item.id,
-      size: item.size,
+      size: item.size as 'Small' | 'Medium',
       flavor: item.flavor,
       quantity: item.quantity,
       costPrice: item.cost_price,
