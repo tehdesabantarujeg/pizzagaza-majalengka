@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   DialogContent, 
   DialogHeader, 
@@ -56,6 +56,9 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
   const firstItemDate = saleItems[0]?.date ? new Date(saleItems[0].date) : new Date();
   const [date, setDate] = useState<Date>(firstItemDate);
 
+  // Calculate total from all items to ensure it's always accurate
+  const calculatedTotal = saleItems.reduce((sum, item) => sum + item.totalPrice, 0);
+
   const onDateChange = (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
@@ -65,7 +68,7 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+    <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Penjualan Baru</DialogTitle>
         <DialogDescription>
@@ -128,26 +131,28 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
             </Button>
           </div>
           
-          {saleItems.map((item, index) => (
-            <div key={index} className="relative border rounded-md p-4">
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className="absolute right-2 top-2 text-destructive"
-                onClick={() => handleRemoveItem(index)}
-                disabled={saleItems.length <= 1}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              
-              <SaleItemForm
-                item={item}
-                index={index}
-                onChange={(updatedItem) => handleItemChange(index, updatedItem)}
-              />
-            </div>
-          ))}
+          <div className="grid grid-cols-1 gap-4">
+            {saleItems.map((item, index) => (
+              <div key={index} className="relative border rounded-md p-4">
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="absolute right-2 top-2 text-destructive"
+                  onClick={() => handleRemoveItem(index)}
+                  disabled={saleItems.length <= 1}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                
+                <SaleItemForm
+                  item={item}
+                  index={index}
+                  onChange={(updatedItem) => handleItemChange(index, updatedItem)}
+                />
+              </div>
+            ))}
+          </div>
         </div>
         
         <div className="space-y-2">
@@ -165,7 +170,7 @@ const MultiItemSaleForm: React.FC<MultiItemSaleFormProps> = ({
         <div className="py-2">
           <div className="flex justify-between items-center font-medium text-lg">
             <span>Total:</span>
-            <span>{formatCurrency(totalPrice)}</span>
+            <span>{formatCurrency(calculatedTotal)}</span>
           </div>
         </div>
         

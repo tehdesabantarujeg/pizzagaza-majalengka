@@ -1,148 +1,202 @@
 
-import React, { useEffect } from 'react';
-import { 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import React, { useState } from 'react';
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { PIZZA_FLAVORS, PIZZA_SIZES, PRICES, formatCurrency } from '@/utils/constants';
+import { 
+  PIZZA_FLAVORS, 
+  PIZZA_SIZES, 
+  PRICES 
+} from '@/utils/constants';
+import { PizzaStock } from '@/utils/types';
+import { CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface PizzaStockFormProps {
-  newPizzaStock: {
-    size: 'Small' | 'Medium';
-    flavor: string;
-    quantity: number;
-    costPrice: number;
-  };
-  setNewPizzaStock: React.Dispatch<React.SetStateAction<{
-    size: 'Small' | 'Medium';
-    flavor: string;
-    quantity: number;
-    costPrice: number;
-  }>>;
-  handlePizzaSubmit: (e: React.FormEvent) => Promise<void>;
-  handlePizzaSizeChange: (value: string) => void;
+  onSave: (stock: Omit<PizzaStock, 'id' | 'updatedAt'>) => Promise<void>;
+  onCancel: () => void;
+  isLoading: boolean;
 }
 
 const PizzaStockForm: React.FC<PizzaStockFormProps> = ({
-  newPizzaStock,
-  setNewPizzaStock,
-  handlePizzaSubmit,
-  handlePizzaSizeChange
+  onSave,
+  onCancel,
+  isLoading
 }) => {
-  // Update cost price when size changes
-  useEffect(() => {
-    if (newPizzaStock.size === 'Small') {
-      setNewPizzaStock(prev => ({ ...prev, costPrice: PRICES.COST_SMALL_PIZZA }));
-    } else {
-      setNewPizzaStock(prev => ({ ...prev, costPrice: PRICES.COST_MEDIUM_PIZZA }));
+  const [size, setSize] = useState<'Small' | 'Medium'>('Small');
+  const [flavor, setFlavor] = useState('');
+  const [quantity, setQuantity] = useState(1);
+  const [costPrice, setCostPrice] = useState(PRICES.COST_SMALL);
+  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
+  const [error, setError] = useState('');
+
+  const handleSizeChange = (value: 'Small' | 'Medium') => {
+    setSize(value);
+    // Update cost price based on size
+    setCostPrice(value === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM);
+  };
+
+  const handleSubmit = async () => {
+    // Validate inputs
+    if (!flavor) {
+      setError('Rasa pizza harus dipilih');
+      return;
     }
-  }, [newPizzaStock.size]);
+
+    if (quantity <= 0) {
+      setError('Jumlah harus lebih dari 0');
+      return;
+    }
+
+    if (costPrice <= 0) {
+      setError('Harga modal harus lebih dari 0');
+      return;
+    }
+
+    try {
+      await onSave({
+        size,
+        flavor,
+        quantity,
+        costPrice,
+        purchaseDate: purchaseDate.toISOString()
+      });
+    } catch (err) {
+      setError('Gagal menyimpan data stok');
+    }
+  };
 
   return (
-    <DialogContent className="sm:max-w-[425px]">
+    <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Tambah Stok Pizza</DialogTitle>
         <DialogDescription>
-          Masukkan detail stok pizza yang baru dibeli
+          Tambahkan stok pizza ke inventaris
         </DialogDescription>
       </DialogHeader>
       
-      <form onSubmit={handlePizzaSubmit}>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="size" className="text-right">
-              Ukuran
-            </Label>
-            <Select value={newPizzaStock.size} onValueChange={handlePizzaSizeChange}>
-              <SelectTrigger id="size" className="col-span-3">
-                <SelectValue placeholder="Pilih ukuran" />
-              </SelectTrigger>
-              <SelectContent>
-                {PIZZA_SIZES.map(size => (
-                  <SelectItem key={size} value={size}>
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="flavor" className="text-right">
-              Rasa
-            </Label>
-            <Select 
-              value={newPizzaStock.flavor} 
-              onValueChange={(value) => setNewPizzaStock({ ...newPizzaStock, flavor: value })}
+      {error && (
+        <div className="bg-destructive/20 text-destructive p-3 rounded-md mb-4">
+          {error}
+        </div>
+      )}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid gap-4">
+          <div>
+            <Label htmlFor="flavor">Rasa Pizza</Label>
+            <Select
+              value={flavor}
+              onValueChange={setFlavor}
             >
-              <SelectTrigger id="flavor" className="col-span-3">
+              <SelectTrigger>
                 <SelectValue placeholder="Pilih rasa" />
               </SelectTrigger>
               <SelectContent>
-                {PIZZA_FLAVORS.map(flavor => (
-                  <SelectItem key={flavor} value={flavor}>
-                    {flavor}
-                  </SelectItem>
+                {PIZZA_FLAVORS.map((flav) => (
+                  <SelectItem key={flav} value={flav}>{flav}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="quantity" className="text-right">
-              Jumlah
-            </Label>
-            <Input
-              id="quantity"
-              type="number"
-              min={1}
-              value={newPizzaStock.quantity}
-              onChange={(e) => setNewPizzaStock({ 
-                ...newPizzaStock, 
-                quantity: parseInt(e.target.value) || 1 
-              })}
-              className="col-span-3"
-            />
-          </div>
-          
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="costPrice" className="text-right">
-              Harga Modal
-            </Label>
-            <Input
-              id="costPrice"
-              type="number"
-              min={1}
-              value={newPizzaStock.costPrice}
-              onChange={(e) => setNewPizzaStock({ 
-                ...newPizzaStock, 
-                costPrice: parseInt(e.target.value) || 0
-              })}
-              className="col-span-3"
-            />
-            <div className="col-span-4 text-right text-sm text-muted-foreground">
-              Default: {formatCurrency(newPizzaStock.size === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA)}
-            </div>
+          <div>
+            <Label htmlFor="size">Ukuran</Label>
+            <Select
+              value={size}
+              onValueChange={(value) => handleSizeChange(value as 'Small' | 'Medium')}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih ukuran" />
+              </SelectTrigger>
+              <SelectContent>
+                {PIZZA_SIZES.map((s) => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         
-        <DialogFooter>
-          <Button type="submit">Tambah Stok</Button>
-        </DialogFooter>
-      </form>
+        <div className="grid gap-4">
+          <div>
+            <Label htmlFor="quantity">Jumlah</Label>
+            <Input
+              id="quantity"
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="costPrice">Harga Modal (Rp)</Label>
+            <Input
+              id="costPrice"
+              type="number"
+              min="0"
+              value={costPrice}
+              onChange={(e) => setCostPrice(parseFloat(e.target.value) || 0)}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Default: Rp {size === 'Small' ? PRICES.COST_SMALL.toLocaleString('id-ID') : PRICES.COST_MEDIUM.toLocaleString('id-ID')}
+            </p>
+          </div>
+        </div>
+        
+        <div className="col-span-1 md:col-span-2">
+          <Label>Tanggal Pembelian</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal mt-2",
+                  !purchaseDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {purchaseDate ? format(purchaseDate, "dd MMMM yyyy") : "Pilih tanggal"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={purchaseDate}
+                onSelect={(date) => date && setPurchaseDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
+      <DialogFooter className="mt-6">
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Batal
+        </Button>
+        <Button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Menyimpan...' : 'Simpan Data'}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 };

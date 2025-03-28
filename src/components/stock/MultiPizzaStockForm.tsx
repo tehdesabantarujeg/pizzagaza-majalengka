@@ -1,156 +1,189 @@
 
 import React, { useState } from 'react';
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { PIZZA_FLAVORS, PRICES, formatCurrency } from '@/utils/constants';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import { 
+  PIZZA_FLAVORS, 
+  PIZZA_SIZES, 
+  PRICES 
+} from '@/utils/constants';
+import { formatCurrency } from '@/utils/constants';
 import { PizzaStock } from '@/utils/types';
-import { useToast } from '@/hooks/use-toast';
-import { X, Plus, Trash } from 'lucide-react';
-import PizzaVariantBadge from '@/components/PizzaVariantBadge';
+import { Plus, Trash2, Info, AlertTriangle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
-interface MultiPizzaStockFormProps {
-  onSubmit: (items: Omit<PizzaStock, 'id' | 'updatedAt'>[]) => Promise<void>;
-  onCancel: () => void;
+interface StockItem {
+  size: 'Small' | 'Medium';
+  flavor: string;
+  quantity: number;
+  costPrice: number;
 }
 
-const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({ onSubmit, onCancel }) => {
-  const { toast } = useToast();
-  const [items, setItems] = useState<Array<{
-    size: 'Small' | 'Medium';
-    flavor: string;
-    quantity: number;
-    costPrice: number;
-  }>>([{
+interface MultiPizzaStockFormProps {
+  onSave: (items: StockItem[]) => Promise<void>;
+  onCancel: () => void;
+  isLoading: boolean;
+}
+
+const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({
+  onSave,
+  onCancel,
+  isLoading
+}) => {
+  const [purchaseDate, setPurchaseDate] = useState<Date>(new Date());
+  const [items, setItems] = useState<StockItem[]>([{
     size: 'Small',
-    flavor: 'Original',
+    flavor: '',
     quantity: 1,
-    costPrice: PRICES.COST_SMALL_PIZZA
+    costPrice: PRICES.COST_SMALL
   }]);
-  
+  const [error, setError] = useState('');
+
   const handleAddItem = () => {
     setItems([...items, {
       size: 'Small',
-      flavor: 'Original',
+      flavor: '',
       quantity: 1,
-      costPrice: PRICES.COST_SMALL_PIZZA
+      costPrice: PRICES.COST_SMALL
     }]);
   };
-  
+
   const handleRemoveItem = (index: number) => {
-    if (items.length === 1) {
-      toast({
-        title: "Tidak dapat menghapus",
-        description: "Minimal harus ada satu item",
-        variant: "destructive"
-      });
-      return;
+    if (items.length <= 1) return;
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  const handleItemChange = (index: number, field: keyof StockItem, value: any) => {
+    const newItems = [...items];
+    
+    if (field === 'size') {
+      // Update cost price when size changes
+      const newSize = value as 'Small' | 'Medium';
+      const newCostPrice = newSize === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM;
+      
+      newItems[index] = {
+        ...newItems[index],
+        [field]: value,
+        costPrice: newCostPrice
+      };
+    } else {
+      newItems[index] = {
+        ...newItems[index],
+        [field]: value
+      };
     }
     
-    const newItems = [...items];
-    newItems.splice(index, 1);
     setItems(newItems);
   };
-  
-  const handleSizeChange = (value: string, index: number) => {
-    const size = value as 'Small' | 'Medium';
-    const newItems = [...items];
-    const newCostPrice = size === 'Small' ? PRICES.COST_SMALL_PIZZA : PRICES.COST_MEDIUM_PIZZA;
-    newItems[index] = { ...newItems[index], size, costPrice: newCostPrice };
-    setItems(newItems);
-  };
-  
-  const handleFlavorChange = (value: string, index: number) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], flavor: value };
-    setItems(newItems);
-  };
-  
-  const handleQuantityChange = (value: number, index: number) => {
-    const newItems = [...items];
-    newItems[index] = { ...newItems[index], quantity: value };
-    setItems(newItems);
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+
+  const handleSubmit = async () => {
     // Validate inputs
-    if (items.some(item => !item.flavor || item.quantity <= 0)) {
-      toast({
-        title: "Input tidak valid",
-        description: "Pastikan semua kolom terisi dengan benar",
-        variant: "destructive"
-      });
+    const hasEmptyFlavor = items.some(item => !item.flavor);
+    if (hasEmptyFlavor) {
+      setError('Semua item harus memiliki rasa (flavor)');
       return;
     }
-    
-    // Prepare data for submission
-    const stockItems = items.map(item => ({
-      ...item,
-      purchaseDate: new Date().toISOString()
-    }));
-    
-    await onSubmit(stockItems);
+
+    try {
+      await onSave(items.map(item => ({
+        ...item,
+        costPrice: Number(item.costPrice),
+        quantity: Number(item.quantity)
+      })));
+    } catch (err) {
+      setError('Gagal menyimpan data stok');
+    }
   };
-  
+
   return (
-    <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+    <DialogContent className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Tambah Stok Pizza (Multiple)</DialogTitle>
+        <DialogDescription>
+          Tambahkan beberapa varian pizza sekaligus ke stok
+        </DialogDescription>
       </DialogHeader>
-      
-      <form onSubmit={handleSubmit} className="space-y-4 py-4">
-        <div className="space-y-6">
+
+      {error && (
+        <div className="bg-destructive/20 p-3 rounded-md flex items-start text-destructive">
+          <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="mb-4">
+        <Label>Tanggal Pembelian</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal mt-2",
+                !purchaseDate && "text-muted-foreground"
+              )}
+            >
+              {purchaseDate ? format(purchaseDate, "dd MMMM yyyy") : "Pilih tanggal"}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={purchaseDate}
+              onSelect={(date) => date && setPurchaseDate(date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <div className="space-y-4 mb-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Daftar Item</h3>
+          <Button type="button" onClick={handleAddItem} variant="outline" size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Tambah Item
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4">
           {items.map((item, index) => (
-            <div key={index} className="space-y-3 border rounded-md p-4 relative">
-              <div className="absolute top-2 right-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveItem(index)}
-                >
-                  <Trash className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-              
-              <div className="flex items-center mb-2">
-                <PizzaVariantBadge
-                  size={item.size}
-                  flavor={item.flavor}
-                  state="Frozen Food"
-                />
-                <span className="ml-2 font-medium">Item #{index + 1}</span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+            <div key={index} className="border rounded-md p-4 relative">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="absolute right-2 top-2 text-destructive"
+                onClick={() => handleRemoveItem(index)}
+                disabled={items.length <= 1}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`size-${index}`}>Ukuran</Label>
-                  <Select
-                    value={item.size}
-                    onValueChange={(value) => handleSizeChange(value, index)}
-                  >
-                    <SelectTrigger id={`size-${index}`}>
-                      <SelectValue placeholder="Pilih ukuran" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Small">Small</SelectItem>
-                      <SelectItem value="Medium">Medium</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor={`flavor-${index}`}>Rasa</Label>
+                  <Label>Rasa</Label>
                   <Select
                     value={item.flavor}
-                    onValueChange={(value) => handleFlavorChange(value, index)}
+                    onValueChange={(value) => handleItemChange(index, 'flavor', value)}
                   >
-                    <SelectTrigger id={`flavor-${index}`}>
+                    <SelectTrigger>
                       <SelectValue placeholder="Pilih rasa" />
                     </SelectTrigger>
                     <SelectContent>
@@ -162,71 +195,62 @@ const MultiPizzaStockForm: React.FC<MultiPizzaStockFormProps> = ({ onSubmit, onC
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor={`quantity-${index}`}>Jumlah</Label>
+                  <Label>Ukuran</Label>
+                  <Select
+                    value={item.size}
+                    onValueChange={(value) => handleItemChange(index, 'size', value as 'Small' | 'Medium')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih ukuran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PIZZA_SIZES.map((size) => (
+                        <SelectItem key={size} value={size}>
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Jumlah</Label>
                   <Input
-                    id={`quantity-${index}`}
                     type="number"
-                    min="1"
+                    min={1}
                     value={item.quantity}
-                    onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1, index)}
+                    onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 1)}
                   />
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor={`cost-price-${index}`}>Harga Modal</Label>
+                  <Label>Harga Modal</Label>
                   <Input
-                    id={`cost-price-${index}`}
-                    value={formatCurrency(item.costPrice)}
-                    readOnly
-                    className="bg-muted"
+                    type="number"
+                    min={0}
+                    value={item.costPrice}
+                    onChange={(e) => handleItemChange(index, 'costPrice', parseFloat(e.target.value) || 0)}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Default: {formatCurrency(item.size === 'Small' ? PRICES.COST_SMALL : PRICES.COST_MEDIUM)}
+                  </p>
                 </div>
               </div>
-              
-              {index < items.length - 1 && <Separator className="my-2" />}
             </div>
           ))}
         </div>
-        
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleAddItem}
-          className="w-full"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Tambah Item Baru
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          Batal
         </Button>
-        
-        <div className="bg-muted p-4 rounded-md">
-          <div className="font-medium mb-2">Ringkasan</div>
-          <div className="flex justify-between">
-            <span>Total Item:</span>
-            <span>{items.length}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Total Quantity:</span>
-            <span>{items.reduce((sum, item) => sum + item.quantity, 0)}</span>
-          </div>
-          <div className="flex justify-between font-medium">
-            <span>Total Biaya:</span>
-            <span>{formatCurrency(items.reduce((sum, item) => sum + item.costPrice * item.quantity, 0))}</span>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-          >
-            Batal
-          </Button>
-          <Button type="submit">Simpan</Button>
-        </DialogFooter>
-      </form>
+        <Button onClick={handleSubmit} disabled={isLoading}>
+          {isLoading ? 'Menyimpan...' : 'Simpan Data'}
+        </Button>
+      </DialogFooter>
     </DialogContent>
   );
 };
