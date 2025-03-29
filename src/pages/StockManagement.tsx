@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -194,7 +193,7 @@ const StockManagement = () => {
             <BoxStockForm
               newBoxStock={newBoxStock}
               setNewBoxStock={setNewBoxStock}
-              handleBoxSubmit={handleBoxStock}
+              handleBoxSubmit={handleAddBoxStock}
               handleBoxSizeChange={handleBoxSizeChange}
             />
           </Dialog>

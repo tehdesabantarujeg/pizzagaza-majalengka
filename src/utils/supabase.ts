@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { PizzaStock, BoxStock, Transaction, Expense } from "./types";
 
@@ -207,8 +208,8 @@ export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> =
       .from('pizza_stock')
       .update({ 
         quantity: stockItem.quantity,
-        costPrice: stockItem.costPrice,
-        updatedAt: new Date().toISOString()
+        cost_price: stockItem.costPrice,
+        updated_at: new Date().toISOString()
       })
       .eq('id', stockItem.id);
 
@@ -219,6 +220,9 @@ export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> =
   }
 };
 
+// Export updateStockItem as updatePizzaStock for backward compatibility
+export const updatePizzaStock = updateStockItem;
+
 // Function to update box stock item
 export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
   try {
@@ -226,8 +230,8 @@ export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
       .from('box_stock')
       .update({ 
         quantity: boxStock.quantity,
-        costPrice: boxStock.costPrice,
-        updatedAt: new Date().toISOString()
+        cost_price: boxStock.costPrice,
+        updated_at: new Date().toISOString()
       })
       .eq('id', boxStock.id);
 
@@ -320,9 +324,9 @@ export const generateTransactionNumber = async (): Promise<string> => {
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .select('transactionNumber')
-      .like('transactionNumber', `${baseTransactionNumber}%`)
-      .order('transactionNumber', { ascending: false })
+      .select('transaction_number')
+      .like('transaction_number', `${baseTransactionNumber}%`)
+      .order('transaction_number', { ascending: false })
       .limit(1);
 
     if (error) {
@@ -331,7 +335,7 @@ export const generateTransactionNumber = async (): Promise<string> => {
     }
 
     if (data && data.length > 0) {
-      const lastTransactionNumber = data[0].transactionNumber;
+      const lastTransactionNumber = data[0].transaction_number;
       const lastSequence = parseInt(lastTransactionNumber.slice(-3), 10);
       const newSequence = String(lastSequence + 1).padStart(3, '0');
       return baseTransactionNumber + newSequence;
