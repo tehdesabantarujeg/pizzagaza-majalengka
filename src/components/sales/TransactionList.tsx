@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Transaction } from '@/utils/types';
 import { formatDateShort, formatCurrency, printReceipt } from '@/utils/constants';
@@ -152,7 +153,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const calculateTotals = (transactions: Transaction[]) => {
     const totalBoxes = transactions.reduce((sum, t) => sum + (t.includeBox ? t.quantity : 0), 0);
-    const totalPrice = transactions.reduce((sum, t) => sum + t.totalPrice, 0);
+    
+    // Fix for NaN: Ensure totalPrice is a valid number before adding
+    const totalPrice = transactions.reduce((sum, t) => {
+      // Convert to number if it's a string or validate if it's NaN
+      const price = typeof t.totalPrice === 'string' ? parseFloat(t.totalPrice) : t.totalPrice;
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
+    
     return { totalBoxes, totalPrice };
   };
 

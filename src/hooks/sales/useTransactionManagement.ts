@@ -83,13 +83,28 @@ const useTransactionManagement = ({
   const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Validate all items to make sure they have proper data types
+      const validatedItems = items.map(item => {
+        // Ensure numeric properties are valid numbers
+        const safeQuantity = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity)) || 1;
+        const safeSellingPrice = typeof item.sellingPrice === 'number' ? item.sellingPrice : parseFloat(String(item.sellingPrice)) || 0;
+        const safeTotalPrice = safeSellingPrice * safeQuantity;
+        
+        return {
+          ...item,
+          quantity: safeQuantity,
+          sellingPrice: safeSellingPrice,
+          totalPrice: safeTotalPrice
+        };
+      });
+      
       const transactionNumber = generateTransactionNumber();
       
       // Create an array to hold the created transactions
       const createdTransactions: Transaction[] = [];
       
       // Process each item and create a transaction
-      for (const item of items) {
+      for (const item of validatedItems) {
         // Ensure pizzaId is null if undefined or empty string
         const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
         
@@ -116,7 +131,7 @@ const useTransactionManagement = ({
       
       if (createdTransactions.length > 0) {
         // Update stock levels after successful transaction
-        await updateStockLevels(items);
+        await updateStockLevels(validatedItems);
         
         // Print receipt
         printReceipt(createdTransactions);

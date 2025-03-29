@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { formatCurrency } from '@/utils/constants';
+import { formatCurrency, formatDateShort } from '@/utils/constants';
 
 interface RecentTransaction {
   id: string;
@@ -40,10 +40,15 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
             <TableBody>
               {transactions.map((tx) => (
                 <TableRow key={tx.id}>
-                  <TableCell className="font-medium">{tx.date}</TableCell>
+                  <TableCell className="font-medium">{formatDateShort(tx.date)}</TableCell>
                   <TableCell>{tx.product}</TableCell>
                   <TableCell className="text-right">{tx.quantity}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(tx.amount)}</TableCell>
+                  <TableCell className="text-right">
+                    {/* Ensure amount is a valid number before formatting */}
+                    {typeof tx.amount === 'number' && !isNaN(tx.amount) 
+                      ? formatCurrency(tx.amount) 
+                      : formatCurrency(0)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

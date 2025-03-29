@@ -76,6 +76,7 @@ export const useSaleManagement = () => {
     setIsLoading(true);
     try {
       const data = await fetchTransactions();
+      
       const updatedData = data.map(transaction => {
         let safeState: 'Frozen Food' | 'Matang';
         
@@ -92,9 +93,23 @@ export const useSaleManagement = () => {
           safeState = 'Frozen Food';
         }
         
+        const safeTotalPrice = typeof transaction.totalPrice === 'number' && !isNaN(transaction.totalPrice) 
+          ? transaction.totalPrice 
+          : typeof transaction.totalPrice === 'string' 
+            ? parseFloat(transaction.totalPrice) || 0
+            : 0;
+        
+        const safeSellingPrice = typeof transaction.sellingPrice === 'number' && !isNaN(transaction.sellingPrice)
+          ? transaction.sellingPrice
+          : typeof transaction.sellingPrice === 'string'
+            ? parseFloat(transaction.sellingPrice) || 0
+            : 0;
+        
         return {
           ...transaction,
-          state: safeState
+          state: safeState,
+          totalPrice: safeTotalPrice,
+          sellingPrice: safeSellingPrice
         };
       });
       
@@ -161,9 +176,16 @@ export const useSaleManagement = () => {
           safeState = 'Frozen Food';
         }
         
+        const safeQuantity = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity)) || 1;
+        const safeSellingPrice = typeof item.sellingPrice === 'number' ? item.sellingPrice : parseFloat(String(item.sellingPrice)) || 0;
+        const safeTotalPrice = safeSellingPrice * safeQuantity;
+        
         return {
           ...item,
-          state: safeState
+          state: safeState,
+          quantity: safeQuantity,
+          sellingPrice: safeSellingPrice,
+          totalPrice: safeTotalPrice
         };
       });
       
@@ -203,14 +225,24 @@ export const useSaleManagement = () => {
         safeState = 'Frozen Food';
       }
       
+      const safeQuantity = typeof formNewSale.quantity === 'number' 
+        ? formNewSale.quantity 
+        : parseInt(String(formNewSale.quantity)) || 1;
+      
+      const safeSellingPrice = typeof formNewSale.sellingPrice === 'number' 
+        ? formNewSale.sellingPrice 
+        : parseFloat(String(formNewSale.sellingPrice)) || 0;
+      
+      const safeTotalPrice = safeSellingPrice * safeQuantity;
+      
       const saleItem: PizzaSaleItem = {
         size: formNewSale.size,
         flavor: formNewSale.flavor,
-        quantity: formNewSale.quantity,
+        quantity: safeQuantity,
         state: safeState,
         includeBox: formNewSale.includeBox,
-        sellingPrice: formNewSale.sellingPrice,
-        totalPrice: formNewSale.totalPrice,
+        sellingPrice: safeSellingPrice,
+        totalPrice: safeTotalPrice,
         date: formNewSale.date
       };
       
