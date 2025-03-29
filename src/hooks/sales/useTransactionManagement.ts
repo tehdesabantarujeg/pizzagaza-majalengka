@@ -4,7 +4,6 @@ import {
   addTransaction, 
   updateTransaction, 
   deleteTransaction, 
-  generateTransactionNumber, 
   fetchStockItems, 
   updateStockItem, 
   fetchBoxStock, 
@@ -71,10 +70,20 @@ const useTransactionManagement = ({
     }
   };
   
+  // Generate a transaction number based on current timestamp
+  const generateTransactionNumber = (): string => {
+    const now = new Date();
+    const yearPart = now.getFullYear().toString().substr(2, 2); // YY
+    const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
+    const sequenceNumber = now.getTime().toString().substr(-4); // Last 4 digits of timestamp
+    
+    return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
+  };
+  
   const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      const transactionNumber = await generateTransactionNumber();
+      const transactionNumber = generateTransactionNumber();
       
       // Create an array to hold the created transactions
       const createdTransactions: Transaction[] = [];

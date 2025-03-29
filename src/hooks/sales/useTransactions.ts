@@ -4,11 +4,8 @@ import { Transaction } from '@/utils/types';
 import { 
   fetchTransactions, 
   addTransaction, 
-  generateTransactionNumber, 
   deleteTransaction, 
-  updateTransaction, 
-  getTransactionCount, 
-  setupSupabaseTables 
+  updateTransaction
 } from '@/utils/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatTransactionNumber } from '@/utils/constants';
@@ -17,11 +14,9 @@ export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const queryClient = useQueryClient();
   
-  // Ambil data transaksi saat komponen dimuat
+  // Load transactions when component mounts
   useEffect(() => {
-    setupSupabaseTables().then(() => {
-      loadTransactions();
-    });
+    loadTransactions();
   }, []);
 
   const loadTransactions = async () => {
@@ -35,10 +30,20 @@ export const useTransactions = () => {
     }
   };
 
+  // Generate a transaction number based on current timestamp
+  const getNextTransactionNumber = (): string => {
+    const now = new Date();
+    const yearPart = now.getFullYear().toString().substr(2, 2); // YY
+    const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
+    const sequenceNumber = now.getTime().toString().substr(-4); // Last 4 digits of timestamp
+    
+    return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
+  };
+
   const addNewTransaction = async (transaction: Omit<Transaction, 'id'>, existingTransactionNumber?: string): Promise<Transaction | null> => {
     try {
       // Use the provided transaction number or generate a new one
-      const transactionNumber = existingTransactionNumber || await getNextTransactionNumber();
+      const transactionNumber = existingTransactionNumber || getNextTransactionNumber();
       
       // Make sure the transaction uses the provided transaction number
       const transactionWithNumber = {
@@ -58,19 +63,6 @@ export const useTransactions = () => {
     } catch (error) {
       console.error("Error adding transaction:", error);
       return null;
-    }
-  };
-  
-  // Function to get the next transaction number
-  const getNextTransactionNumber = async (): Promise<string> => {
-    try {
-      // Get the count of unique transaction numbers, not all transactions
-      const count = await getTransactionCount();
-      return formatTransactionNumber(count + 1);
-    } catch (error) {
-      console.error("Error getting transaction count:", error);
-      // Fallback to current timestamp if we can't get the count
-      return formatTransactionNumber(Date.now());
     }
   };
 

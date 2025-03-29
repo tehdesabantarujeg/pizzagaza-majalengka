@@ -10,8 +10,19 @@ interface BoxAvailabilityBoxProps {
 }
 
 const BoxAvailabilityBox: React.FC<BoxAvailabilityBoxProps> = ({ boxItems }) => {
-  // Sort box items by size
-  const sortedBoxItems = [...boxItems].sort((a, b) => a.size > b.size ? 1 : -1);
+  // Combine quantities for the same size boxes
+  const combinedBoxes: Record<string, number> = {};
+  
+  boxItems.forEach(item => {
+    if (combinedBoxes[item.size]) {
+      combinedBoxes[item.size] += item.quantity;
+    } else {
+      combinedBoxes[item.size] = item.quantity;
+    }
+  });
+  
+  // Sort by size
+  const sortedSizes = Object.keys(combinedBoxes).sort();
 
   return (
     <Card className="w-full">
@@ -19,15 +30,16 @@ const BoxAvailabilityBox: React.FC<BoxAvailabilityBoxProps> = ({ boxItems }) => 
         <CardTitle className="text-base">Ketersediaan Stock Dus</CardTitle>
       </CardHeader>
       <CardContent>
-        {sortedBoxItems.length > 0 ? (
+        {sortedSizes.length > 0 ? (
           <div className="space-y-2">
-            {sortedBoxItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between">
-                <span className="font-medium">{item.size}</span>
-                <Badge variant={item.quantity <= 0 ? "destructive" : item.quantity < 5 ? "outline" : "secondary"}>
-                  {item.quantity}
+            {sortedSizes.map((size) => (
+              <div key={size} className="flex items-center justify-between">
+                <span className="font-medium">{size}</span>
+                <Badge 
+                  variant={combinedBoxes[size] <= 0 ? "destructive" : combinedBoxes[size] < 5 ? "outline" : "secondary"}
+                >
+                  {combinedBoxes[size]}
                 </Badge>
-                <Separator className="my-1" />
               </div>
             ))}
           </div>

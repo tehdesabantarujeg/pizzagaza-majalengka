@@ -11,16 +11,27 @@ interface StockAvailabilityBoxProps {
 }
 
 const StockAvailabilityBox: React.FC<StockAvailabilityBoxProps> = ({ stockItems }) => {
-  // Group stock items by size
-  const groupedBySize = stockItems.reduce((groups, item) => {
-    if (!groups[item.size]) {
-      groups[item.size] = [];
+  // Group stock items by size and flavor, combining quantities
+  const groupedBySize: Record<string, Record<string, number>> = {};
+  
+  // Process all stock items and combine quantities for the same size and flavor
+  stockItems.forEach(item => {
+    if (!groupedBySize[item.size]) {
+      groupedBySize[item.size] = {};
     }
-    groups[item.size].push(item);
-    return groups;
-  }, {} as Record<string, PizzaStock[]>);
+    
+    // Add to existing quantity or initialize new
+    if (groupedBySize[item.size][item.flavor]) {
+      groupedBySize[item.size][item.flavor] += item.quantity;
+    } else {
+      groupedBySize[item.size][item.flavor] = item.quantity;
+    }
+  });
 
-  const hasZeroStock = stockItems.some(item => item.quantity === 0);
+  // Check if any stock is zero
+  const hasZeroStock = Object.values(groupedBySize).some(
+    sizeGroup => Object.values(sizeGroup).some(quantity => quantity === 0)
+  );
 
   return (
     <Card className="w-full">
@@ -38,18 +49,18 @@ const StockAvailabilityBox: React.FC<StockAvailabilityBoxProps> = ({ stockItems 
       <CardContent>
         {Object.keys(groupedBySize).length > 0 ? (
           <div className="space-y-4">
-            {Object.entries(groupedBySize).map(([size, items]) => (
+            {Object.entries(groupedBySize).map(([size, flavors]) => (
               <div key={size} className="border rounded-md p-3">
                 <h3 className="font-medium text-sm border-b pb-1 mb-2">{size}</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {items.map((item) => (
-                    <div key={`${item.flavor}-${item.size}`} className="flex items-center justify-between">
-                      <span className="text-xs">{item.flavor}</span>
+                  {Object.entries(flavors).map(([flavor, quantity]) => (
+                    <div key={`${flavor}-${size}`} className="flex items-center justify-between">
+                      <span className="text-xs">{flavor}</span>
                       <Badge 
-                        variant={item.quantity <= 0 ? "destructive" : item.quantity < 5 ? "outline" : "secondary"} 
+                        variant={quantity <= 0 ? "destructive" : quantity < 5 ? "outline" : "secondary"} 
                         className="text-xs"
                       >
-                        {item.quantity}
+                        {quantity}
                       </Badge>
                     </div>
                   ))}

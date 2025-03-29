@@ -12,19 +12,29 @@ interface StockAvailabilityTableProps {
 }
 
 const StockAvailabilityTable: React.FC<StockAvailabilityTableProps> = ({ stockItems, isLoading = false }) => {
+  // Group stock items by size and flavor, combining quantities
+  const groupedItems: Record<string, Record<string, number>> = {};
+  
+  stockItems.forEach(item => {
+    if (!groupedItems[item.flavor]) {
+      groupedItems[item.flavor] = {};
+    }
+    
+    if (groupedItems[item.flavor][item.size]) {
+      groupedItems[item.flavor][item.size] += item.quantity;
+    } else {
+      groupedItems[item.flavor][item.size] = item.quantity;
+    }
+  });
+  
   // Get unique flavors and sizes
-  const flavors = Array.from(new Set(stockItems.map(item => item.flavor)));
+  const flavors = Object.keys(groupedItems).sort();
   const sizes = ['Small', 'Medium'];
   
   // Check if any stock is zero
-  const hasZeroStock = stockItems.some(item => item.quantity === 0);
-  
-  // Create a map for quick access to stock quantities
-  const stockMap = new Map<string, number>();
-  stockItems.forEach(item => {
-    const key = `${item.flavor}-${item.size}`;
-    stockMap.set(key, item.quantity);
-  });
+  const hasZeroStock = Object.values(groupedItems).some(
+    flavorSizes => Object.values(flavorSizes).some(quantity => quantity === 0)
+  );
   
   return (
     <Card className="w-full">
@@ -60,8 +70,7 @@ const StockAvailabilityTable: React.FC<StockAvailabilityTableProps> = ({ stockIt
                   <TableRow key={flavor}>
                     <TableCell className="font-medium">{flavor}</TableCell>
                     {sizes.map(size => {
-                      const key = `${flavor}-${size}`;
-                      const quantity = stockMap.get(key) || 0;
+                      const quantity = groupedItems[flavor][size] || 0;
                       return (
                         <TableCell key={size} className="text-center">
                           <Badge 
