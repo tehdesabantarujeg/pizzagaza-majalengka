@@ -150,7 +150,7 @@ const Expenses = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Pengeluaran Bulan Ini</h3>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(currentMonthTotal)}</p>
+                  <p className="text-3xl font-bold mt-1">{formatCurrency(Number(currentMonthTotal))}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
                 </div>
                 <div className="p-3 bg-red-50 rounded-full dark:bg-red-900/20">

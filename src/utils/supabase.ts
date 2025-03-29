@@ -409,3 +409,142 @@ export const fetchTransactionCount = async (): Promise<number> => {
     return 0;
   }
 };
+
+/**
+ * Updates the cost price of a pizza stock item.
+ * @param stockId The ID of the pizza stock item to update.
+ * @param newPrice The new cost price.
+ */
+export const updatePizzaStockCostPrice = async (stockId: string, newPrice: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('pizza_stock')
+      .update({ cost_price: newPrice })
+      .eq('id', stockId);
+    
+    if (error) {
+      console.error("Error updating pizza stock cost price:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating pizza stock cost price:", error);
+    return false;
+  }
+};
+
+/**
+ * Updates the cost price of a box stock item.
+ * @param stockId The ID of the box stock item to update.
+ * @param newPrice The new cost price.
+ */
+export const updateBoxStockCostPrice = async (stockId: string, newPrice: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('box_stock')
+      .update({ cost_price: newPrice })
+      .eq('id', stockId);
+    
+    if (error) {
+      console.error("Error updating box stock cost price:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating box stock cost price:", error);
+    return false;
+  }
+};
+
+/**
+ * Fetches cash summary data for a specific date range.
+ * @param startDate The start date of the range.
+ * @param endDate The end date of the range.
+ */
+export const fetchCashSummary = async (startDate: string, endDate: string) => {
+  try {
+    // Fetch transactions for the specified date range
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: false });
+    
+    if (transactionsError) {
+      console.error("Error fetching transactions for cash summary:", transactionsError);
+      return { income: 0, expenses: 0, balance: 0, transactions: [], expensesList: [] };
+    }
+    
+    // Fetch expenses for the specified date range
+    const { data: expenses, error: expensesError } = await supabase
+      .from('expenses')
+      .select('*')
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: false });
+    
+    if (expensesError) {
+      console.error("Error fetching expenses for cash summary:", expensesError);
+      return { income: 0, expenses: 0, balance: 0, transactions: transactions || [], expensesList: [] };
+    }
+    
+    // Calculate income from transactions
+    const income = transactions ? transactions.reduce((sum, transaction) => sum + Number(transaction.total_price), 0) : 0;
+    
+    // Calculate expenses total
+    const expensesTotal = expenses ? expenses.reduce((sum, expense) => sum + Number(expense.amount), 0) : 0;
+    
+    // Calculate balance
+    const balance = income - expensesTotal;
+    
+    return {
+      income,
+      expenses: expensesTotal,
+      balance,
+      transactions: transactions ? transactions.map(mapDbToTransaction) : [],
+      expensesList: expenses ? expenses.map(mapDbToExpense) : []
+    };
+  } catch (error) {
+    console.error("Error fetching cash summary:", error);
+    return { income: 0, expenses: 0, balance: 0, transactions: [], expensesList: [] };
+  }
+};
+
+/**
+ * Fetches the total expenses for the current month.
+ */
+export const getCurrentMonthTotalExpenses = async (): Promise<number> => {
+  try {
+    // Get the first and last day of the current month
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    // Format dates for the query
+    const startDate = firstDay.toISOString();
+    const endDate = lastDay.toISOString();
+    
+    // Fetch expenses for the current month
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('amount')
+      .gte('date', startDate)
+      .lte('date', endDate);
+    
+    if (error) {
+      console.error("Error fetching current month expenses:", error);
+      return 0;
+    }
+    
+    // Calculate the total expenses
+    const total = data ? data.reduce((sum, expense) => sum + Number(expense.amount), 0) : 0;
+    
+    return total;
+  } catch (error) {
+    console.error("Error calculating current month expenses:", error);
+    return 0;
+  }
+};
