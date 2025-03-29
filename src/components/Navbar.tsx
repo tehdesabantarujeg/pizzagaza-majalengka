@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
       <div className="flex items-center">
         <NavLink to="/" className="flex items-center gap-2 mr-8">
           <Pizza className="h-6 w-6 text-pizza-red" />
-          <span className="font-semibold text-lg">Kasir Pizza Gaza Majalengka</span>
+          <span className="font-semibold text-lg">Pizza Gaza Majalengka</span>
         </NavLink>
         
         <nav className="hidden md:flex items-center gap-1">

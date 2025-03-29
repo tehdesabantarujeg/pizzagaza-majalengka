@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import Expenses from "./pages/Expenses";
 import CashManagement from "./pages/CashManagement";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -46,8 +46,9 @@ const PublicRoute = ({ element }: { element: JSX.Element }) => {
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Add Home route */}
+      <Route path="/" element={<ProtectedRoute element={<Home />} />} />
       <Route path="/login" element={<PublicRoute element={<Login />} />} />
-      <Route path="/" element={<ProtectedRoute element={<Index />} />} />
       <Route path="/stock" element={<ProtectedRoute element={<StockManagement />} allowedRoles={['admin']} />} />
       <Route path="/sales" element={<ProtectedRoute element={<Sales />} />} />
       <Route path="/expenses" element={<ProtectedRoute element={<Expenses />} allowedRoles={['admin']} />} />
