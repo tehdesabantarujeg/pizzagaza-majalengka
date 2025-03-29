@@ -14,6 +14,189 @@ if (!supabaseKey) {
 
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
+export const fetchDashboardData = async () => {
+  try {
+    const stockItemsPromise = fetchStockItems();
+    const transactionsPromise = fetchTransactions();
+    const customersPromise = fetchCustomers();
+    
+    const [stockItems, transactions, customers] = await Promise.all([
+      stockItemsPromise,
+      transactionsPromise,
+      customersPromise
+    ]);
+    
+    return {
+      stockItems,
+      transactions,
+      customers
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    return {
+      stockItems: [],
+      transactions: [],
+      customers: []
+    };
+  }
+};
+
+export const fetchCashSummary = async (start?: string, end?: string) => {
+  try {
+    let query = supabase
+      .from('transactions')
+      .select('*');
+    
+    if (start) {
+      query = query.gte('date', start);
+    }
+    
+    if (end) {
+      query = query.lte('date', end);
+    }
+    
+    const { data: transactions, error: transactionsError } = await query;
+    
+    if (transactionsError) {
+      console.error("Error fetching transactions for cash summary:", transactionsError);
+      return { 
+        income: 0,
+        expenses: 0,
+        balance: 0,
+        transactions: []
+      };
+    }
+    
+    let expensesQuery = supabase
+      .from('expenses')
+      .select('*');
+    
+    if (start) {
+      expensesQuery = expensesQuery.gte('date', start);
+    }
+    
+    if (end) {
+      expensesQuery = expensesQuery.lte('date', end);
+    }
+    
+    const { data: expenses, error: expensesError } = await expensesQuery;
+    
+    if (expensesError) {
+      console.error("Error fetching expenses for cash summary:", expensesError);
+      return { 
+        income: 0,
+        expenses: 0,
+        balance: 0,
+        transactions: []
+      };
+    }
+    
+    const income = transactions.reduce((sum, t) => sum + (t.total_price || 0), 0);
+    
+    const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    const balance = income - expensesTotal;
+    
+    return {
+      income,
+      expenses: expensesTotal,
+      balance,
+      transactions,
+      expensesList: expenses
+    };
+  } catch (error) {
+    console.error("Error fetching cash summary:", error);
+    return { 
+      income: 0,
+      expenses: 0,
+      balance: 0,
+      transactions: [],
+      expensesList: []
+    };
+  }
+};
+
+export const deleteExpense = async (id: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting expense:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting expense:", error);
+    return false;
+  }
+};
+
+export const getCurrentMonthTotalExpenses = async (): Promise<number> => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('amount')
+      .gte('date', firstDayOfMonth)
+      .lte('date', lastDayOfMonth);
+
+    if (error) {
+      console.error("Error fetching current month expenses:", error);
+      return 0;
+    }
+    
+    return data.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+  } catch (error) {
+    console.error("Error fetching current month expenses:", error);
+    return 0;
+  }
+};
+
+export const updatePizzaStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('pizza_stock')
+      .update({ cost_price: newPrice, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating pizza stock cost price:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating pizza stock cost price:", error);
+    return false;
+  }
+};
+
+export const updateBoxStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('box_stock')
+      .update({ cost_price: newPrice, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating box stock cost price:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating box stock cost price:", error);
+    return false;
+  }
+};
+
 export const fetchStockItems = async () => {
   try {
     const { data, error } = await supabase
@@ -111,7 +294,6 @@ export const fetchCustomers = async () => {
 
 export const addTransaction = async (transaction: any): Promise<any> => {
   try {
-    // Map transaction to database schema
     const { mapTransactionToDatabase } = await import('@/integrations/supabase/database.types');
     const dbTransaction = mapTransactionToDatabase(transaction);
     
@@ -173,7 +355,6 @@ export const deleteTransaction = async (id: string): Promise<boolean> => {
 
 export const addStockItem = async (item: any): Promise<boolean> => {
   try {
-    // Map stock item to database schema
     const { mapPizzaStockToDatabase } = await import('@/integrations/supabase/database.types');
     const dbItem = mapPizzaStockToDatabase(item);
     
@@ -214,7 +395,6 @@ export const updateStockItem = async (item: any): Promise<boolean> => {
 
 export const addMultiplePizzaStock = async (items: any[]): Promise<boolean> => {
   try {
-    // Map each item to database schema
     const { mapPizzaStockToDatabase } = await import('@/integrations/supabase/database.types');
     const dbItems = items.map(item => mapPizzaStockToDatabase(item));
     
@@ -236,7 +416,6 @@ export const addMultiplePizzaStock = async (items: any[]): Promise<boolean> => {
 
 export const addBoxStock = async (item: any): Promise<boolean> => {
   try {
-    // Map box stock to database schema
     const { mapBoxStockToDatabase } = await import('@/integrations/supabase/database.types');
     const dbItem = mapBoxStockToDatabase(item);
     
