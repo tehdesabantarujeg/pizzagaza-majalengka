@@ -16,7 +16,6 @@ import StockAvailabilityTable from '@/components/dashboard/StockAvailabilityTabl
 import { useQuery } from '@tanstack/react-query';
 import { fetchBoxStock } from '@/utils/supabase';
 import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
-import { transformBoxStockFromDB } from '@/integrations/supabase/database.types';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
@@ -32,15 +31,11 @@ const Dashboard = () => {
   } = useDashboardData();
 
   const { 
-    data: boxItemsRaw = [],
-    isLoading: isLoadingBoxStock
+    data: boxItems = []
   } = useQuery({
     queryKey: ['boxStocks'],
     queryFn: fetchBoxStock
   });
-  
-  // Transform boxItems data from DB format to app format
-  const boxItems = boxItemsRaw.map(transformBoxStockFromDB);
 
   return (
     <Layout>

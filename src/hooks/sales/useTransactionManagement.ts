@@ -1,3 +1,4 @@
+
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
 import { 
   addTransaction, 
@@ -6,11 +7,9 @@ import {
   fetchStockItems, 
   updateStockItem, 
   fetchBoxStock, 
-  updateBoxStock,
-  generateTransactionNumber
+  updateBoxStock 
 } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
-import { transformPizzaStockFromDB, transformBoxStockFromDB } from '@/integrations/supabase/database.types';
 
 interface UseTransactionManagementProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
@@ -26,16 +25,15 @@ const useTransactionManagement = ({
   loadTransactions
 }: UseTransactionManagementProps) => {
   
+  // Helper function to update stock levels after a successful transaction
   const updateStockLevels = async (items: PizzaSaleItem[]): Promise<boolean> => {
     try {
       const pizzaStockItems = await fetchStockItems();
       const boxStockItems = await fetchBoxStock();
       
-      const transformedPizzaStock = pizzaStockItems.map(transformPizzaStockFromDB);
-      const transformedBoxStock = boxStockItems.map(transformBoxStockFromDB);
-      
       for (const item of items) {
-        const matchingPizzaStock = transformedPizzaStock.find(
+        // Update pizza stock
+        const matchingPizzaStock = pizzaStockItems.find(
           stock => stock.size === item.size && stock.flavor === item.flavor
         );
         
@@ -48,8 +46,9 @@ const useTransactionManagement = ({
           await updateStockItem(updatedStock);
         }
         
+        // Update box stock if needed
         if (item.includeBox) {
-          const matchingBoxStock = transformedBoxStock.find(
+          const matchingBoxStock = boxStockItems.find(
             stock => stock.size === item.size
           );
           
@@ -71,24 +70,22 @@ const useTransactionManagement = ({
     }
   };
   
-  const getTransactionNumber = async (): Promise<string> => {
-    try {
-      return await generateTransactionNumber();
-    } catch (error) {
-      console.error("Error generating transaction number:", error);
-      const now = new Date();
-      const yearPart = now.getFullYear().toString().substr(2, 2); // YY
-      const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
-      const sequenceNumber = now.getTime().toString().substr(-4); // Last 4 digits of timestamp
-      
-      return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
-    }
+  // Generate a transaction number based on current timestamp
+  const generateTransactionNumber = (): string => {
+    const now = new Date();
+    const yearPart = now.getFullYear().toString().substr(2, 2); // YY
+    const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
+    const sequenceNumber = now.getTime().toString().substr(-4); // Last 4 digits of timestamp
+    
+    return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
   };
   
   const createTransaction = async (items: PizzaSaleItem[], customerName?: string, notes?: string): Promise<boolean> => {
     setIsLoading(true);
     try {
+      // Validate all items to make sure they have proper data types
       const validatedItems = items.map(item => {
+        // Ensure numeric properties are valid numbers
         const safeQuantity = typeof item.quantity === 'number' ? item.quantity : parseInt(String(item.quantity)) || 1;
         const safeSellingPrice = typeof item.sellingPrice === 'number' ? item.sellingPrice : parseFloat(String(item.sellingPrice)) || 0;
         const safeTotalPrice = safeSellingPrice * safeQuantity;
@@ -101,11 +98,14 @@ const useTransactionManagement = ({
         };
       });
       
-      const transactionNumber = await getTransactionNumber();
+      const transactionNumber = generateTransactionNumber();
       
+      // Create an array to hold the created transactions
       const createdTransactions: Transaction[] = [];
       
+      // Process each item and create a transaction
       for (const item of validatedItems) {
+        // Ensure pizzaId is null if undefined or empty string
         const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
         
         const transaction: Omit<Transaction, 'id'> = {
@@ -130,9 +130,15 @@ const useTransactionManagement = ({
       }
       
       if (createdTransactions.length > 0) {
+        // Update stock levels after successful transaction
         await updateStockLevels(validatedItems);
+        
+        // Print receipt
         printReceipt(createdTransactions);
+        
+        // Reload transactions
         await loadTransactions();
+        
         toast({
           title: "Berhasil",
           description: "Transaksi berhasil disimpan",
@@ -159,8 +165,10 @@ const useTransactionManagement = ({
     }
   };
 
+  // Updated function to handle both existing and new transactions in a group
   const updateExistingTransactions = async (updatedTransactions: Transaction[]): Promise<boolean> => {
     try {
+      // Separate existing transactions from new ones
       const existingTransactions = updatedTransactions.filter(t => 
         t.id && !t.id.startsWith('temp-') && t.id.trim() !== ''
       );
@@ -169,15 +177,19 @@ const useTransactionManagement = ({
         !t.id || t.id.startsWith('temp-') || t.id.trim() === ''
       );
       
+      // First update existing transactions
       if (existingTransactions.length > 0) {
         await Promise.all(existingTransactions.map(async (transaction) => {
           return updateTransaction(transaction);
         }));
       }
       
+      // Then create new transactions with the same transaction number
       if (newTransactions.length > 0 && updatedTransactions.length > 0) {
+        // Use the transaction number from the existing group
         const transactionNumber = updatedTransactions[0].transactionNumber;
         
+        // Convert to PizzaSaleItem for stock update
         const newItems: PizzaSaleItem[] = newTransactions.map(t => ({
           size: t.size,
           flavor: t.flavor,
@@ -189,12 +201,13 @@ const useTransactionManagement = ({
           date: t.date
         }));
         
+        // Update stock for new items
         await updateStockLevels(newItems);
         
-        for (const transaction of newTransactions) {
+        await Promise.all(newTransactions.map(async (transaction) => {
           const newTransactionData: Omit<Transaction, 'id'> = {
-            date: transaction.date,
-            pizzaId: transaction.pizzaId,
+            date: transaction.date || new Date().toISOString(),
+            pizzaId: transaction.pizzaId || null,
             size: transaction.size,
             flavor: transaction.flavor,
             quantity: transaction.quantity,
@@ -204,31 +217,55 @@ const useTransactionManagement = ({
             totalPrice: transaction.totalPrice,
             customerName: transaction.customerName,
             notes: transaction.notes,
-            transactionNumber: transactionNumber
+            transactionNumber
           };
           
-          await addTransaction(newTransactionData);
-        }
+          return addTransaction(newTransactionData);
+        }));
       }
       
       await loadTransactions();
-      
+      toast({
+        title: "Berhasil",
+        description: "Transaksi berhasil diperbarui",
+      });
       return true;
     } catch (error) {
       console.error("Error updating transactions:", error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui transaksi",
+        variant: "destructive"
+      });
       return false;
     }
   };
 
-  const handleDeleteTransaction = async (id: string): Promise<boolean> => {
+  const handleDeleteTransaction = async (transactionId: string): Promise<boolean> => {
     try {
-      const success = await deleteTransaction(id);
+      const success = await deleteTransaction(transactionId);
       if (success) {
-        setTransactions(prev => prev.filter(t => t.id !== id));
+        await loadTransactions();
+        toast({
+          title: "Berhasil",
+          description: "Transaksi berhasil dihapus",
+        });
+        return true;
+      } else {
+        toast({
+          title: "Error",
+          description: "Gagal menghapus transaksi",
+          variant: "destructive"
+        });
+        return false;
       }
-      return success;
     } catch (error) {
       console.error("Error deleting transaction:", error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus transaksi",
+        variant: "destructive"
+      });
       return false;
     }
   };

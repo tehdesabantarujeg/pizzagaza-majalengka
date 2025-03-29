@@ -9,7 +9,6 @@ import {
 } from '@/utils/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatTransactionNumber } from '@/utils/constants';
-import { transformTransactionFromDB } from '@/integrations/supabase/database.types';
 
 export const useTransactions = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -23,9 +22,7 @@ export const useTransactions = () => {
   const loadTransactions = async () => {
     try {
       const transactionData = await fetchTransactions();
-      // Transform the data from DB format to app format
-      const transformedTransactions = transactionData.map(transformTransactionFromDB);
-      setTransactions(transformedTransactions);
+      setTransactions(transactionData);
       // Invalidate dashboard data to ensure it refreshes
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     } catch (error) {

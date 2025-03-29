@@ -22,7 +22,6 @@ import { PizzaStock, BoxStock } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import StockAvailabilityTable from '@/components/dashboard/StockAvailabilityTable';
-import { transformPizzaStockFromDB, transformBoxStockFromDB } from '@/integrations/supabase/database.types';
 
 const StockManagement = () => {
   const [isOpenPizzaForm, setIsOpenPizzaForm] = useState(false);
@@ -37,24 +36,20 @@ const StockManagement = () => {
   const { toast } = useToast();
 
   const { 
-    data: pizzaStocksRaw = [], 
+    data: pizzaStocks = [], 
     isLoading: isLoadingPizzaStocks 
   } = useQuery({
     queryKey: ['pizzaStocks'],
     queryFn: fetchStockItems
   });
-  
-  const pizzaStocks = pizzaStocksRaw.map(transformPizzaStockFromDB);
 
   const { 
-    data: boxStocksRaw = [], 
+    data: boxStocks = [], 
     isLoading: isLoadingBoxStocks 
   } = useQuery({
     queryKey: ['boxStocks'],
     queryFn: fetchBoxStock
   });
-  
-  const boxStocks = boxStocksRaw.map(transformBoxStockFromDB);
 
   const addPizzaStockMutation = useMutation({
     mutationFn: (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => addStockItem(newStock),
