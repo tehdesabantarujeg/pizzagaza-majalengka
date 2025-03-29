@@ -23,3 +23,42 @@ export type BoxStockUpdate = Tables['box_stock']['Update'];
 export type TransactionUpdate = Tables['transactions']['Update'];
 export type CustomerUpdate = Tables['customers']['Update'];
 export type ExpenseUpdate = Tables['expenses']['Update'];
+
+// Mapping for column names
+export const columnMapping = {
+  // Pizza stock
+  pizzaStock: {
+    id: 'id',
+    size: 'size',
+    flavor: 'flavor',
+    quantity: 'quantity',
+    costPrice: 'cost_price',
+    purchaseDate: 'purchase_date',
+    updatedAt: 'updated_at'
+  },
+  // Box stock
+  boxStock: {
+    id: 'id',
+    size: 'size',
+    quantity: 'quantity',
+    costPrice: 'cost_price',
+    purchaseDate: 'purchase_date',
+    updatedAt: 'updated_at'
+  },
+  // Transactions
+  transactions: {
+    id: 'id',
+    date: 'date',
+    pizzaId: 'pizza_id',
+    size: 'size',
+    flavor: 'flavor',
+    quantity: 'quantity',
+    state: 'state',
+    includeBox: 'include_box',
+    sellingPrice: 'selling_price',
+    totalPrice: 'total_price',
+    customerName: 'customer_name',
+    notes: 'notes',
+    transactionNumber: 'transaction_number'
+  }
+};
