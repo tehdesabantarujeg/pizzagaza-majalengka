@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -11,11 +12,12 @@ import { BoxStock } from '@/utils/types';
 
 interface BoxStockStatusChartProps {
   boxItems: BoxStock[];
+  isLoading?: boolean;
 }
 
 const COLORS = ['#FF8042', '#0088FE', '#00C49F', '#FFBB28'];
 
-const BoxStockStatusChart: React.FC<BoxStockStatusChartProps> = ({ boxItems }) => {
+const BoxStockStatusChart: React.FC<BoxStockStatusChartProps> = ({ boxItems, isLoading = false }) => {
   // Process stock data for pie chart
   const stockData = boxItems
     ? boxItems
@@ -42,7 +44,7 @@ const BoxStockStatusChart: React.FC<BoxStockStatusChartProps> = ({ boxItems }) =
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
-          {stockData && stockData.length > 0 ? (
+          {!isLoading && stockData && stockData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -63,7 +65,11 @@ const BoxStockStatusChart: React.FC<BoxStockStatusChartProps> = ({ boxItems }) =
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center">
-              Belum ada data stok dus
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              ) : (
+                "Belum ada data stok dus"
+              )}
             </div>
           )}
         </div>

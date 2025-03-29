@@ -25,7 +25,7 @@ const Index = () => {
     }
   }, [location, navigate]);
 
-  const { data, isLoading } = useDashboardData();
+  const { salesTrend, topProducts, summarySales, recentTransactions, stockItems, boxItems, isLoading, timeframe } = useDashboardData();
 
   return (
     <Layout>
@@ -36,10 +36,7 @@ const Index = () => {
       
       <div className="container px-4 py-6">
         <SummaryCards 
-          totalSales={data.totalSales}
-          totalProducts={data.totalProducts}
-          totalCustomers={data.totalCustomers}
-          currentMonthExpenses={data.currentMonthExpenses}
+          data={summarySales}
           isLoading={isLoading}
         />
         
@@ -53,14 +50,14 @@ const Index = () => {
               <TabsContent value="sales">
                 <Card>
                   <CardContent className="pt-4">
-                    <SalesTrendChart data={data.salesTrend} isLoading={isLoading} />
+                    <SalesTrendChart salesData={salesTrend} isLoading={isLoading} timeframe={timeframe} />
                   </CardContent>
                 </Card>
               </TabsContent>
               <TabsContent value="products">
                 <Card>
                   <CardContent className="pt-4">
-                    <TopProductsChart data={data.topProducts} isLoading={isLoading} />
+                    <TopProductsChart topProducts={topProducts} isLoading={isLoading} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -76,14 +73,14 @@ const Index = () => {
               <TabsContent value="pizza">
                 <Card>
                   <CardContent className="pt-4">
-                    <StockStatusChart data={data.stockStatus} isLoading={isLoading} />
+                    <StockStatusChart stockItems={stockItems} isLoading={isLoading} />
                   </CardContent>
                 </Card>
               </TabsContent>
               <TabsContent value="box">
                 <Card>
                   <CardContent className="pt-4">
-                    <BoxStockStatusChart data={data.boxStockStatus} isLoading={isLoading} />
+                    <BoxStockStatusChart boxItems={boxItems} isLoading={isLoading} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -93,11 +90,11 @@ const Index = () => {
         
         <div className="mt-6 grid grid-cols-1 md:grid-cols-7 gap-6">
           <div className="md:col-span-4">
-            <StockAvailabilityTable stockItems={data.stockItems} isLoading={isLoading} />
+            <StockAvailabilityTable stockItems={stockItems} isLoading={isLoading} />
           </div>
           
           <div className="md:col-span-3">
-            <RecentTransactions transactions={data.recentTransactions} isLoading={isLoading} />
+            <RecentTransactions transactions={recentTransactions} isLoading={isLoading} />
           </div>
         </div>
       </div>

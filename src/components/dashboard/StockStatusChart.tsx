@@ -11,14 +11,16 @@ import {
   ResponsiveContainer,
   LabelList
 } from 'recharts';
+import { PizzaStock } from '@/utils/types';
 
 interface StockStatusChartProps {
-  stockItems: any[];
+  stockItems: PizzaStock[];
+  isLoading?: boolean;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
-const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems }) => {
+const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems, isLoading = false }) => {
   // Process stock data for bar chart
   const stockData = stockItems
     ? stockItems
@@ -44,7 +46,7 @@ const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems }) => {
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
-          {stockData && stockData.length > 0 ? (
+          {!isLoading && stockData && stockData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={stockData}
@@ -70,7 +72,11 @@ const StockStatusChart: React.FC<StockStatusChartProps> = ({ stockItems }) => {
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center">
-              Belum ada data stok
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              ) : (
+                "Belum ada data stok"
+              )}
             </div>
           )}
         </div>

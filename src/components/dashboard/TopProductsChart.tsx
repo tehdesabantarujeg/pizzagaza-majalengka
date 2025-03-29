@@ -13,9 +13,10 @@ import {
 
 interface TopProductsChartProps {
   topProducts: Array<{ name: string; quantity: number; revenue: number }>;
+  isLoading?: boolean;
 }
 
-const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts }) => {
+const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts, isLoading = false }) => {
   return (
     <Card>
       <CardHeader>
@@ -26,7 +27,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts }) => {
       </CardHeader>
       <CardContent>
         <div className="h-80">
-          {topProducts && topProducts.length > 0 ? (
+          {!isLoading && topProducts && topProducts.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={topProducts}
@@ -52,7 +53,11 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ topProducts }) => {
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex items-center justify-center">
-              Belum ada data penjualan
+              {isLoading ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              ) : (
+                "Belum ada data penjualan"
+              )}
             </div>
           )}
         </div>

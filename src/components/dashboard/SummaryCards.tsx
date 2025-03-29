@@ -5,25 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShoppingCart, Calendar, TrendingUp, Users } from 'lucide-react';
 import { FadeIn } from '@/components/animations/FadeIn';
 
-interface SummaryData {
-  total: number;
-  today: number;
-  month: number;
-  year: number;
-  transactions: number;
-  customers: number;
-  averageOrder: number;
-}
-
 interface SummaryCardsProps {
-  data: SummaryData;
+  data: {
+    total: number;
+    today: number;
+    month: number;
+    year: number;
+    transactions: number;
+    customers: number;
+    averageOrder: number;
+  };
   isLoading?: boolean;
 }
 
 const SummaryCards: React.FC<SummaryCardsProps> = ({ data, isLoading = false }) => {
   if (isLoading) {
     return (
-      <>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[...Array(4)].map((_, index) => (
           <FadeIn key={index} delay={index * 50}>
             <Card>
@@ -38,12 +36,12 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, isLoading = false }) 
             </Card>
           </FadeIn>
         ))}
-      </>
+      </div>
     );
   }
   
   return (
-    <>
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <FadeIn>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -115,7 +113,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ data, isLoading = false }) 
           </CardContent>
         </Card>
       </FadeIn>
-    </>
+    </div>
   );
 };
 

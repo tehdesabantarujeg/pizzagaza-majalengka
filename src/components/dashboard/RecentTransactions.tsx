@@ -3,13 +3,14 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatDateShort } from '@/utils/constants';
-import { TransactionRow } from '@/integrations/supabase/database.types';
+import { Transaction } from '@/utils/types';
 
 interface RecentTransactionsProps {
-  transactions: TransactionRow[];
+  transactions: Transaction[];
+  isLoading?: boolean;
 }
 
-const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions }) => {
+const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions, isLoading = false }) => {
   return (
     <Card>
       <CardHeader>
@@ -19,7 +20,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {transactions && transactions.length > 0 ? (
+        {!isLoading && transactions && transactions.length > 0 ? (
           <Table>
             <TableHeader>
               <TableRow>
@@ -37,8 +38,8 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
                   <TableCell className="text-right">{tx.quantity}</TableCell>
                   <TableCell className="text-right">
                     {/* Ensure amount is a valid number before formatting */}
-                    {typeof tx.total_price === 'number' && !isNaN(tx.total_price) 
-                      ? formatCurrency(tx.total_price) 
+                    {typeof tx.totalPrice === 'number' && !isNaN(tx.totalPrice) 
+                      ? formatCurrency(tx.totalPrice) 
                       : formatCurrency(0)}
                   </TableCell>
                 </TableRow>
@@ -47,7 +48,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
           </Table>
         ) : (
           <div className="py-8 text-center text-muted-foreground">
-            Belum ada transaksi
+            {isLoading ? (
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              "Belum ada transaksi"
+            )}
           </div>
         )}
       </CardContent>

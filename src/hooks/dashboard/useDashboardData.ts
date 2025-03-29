@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { fetchDashboardData } from '@/utils/supabase';
 import { format, subDays, subMonths, subYears, isSameDay, isWithinInterval, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { PizzaStock, BoxStock, Transaction } from '@/utils/types';
 
 export const useDashboardData = () => {
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -10,7 +11,8 @@ export const useDashboardData = () => {
   const [timeframe, setTimeframe] = useState('week');
   const [salesTrend, setSalesTrend] = useState<any[]>([]);
   const [topProducts, setTopProducts] = useState<any[]>([]);
-  const [stockItems, setStockItems] = useState<any[]>([]);
+  const [stockItems, setStockItems] = useState<PizzaStock[]>([]);
+  const [boxItems, setBoxItems] = useState<BoxStock[]>([]);
   const [summarySales, setSummarySales] = useState({
     total: 0,
     today: 0,
@@ -21,7 +23,7 @@ export const useDashboardData = () => {
     customers: 0,
     averageOrder: 0
   });
-  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   
   useEffect(() => {
     loadDashboardData();
@@ -40,8 +42,13 @@ export const useDashboardData = () => {
       setDashboardData(data);
       
       // Set stockItems from dashboardData
-      if (data && data.stockItems) {
-        setStockItems(data.stockItems);
+      if (data && data.pizzaStockItems) {
+        setStockItems(data.pizzaStockItems);
+      }
+      
+      // Set boxItems from dashboardData
+      if (data && data.boxStockItems) {
+        setBoxItems(data.boxStockItems);
       }
       
       // Process data for different visualizations
@@ -56,7 +63,7 @@ export const useDashboardData = () => {
   const processData = (data: any) => {
     if (!data) return;
     
-    const { transactions, stockItems, customers } = data;
+    const { transactions, customers } = data;
     
     // Check if transactions exist and have valid price data
     const validTransactions = transactions.filter((t: any) => 
@@ -109,7 +116,7 @@ export const useDashboardData = () => {
       month: monthSales,
       year: yearSales,
       transactions: validTransactions.length,
-      customers: customers.length,
+      customers: customers?.length || 0,
       averageOrder
     });
     
@@ -139,19 +146,26 @@ export const useDashboardData = () => {
       
     setTopProducts(sortedProducts);
 
-    // Recent transactions (last 5)
-    const recent = validTransactions
+    // Map db transactions to app model
+    const mappedTransactions = validTransactions
       .slice(0, 5)
-      ?.map((t: any) => ({
+      .map((t: any) => ({
         id: t.id,
-        date: format(new Date(t.date), 'dd MMM yyyy, HH:mm', { locale: id }),
-        product: `${t.flavor} ${t.size} ${t.state}`,
+        date: t.date,
+        flavor: t.flavor,
+        size: t.size,
+        state: t.state,
         quantity: t.quantity,
-        amount: t.total_price,
-        customer: t.customer_name || 'Pelanggan Umum'
+        includeBox: t.include_box,
+        sellingPrice: t.selling_price,
+        totalPrice: t.total_price,
+        customerName: t.customer_name || 'Pelanggan Umum',
+        notes: t.notes,
+        transactionNumber: t.transaction_number,
+        createdAt: t.created_at
       }));
 
-    setRecentTransactions(recent);
+    setRecentTransactions(mappedTransactions);
   };
 
   // Update sales trend based on selected timeframe
@@ -285,10 +299,14 @@ export const useDashboardData = () => {
     // Sort data based on timeframe
     if (timeframe === 'week') {
       const dayOrder = {'Sen': 0, 'Sel': 1, 'Rab': 2, 'Kam': 3, 'Jum': 4, 'Sab': 5, 'Min': 6};
-      trendData.sort((a, b) => dayOrder[a.period as keyof typeof dayOrder] - dayOrder[b.period as keyof typeof dayOrder]);
+      trendData.sort((a, b) => {
+        return (dayOrder[a.period as keyof typeof dayOrder] || 0) - (dayOrder[b.period as keyof typeof dayOrder] || 0);
+      });
     } else if (timeframe === 'year') {
       const monthOrder = {'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'Mei': 4, 'Jun': 5, 'Jul': 6, 'Agu': 7, 'Sep': 8, 'Okt': 9, 'Nov': 10, 'Des': 11};
-      trendData.sort((a, b) => monthOrder[a.period as keyof typeof monthOrder] - monthOrder[b.period as keyof typeof monthOrder]);
+      trendData.sort((a, b) => {
+        return (monthOrder[a.period as keyof typeof monthOrder] || 0) - (monthOrder[b.period as keyof typeof monthOrder] || 0);
+      });
     } else {
       // For day and month, sort numerically
       trendData.sort((a, b) => {
@@ -313,6 +331,7 @@ export const useDashboardData = () => {
     summarySales,
     recentTransactions,
     stockItems,
+    boxItems,
     loadDashboardData
   };
 };

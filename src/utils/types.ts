@@ -14,6 +14,7 @@ export interface PizzaStock {
   quantity: number;
   purchaseDate: string;
   costPrice: number;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -23,6 +24,7 @@ export interface BoxStock {
   quantity: number;
   purchaseDate: string;
   costPrice: number;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -52,6 +54,7 @@ export interface Transaction {
   customerName?: string;
   notes?: string;
   transactionNumber?: string;
+  createdAt: string;
 }
 
 export interface MultiItemTransaction {

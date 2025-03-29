@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +16,7 @@ import {
 interface SalesTrendChartProps {
   salesData: Array<{ period: string; amount: number }>;
   isLoading: boolean;
-  timeframe: string;
+  timeframe?: string;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -37,7 +38,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 const SalesTrendChart: React.FC<SalesTrendChartProps> = ({ 
   salesData, 
   isLoading,
-  timeframe
+  timeframe = 'week'
 }) => {
   // Get title based on timeframe
   const getTimeframeTitle = () => {
@@ -62,7 +63,7 @@ const SalesTrendChart: React.FC<SalesTrendChartProps> = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="h-96">
-          {!isLoading && salesData.length > 0 ? (
+          {!isLoading && salesData && salesData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={salesData}
