@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { PizzaStock } from '@/utils/types';
 import { Button } from '@/components/ui/button';
@@ -99,7 +98,6 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
     if (!deleteItem) return;
     
     try {
-      // Since deletePizzaStock is not available, we'll simulate by setting quantity to 0
       const updatedStock = {
         ...deleteItem,
         quantity: 0

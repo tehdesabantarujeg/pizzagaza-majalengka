@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,9 +16,7 @@ interface StockCardProps {
   updated?: string;
 }
 
-// Add an overload for accepting a stock object
 const StockCard: React.FC<StockCardProps | { stock: PizzaStock }> = (props) => {
-  // Handle both prop formats
   const stockProps = 'stock' in props ? props.stock : props;
   const { id, flavor, size, quantity, costPrice, purchaseDate } = stockProps;
   const updated = 'stock' in props ? props.stock.updatedAt : props.updated;
@@ -52,7 +49,7 @@ const StockCard: React.FC<StockCardProps | { stock: PizzaStock }> = (props) => {
         </div>
         <div className="text-sm">
           <span className="font-medium">Tanggal Pembelian:</span>{' '}
-          {formatDate(purchaseDate)}
+          {formatDate(purchaseDate || '')}
         </div>
         {updated && (
           <div className="text-sm text-muted-foreground">

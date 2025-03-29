@@ -64,13 +64,26 @@ export const formatDate = (dateString: string): string => {
 };
 
 // Format tanggal ke format pendek
-export const formatDateShort = (dateString: string): string => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
+export const formatDateShort = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return '-';
+    }
+    
+    return new Intl.DateTimeFormat('id-ID', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  } catch (error) {
+    console.error('Error formatting date:', error, dateString);
+    return '-';
+  }
 };
 
 // Format tanggal dan waktu untuk nota
