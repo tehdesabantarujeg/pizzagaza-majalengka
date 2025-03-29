@@ -54,3 +54,18 @@ export const mapTransactionToDatabase = (item: any): TransactionInsert => ({
   notes: item.notes,
   transaction_number: item.transactionNumber
 });
+
+// Additional mapping function for expenses
+export const mapExpenseToDatabase = (item: any): ExpenseInsert => ({
+  category: item.category,
+  date: item.date,
+  amount: item.amount,
+  description: item.description
+});
+
+// Additional mapping function for customers
+export const mapCustomerToDatabase = (item: any): CustomerInsert => ({
+  name: item.name,
+  purchases: item.purchases,
+  last_purchase: item.lastPurchase
+});

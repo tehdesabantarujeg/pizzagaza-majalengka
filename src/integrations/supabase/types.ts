@@ -12,24 +12,27 @@ export type Database = {
       box_stock: {
         Row: {
           cost_price: number
+          created_at: string | null
           id: string
-          purchase_date: string | null
+          purchase_date: string
           quantity: number
           size: string
           updated_at: string | null
         }
         Insert: {
           cost_price?: number
+          created_at?: string | null
           id?: string
-          purchase_date?: string | null
+          purchase_date?: string
           quantity?: number
           size: string
           updated_at?: string | null
         }
         Update: {
           cost_price?: number
+          created_at?: string | null
           id?: string
-          purchase_date?: string | null
+          purchase_date?: string
           quantity?: number
           size?: string
           updated_at?: string | null
@@ -87,27 +90,30 @@ export type Database = {
       pizza_stock: {
         Row: {
           cost_price: number
+          created_at: string | null
           flavor: string
           id: string
-          purchase_date: string | null
+          purchase_date: string
           quantity: number
           size: string
           updated_at: string | null
         }
         Insert: {
           cost_price?: number
+          created_at?: string | null
           flavor: string
           id?: string
-          purchase_date?: string | null
+          purchase_date?: string
           quantity?: number
           size: string
           updated_at?: string | null
         }
         Update: {
           cost_price?: number
+          created_at?: string | null
           flavor?: string
           id?: string
-          purchase_date?: string | null
+          purchase_date?: string
           quantity?: number
           size?: string
           updated_at?: string | null
@@ -116,8 +122,9 @@ export type Database = {
       }
       transactions: {
         Row: {
+          created_at: string | null
           customer_name: string | null
-          date: string | null
+          date: string
           flavor: string
           id: string
           include_box: boolean
@@ -128,12 +135,12 @@ export type Database = {
           size: string
           state: string
           total_price: number
-          transaction_date: string | null
           transaction_number: string | null
         }
         Insert: {
+          created_at?: string | null
           customer_name?: string | null
-          date?: string | null
+          date?: string
           flavor: string
           id?: string
           include_box?: boolean
@@ -144,12 +151,12 @@ export type Database = {
           size: string
           state: string
           total_price?: number
-          transaction_date?: string | null
           transaction_number?: string | null
         }
         Update: {
+          created_at?: string | null
           customer_name?: string | null
-          date?: string | null
+          date?: string
           flavor?: string
           id?: string
           include_box?: boolean
@@ -160,7 +167,6 @@ export type Database = {
           size?: string
           state?: string
           total_price?: number
-          transaction_date?: string | null
           transaction_number?: string | null
         }
         Relationships: [

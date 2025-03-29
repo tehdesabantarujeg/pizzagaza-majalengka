@@ -1,20 +1,5 @@
-
-import { createClient } from '@supabase/supabase-js';
-import { Database } from './types';
-
-// Use Supabase project details from your project
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://zaefsgelthwybfomhlfa.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZWZzZ2VsdGh3eWJmb21obGZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMTYzNDUsImV4cCI6MjA1ODU5MjM0NX0.HdBQxSb_-jroclYCNjbcvILKIaTdYR2hKLlrqdv1CAE';
-
-if (!supabaseUrl) {
-  throw new Error('Supabase URL is not defined');
-}
-
-if (!supabaseKey) {
-  throw new Error('Supabase Key is not defined');
-}
-
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+import { supabase } from '@/integrations/supabase/client';
+import { Database } from '@/integrations/supabase/types';
 
 export const fetchCashSummary = async (start?: string, end?: string) => {
   try {
@@ -431,9 +416,11 @@ export const updateBoxStock = async (item: any): Promise<boolean> => {
 
 export const addCustomer = async (customer: any): Promise<boolean> => {
   try {
+    const { mapCustomerToDatabase } = await import('@/integrations/supabase/database.types');
+    const dbCustomer = mapCustomerToDatabase(customer);
     const { error } = await supabase
       .from('customers')
-      .insert(customer);
+      .insert(dbCustomer);
 
     if (error) {
       console.error("Error adding customer:", error);
@@ -468,9 +455,11 @@ export const updateCustomer = async (customer: any): Promise<boolean> => {
 
 export const addExpense = async (expense: any): Promise<boolean> => {
   try {
+    const { mapExpenseToDatabase } = await import('@/integrations/supabase/database.types');
+    const dbExpense = mapExpenseToDatabase(expense);
     const { error } = await supabase
       .from('expenses')
-      .insert(expense);
+      .insert(dbExpense);
 
     if (error) {
       console.error("Error adding expense:", error);
