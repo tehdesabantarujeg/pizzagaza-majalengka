@@ -19,12 +19,8 @@ import {
 const SUPABASE_URL = "https://wbnpwldfcspeoiwofbiq.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndibnB3bGRmY3NwZW9pd29mYmlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMxNTYyMDksImV4cCI6MjA1ODczMjIwOX0.yZ-SSI5m-QKgyBPAMLIpkn13MvGN8HszZN-PDusRh1s";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
-// Helper functions for data conversion
 const camelToSnakeCase = (obj: any): any => {
   if (obj === null || obj === undefined || typeof obj !== 'object') {
     return obj;
@@ -37,10 +33,8 @@ const camelToSnakeCase = (obj: any): any => {
   const snakeObj: any = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      // Skip null or undefined values
       if (obj[key] === null || obj[key] === undefined) continue;
       
-      // Convert camelCase to snake_case
       const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
       snakeObj[snakeKey] = camelToSnakeCase(obj[key]);
     }
@@ -60,10 +54,8 @@ const snakeToCamelCase = (obj: any): any => {
   const camelObj: any = {};
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      // Skip null or undefined values
       if (obj[key] === null || obj[key] === undefined) continue;
       
-      // Convert snake_case to camelCase
       const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
       camelObj[camelKey] = snakeToCamelCase(obj[key]);
     }
@@ -71,10 +63,8 @@ const snakeToCamelCase = (obj: any): any => {
   return camelObj;
 };
 
-// Setup Supabase tables if needed (placeholder function)
 export const setupSupabaseTables = async (): Promise<void> => {
   console.log('Setting up Supabase tables if needed');
-  // This is just a placeholder function for now
   return Promise.resolve();
 };
 
@@ -118,7 +108,6 @@ export const fetchBoxStock = async () => {
 
 export const fetchDashboardData = async () => {
   try {
-    // Fetch multiple datasets in parallel
     const [stockItemsRaw, boxItemsRaw, transactionsRaw, expensesRaw, customersRaw] = await Promise.all([
       fetchStockItems(),
       fetchBoxStock(),
@@ -127,7 +116,6 @@ export const fetchDashboardData = async () => {
       fetchCustomers(),
     ]);
     
-    // Transform the data
     const stockItems = stockItemsRaw.map(transformPizzaStockFromDB);
     const boxItems = boxItemsRaw.map(transformBoxStockFromDB);
     const transactions = transactionsRaw.map(transformTransactionFromDB);
@@ -217,7 +205,6 @@ export const fetchCashSummary = async () => {
       fetchExpenses()
     ]);
     
-    // Calculate totals
     const totalIncome = transactions.reduce((sum, t) => sum + Number(t.total_price), 0);
     const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
     
@@ -312,7 +299,6 @@ export const addStockItem = async (newStock: Omit<PizzaStock, 'id' | 'updatedAt'
   try {
     console.log('Adding pizza stock item:', newStock);
     
-    // Convert from app format to DB format
     const dbData = transformPizzaStockToDB(newStock);
     
     console.log('Converted stock data:', dbData);
@@ -335,7 +321,6 @@ export const addMultiplePizzaStock = async (newStocks: Omit<PizzaStock, 'id' | '
   try {
     console.log('Adding multiple pizza stock items:', newStocks);
     
-    // Convert from app format to DB format
     const dbData = newStocks.map(transformPizzaStockToDB);
     
     console.log('Converted stock data:', dbData);
@@ -358,7 +343,6 @@ export const addBoxStock = async (newStock: Omit<BoxStock, 'id' | 'updatedAt'>):
   try {
     console.log('Adding box stock item:', newStock);
     
-    // Convert from app format to DB format
     const dbData = transformBoxStockToDB(newStock);
     
     console.log('Converted box stock data:', dbData);
@@ -436,7 +420,6 @@ export const deleteTransaction = async (transactionId: string): Promise<boolean>
 
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
-    // Convert from app format to DB format
     const dbData = transformTransactionToDB(transaction);
     
     const { error } = await supabase
@@ -460,7 +443,6 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
   try {
     console.log('Adding transaction:', transaction);
     
-    // Convert from app format to DB format
     const dbData = transformTransactionToDB(transaction);
     
     console.log('Converted transaction data:', dbData);
@@ -476,7 +458,6 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
       return null;
     }
 
-    // Transform snake_case back to camelCase
     return transformTransactionFromDB(data);
   } catch (error) {
     console.error("Error adding transaction:", error);
@@ -567,7 +548,6 @@ export const deleteBoxStock = async (id: string): Promise<boolean> => {
 
 export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
   try {
-    // Convert from app format to DB format
     const dbData = transformExpenseToDB(expense);
     
     const { data, error } = await supabase
@@ -590,7 +570,6 @@ export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Pr
 
 export const updateExpense = async (expense: Expense): Promise<boolean> => {
   try {
-    // Exclude createdAt which should not be updated
     const { createdAt, ...updateData } = expense;
     const dbData = transformExpenseToDB(updateData);
     
@@ -632,7 +611,6 @@ export const deleteExpense = async (id: string): Promise<boolean> => {
 
 export const reprintTransactionReceipt = async (transactionId: string): Promise<void> => {
   try {
-    // Get the transaction and any related transactions with the same transaction number
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
@@ -649,7 +627,6 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
     
     let transactionsToReprint = [transformedTransaction];
     
-    // If there's a transaction number, get all transactions with this number
     if (transactionNumber) {
       const { data: relatedData, error: relatedError } = await supabase
         .from('transactions')
@@ -661,10 +638,8 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
       }
     }
     
-    // Import the printReceipt function from constants
     const { printReceipt } = await import('./constants');
     
-    // Print the receipt with all related transactions
     printReceipt(transactionsToReprint);
   } catch (error) {
     console.error("Error reprinting transaction receipt:", error);
