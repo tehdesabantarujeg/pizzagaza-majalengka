@@ -57,6 +57,11 @@ export interface Transaction {
   createdAt: string;
 }
 
+// For database operations, we need versions without certain fields
+export type PizzaStockInsert = Omit<PizzaStock, 'id' | 'updatedAt' | 'createdAt'>;
+export type BoxStockInsert = Omit<BoxStock, 'id' | 'updatedAt' | 'createdAt'>;
+export type TransactionInsert = Omit<Transaction, 'id' | 'createdAt'>;
+
 export interface MultiItemTransaction {
   id: string;
   date: string;

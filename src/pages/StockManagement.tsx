@@ -18,7 +18,7 @@ import {
   addMultiplePizzaStock,
   addBoxStock 
 } from '@/utils/supabase';
-import { PizzaStock, BoxStock } from '@/utils/types';
+import { PizzaStock, BoxStock, PizzaStockInsert, BoxStockInsert } from '@/utils/types';
 import { PRICES } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import StockAvailabilityTable from '@/components/dashboard/StockAvailabilityTable';
@@ -52,7 +52,7 @@ const StockManagement = () => {
   });
 
   const addPizzaStockMutation = useMutation({
-    mutationFn: (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => addStockItem(newStock),
+    mutationFn: (newStock: PizzaStockInsert) => addStockItem(newStock),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pizzaStocks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
@@ -72,7 +72,7 @@ const StockManagement = () => {
   });
 
   const addMultiplePizzaStockMutation = useMutation({
-    mutationFn: (newStocks: Omit<PizzaStock, 'id' | 'updatedAt'>[]) => addMultiplePizzaStock(newStocks),
+    mutationFn: (newStocks: PizzaStockInsert[]) => addMultiplePizzaStock(newStocks),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pizzaStocks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
@@ -92,7 +92,7 @@ const StockManagement = () => {
   });
 
   const addBoxStockMutation = useMutation({
-    mutationFn: (newStock: Omit<BoxStock, 'id' | 'updatedAt'>) => addBoxStock(newStock),
+    mutationFn: (newStock: BoxStockInsert) => addBoxStock(newStock),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['boxStocks'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
@@ -111,11 +111,8 @@ const StockManagement = () => {
     }
   });
 
-  const handleAddPizzaStock = async (newStock: Omit<PizzaStock, 'id' | 'updatedAt'>) => {
-    addPizzaStockMutation.mutate({
-      ...newStock,
-      purchaseDate: new Date().toISOString()
-    });
+  const handleAddPizzaStock = async (newStock: PizzaStockInsert) => {
+    addPizzaStockMutation.mutate(newStock);
   };
 
   const handleAddMultiplePizzaStock = async (newStocks: Array<{
@@ -124,20 +121,22 @@ const StockManagement = () => {
     quantity: number;
     costPrice: number;
   }>) => {
-    addMultiplePizzaStockMutation.mutate(
-      newStocks.map(stock => ({
-        ...stock,
-        purchaseDate: new Date().toISOString()
-      }))
-    );
+    const stocksToAdd: PizzaStockInsert[] = newStocks.map(stock => ({
+      ...stock,
+      purchaseDate: new Date().toISOString()
+    }));
+    
+    addMultiplePizzaStockMutation.mutate(stocksToAdd);
   };
 
   const handleAddBoxStock = async (e: React.FormEvent) => {
     e.preventDefault();
-    addBoxStockMutation.mutate({
+    const boxStockToAdd: BoxStockInsert = {
       ...newBoxStock,
       purchaseDate: new Date().toISOString()
-    });
+    };
+    
+    addBoxStockMutation.mutate(boxStockToAdd);
   };
 
   const handleBoxSizeChange = (value: string) => {

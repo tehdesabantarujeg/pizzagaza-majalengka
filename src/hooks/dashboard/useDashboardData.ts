@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { fetchDashboardData } from '@/utils/supabase';
 import { format, subDays, subMonths, subYears, isSameDay, isWithinInterval, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
@@ -42,14 +41,13 @@ export const useDashboardData = () => {
       setDashboardData(data);
       
       // Set stockItems from dashboardData
-      if (data && data.pizzaStockItems) {
-        setStockItems(data.pizzaStockItems);
+      if (data && data.stockItems) {
+        setStockItems(data.stockItems);
       }
       
-      // Set boxItems from dashboardData
-      if (data && data.boxStockItems) {
-        setBoxItems(data.boxStockItems);
-      }
+      // For boxItems, we don't currently have them in the dashboard data
+      // In a real implementation, we'd fetch them or ensure they're included
+      // Until then, we'll keep the boxItems state empty
       
       // Process data for different visualizations
       processData(data);

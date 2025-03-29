@@ -1,5 +1,6 @@
 
 import { Database } from './types';
+import { PizzaStockInsert, BoxStockInsert, TransactionInsert } from '@/utils/types';
 
 export type Tables = Database['public']['Tables'];
 

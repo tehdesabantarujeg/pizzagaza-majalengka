@@ -1,5 +1,4 @@
-
-import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
+import { Transaction, PizzaSaleItem, PizzaStock, BoxStock, TransactionInsert } from '@/utils/types';
 import { 
   addTransaction, 
   updateTransaction, 
@@ -114,7 +113,7 @@ const useTransactionManagement = ({
         // Ensure pizzaId is null if undefined or empty string
         const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
         
-        const transaction: Omit<Transaction, 'id'> = {
+        const transaction: TransactionInsert = {
           date: item.date || new Date().toISOString(),
           pizzaId: pizzaId,
           size: item.size,
@@ -211,7 +210,7 @@ const useTransactionManagement = ({
         await updateStockLevels(newItems);
         
         await Promise.all(newTransactions.map(async (transaction) => {
-          const newTransactionData: Omit<Transaction, 'id'> = {
+          const newTransactionData: TransactionInsert = {
             date: transaction.date || new Date().toISOString(),
             pizzaId: transaction.pizzaId || null,
             size: transaction.size,
