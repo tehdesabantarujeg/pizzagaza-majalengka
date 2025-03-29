@@ -1,23 +1,24 @@
 
-import { PizzaStock, BoxStock, Transaction, Expense } from '@/utils/types';
+import { PizzaStock, BoxStock, Transaction, Expense } from './types';
 
 /**
- * Transforms database snake_case fields to frontend camelCase fields for PizzaStock
+ * Maps database pizza stock item to application model
  */
 export const mapDbToPizzaStock = (dbItem: any): PizzaStock => {
   return {
     id: dbItem.id,
-    size: dbItem.size,
     flavor: dbItem.flavor,
+    size: dbItem.size,
     quantity: dbItem.quantity,
     purchaseDate: dbItem.purchase_date,
     costPrice: dbItem.cost_price,
-    updatedAt: dbItem.updated_at || dbItem.created_at
+    createdAt: dbItem.created_at,
+    updatedAt: dbItem.updated_at
   };
 };
 
 /**
- * Transforms database snake_case fields to frontend camelCase fields for BoxStock
+ * Maps database box stock item to application model
  */
 export const mapDbToBoxStock = (dbItem: any): BoxStock => {
   return {
@@ -26,12 +27,13 @@ export const mapDbToBoxStock = (dbItem: any): BoxStock => {
     quantity: dbItem.quantity,
     purchaseDate: dbItem.purchase_date,
     costPrice: dbItem.cost_price,
-    updatedAt: dbItem.updated_at || dbItem.created_at
+    createdAt: dbItem.created_at,
+    updatedAt: dbItem.updated_at
   };
 };
 
 /**
- * Transforms database snake_case fields to frontend camelCase fields for Transaction
+ * Maps database transaction to application model
  */
 export const mapDbToTransaction = (dbItem: any): Transaction => {
   return {
@@ -41,24 +43,25 @@ export const mapDbToTransaction = (dbItem: any): Transaction => {
     size: dbItem.size,
     flavor: dbItem.flavor,
     quantity: dbItem.quantity,
-    state: dbItem.state as 'Frozen Food' | 'Matang',
+    state: dbItem.state,
     includeBox: dbItem.include_box,
     sellingPrice: dbItem.selling_price,
     totalPrice: dbItem.total_price,
     customerName: dbItem.customer_name,
     notes: dbItem.notes,
-    transactionNumber: dbItem.transaction_number
+    transactionNumber: dbItem.transaction_number,
+    createdAt: dbItem.created_at
   };
 };
 
 /**
- * Transforms database snake_case fields to frontend camelCase fields for Expense
+ * Maps database expense to application model
  */
 export const mapDbToExpense = (dbItem: any): Expense => {
   return {
     id: dbItem.id,
-    category: dbItem.category,
     date: dbItem.date,
+    category: dbItem.category,
     amount: dbItem.amount,
     description: dbItem.description,
     createdAt: dbItem.created_at

@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { mapDbToPizzaStock, mapDbToBoxStock, mapDbToTransaction, mapDbToExpense } from './dataMappers';
 import { PizzaStock, BoxStock, Transaction, Expense } from './types';
@@ -259,9 +258,25 @@ export const updateBoxStock = async (stockItem: BoxStock): Promise<boolean> => {
  */
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
   try {
+    // Map the properties to match the database column names
+    const dbTransaction = {
+      date: transaction.date,
+      pizza_id: transaction.pizzaId,
+      size: transaction.size,
+      flavor: transaction.flavor,
+      quantity: transaction.quantity,
+      state: transaction.state,
+      include_box: transaction.includeBox,
+      selling_price: transaction.sellingPrice,
+      total_price: transaction.totalPrice,
+      customer_name: transaction.customerName, // Changed from customerName to customer_name
+      notes: transaction.notes,
+      transaction_number: transaction.transactionNumber
+    };
+    
     const { data, error } = await supabase
       .from('transactions')
-      .insert([transaction])
+      .insert([dbTransaction])
       .select('*')
       .single();
     
@@ -283,9 +298,25 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
  */
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
+    // Map the properties to match the database column names
+    const dbTransaction = {
+      date: transaction.date,
+      pizza_id: transaction.pizzaId,
+      size: transaction.size,
+      flavor: transaction.flavor,
+      quantity: transaction.quantity,
+      state: transaction.state,
+      include_box: transaction.includeBox,
+      selling_price: transaction.sellingPrice,
+      total_price: transaction.totalPrice,
+      customer_name: transaction.customerName, // Changed from customerName to customer_name
+      notes: transaction.notes,
+      transaction_number: transaction.transactionNumber
+    };
+    
     const { data, error } = await supabase
       .from('transactions')
-      .update(transaction)
+      .update(dbTransaction)
       .eq('id', transaction.id);
     
     if (error) {
