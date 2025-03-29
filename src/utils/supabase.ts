@@ -14,7 +14,16 @@ export const fetchStockItems = async (): Promise<PizzaStock[]> => {
       return [];
     }
 
-    return data || [];
+    // Transform data to match PizzaStock type
+    return data?.map(item => ({
+      id: item.id,
+      size: item.size as 'Small' | 'Medium',
+      flavor: item.flavor,
+      quantity: item.quantity,
+      purchaseDate: item.purchase_date,
+      costPrice: item.cost_price,
+      updatedAt: item.updated_at
+    })) || [];
   } catch (error) {
     console.error("Error fetching pizza stock:", error);
     return [];
@@ -34,10 +43,46 @@ export const fetchBoxStock = async (): Promise<BoxStock[]> => {
       return [];
     }
 
-    return data || [];
+    // Transform data to match BoxStock type
+    return data?.map(item => ({
+      id: item.id,
+      size: item.size as 'Small' | 'Medium',
+      quantity: item.quantity,
+      purchaseDate: item.purchase_date,
+      costPrice: item.cost_price,
+      updatedAt: item.updated_at
+    })) || [];
   } catch (error) {
     console.error("Error fetching box stock:", error);
     return [];
+  }
+};
+
+// Function to fetch dashboard data
+export const fetchDashboardData = async () => {
+  try {
+    // Fetch all necessary data for the dashboard in parallel
+    const [stockItemsData, boxStockData, transactionsData, customersData] = await Promise.all([
+      fetchStockItems(),
+      fetchBoxStock(),
+      fetchTransactions(),
+      supabase.from('customers').select('*')
+    ]);
+
+    return {
+      stockItems: stockItemsData,
+      boxItems: boxStockData,
+      transactions: transactionsData,
+      customers: customersData.data || []
+    };
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error);
+    return {
+      stockItems: [],
+      boxItems: [],
+      transactions: [],
+      customers: []
+    };
   }
 };
 
@@ -326,7 +371,22 @@ export const fetchTransactions = async (): Promise<Transaction[]> => {
       return [];
     }
 
-    return data || [];
+    // Transform data to match Transaction type
+    return data?.map(item => ({
+      id: item.id,
+      date: item.date,
+      pizzaId: item.pizza_id,
+      size: item.size as 'Small' | 'Medium',
+      flavor: item.flavor,
+      quantity: item.quantity,
+      state: item.state as 'Frozen Food' | 'Matang',
+      includeBox: item.include_box,
+      sellingPrice: item.selling_price,
+      totalPrice: item.total_price,
+      customerName: item.customer_name,
+      notes: item.notes,
+      transactionNumber: item.transaction_number
+    })) || [];
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
@@ -376,7 +436,15 @@ export const fetchExpenses = async (): Promise<Expense[]> => {
       return [];
     }
 
-    return data || [];
+    // Transform data to match Expense type
+    return data?.map(item => ({
+      id: item.id,
+      category: item.category as any,
+      date: item.date,
+      amount: item.amount,
+      description: item.description || '',
+      createdAt: item.created_at
+    })) || [];
   } catch (error) {
     console.error("Error fetching expenses:", error);
     return [];
