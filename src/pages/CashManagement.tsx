@@ -1,249 +1,260 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCashSummary } from '@/utils/supabase';
-import { subDays, format, addDays } from 'date-fns';
-import { CashSummary } from '@/utils/types';
-import { formatCurrency } from '@/utils/constants';
-import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, TrendingUp, Download } from 'lucide-react';
+import { formatCurrency } from '@/utils/constants';
 import CashFlowChart from '@/components/cash/CashFlowChart';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { ArrowUpCircle, ArrowDownCircle, DollarSign } from 'lucide-react';
+
+interface CashSummaryData {
+  totalIncome: number;
+  totalExpenses: number;
+  netProfit: number;
+  transactions: any[];
+  expenses: any[];
+}
 
 const CashManagement = () => {
-  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month' | 'year'>('month');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30),
-    to: new Date(),
+  const [selectedTab, setSelectedTab] = useState('overview');
+  const [dateRange, setDateRange] = useState<{start: Date; end: Date}>({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
   });
-  const isMobile = useIsMobile();
-
-  // Total values
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalExpense, setTotalExpense] = useState(0);
-  const [totalBalance, setTotalBalance] = useState(0);
 
   // Fetch cash summary data
-  const { data: cashData = [], isLoading } = useQuery({
-    queryKey: ['cashSummary', timeframe, date],
-    queryFn: async () => {
-      if (!date?.from || !date?.to) return [];
-      return fetchCashSummary(
-        timeframe, 
-        date.from.toISOString(), 
-        date.to.toISOString()
-      );
-    },
-    enabled: !!date?.from && !!date?.to
+  const { data: cashSummary, isLoading } = useQuery<CashSummaryData>({
+    queryKey: ['cashSummary'],
+    queryFn: fetchCashSummary
   });
 
-  // Filter data based on search term
-  const filteredData = cashData.filter(item => 
-    item.period.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get current month and year
+  const currentMonth = format(new Date(), 'MMMM yyyy');
 
-  // Calculate totals
-  useEffect(() => {
-    if (cashData.length > 0) {
-      setTotalIncome(cashData.reduce((sum, item) => sum + item.income, 0));
-      setTotalExpense(cashData.reduce((sum, item) => sum + item.expense, 0));
-      setTotalBalance(cashData.reduce((sum, item) => sum + item.balance, 0));
-    } else {
-      setTotalIncome(0);
-      setTotalExpense(0);
-      setTotalBalance(0);
+  // Prepare data for the chart
+  const chartData = React.useMemo(() => {
+    if (!cashSummary) return [];
+
+    // Get a list of all dates in the current month
+    const dates = [];
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+      dates.push(new Date(year, month, i));
     }
-  }, [cashData]);
 
-  // Export to CSV
-  const exportToCSV = () => {
-    if (cashData.length === 0) return;
+    // Group transactions and expenses by date
+    const transactionsByDate = cashSummary.transactions.reduce((acc, transaction) => {
+      const date = format(new Date(transaction.date), 'yyyy-MM-dd');
+      if (!acc[date]) acc[date] = 0;
+      acc[date] += Number(transaction.total_price);
+      return acc;
+    }, {} as Record<string, number>);
 
-    const headers = ['Periode', 'Pendapatan', 'Pengeluaran', 'Saldo'];
-    const csvContent = [
-      headers.join(','),
-      ...cashData.map(item => [
-        item.period,
-        item.income,
-        item.expense,
-        item.balance
-      ].join(','))
-    ].join('\n');
+    const expensesByDate = cashSummary.expenses.reduce((acc, expense) => {
+      const date = format(new Date(expense.date), 'yyyy-MM-dd');
+      if (!acc[date]) acc[date] = 0;
+      acc[date] += Number(expense.amount);
+      return acc;
+    }, {} as Record<string, number>);
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `KasKu_${timeframe}_${format(new Date(), 'yyyyMMdd')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    // Create chart data
+    return dates.map(date => {
+      const formattedDate = format(date, 'yyyy-MM-dd');
+      const displayDate = format(date, 'dd MMM');
+      const income = transactionsByDate[formattedDate] || 0;
+      const expenses = expensesByDate[formattedDate] || 0;
+      return {
+        date: displayDate,
+        income,
+        expenses,
+        profit: income - expenses
+      };
+    });
+  }, [cashSummary]);
 
-  const getTimeframeTitle = () => {
-    switch(timeframe) {
-      case 'day': return 'Harian';
-      case 'week': return 'Mingguan';
-      case 'month': return 'Bulanan';
-      case 'year': return 'Tahunan';
-      default: return 'Bulanan';
-    }
-  };
+  if (isLoading) {
+    return (
+      <Layout>
+        <Header 
+          title="Manajemen Kas" 
+          description="Ringkasan keuangan dan laporan arus kas"
+        />
+        <div className="container py-6">
+          <div className="text-center py-10">
+            <p>Memuat data...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <Header 
-        title="KasKu" 
-        description="Manajemen kas dan aliran dana"
+        title="Manajemen Kas" 
+        description="Ringkasan keuangan dan laporan arus kas"
       />
-
+      
       <div className="container px-4 py-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-4">
-            <h2 className="text-xl font-semibold">Periode</h2>
-            <div className="w-full md:max-w-sm">
-              <DateRangePicker 
-                value={date} 
-                onChange={setDate} 
-              />
-            </div>
-          </div>
-          
-          <Tabs 
-            value={timeframe} 
-            onValueChange={(v) => setTimeframe(v as any)}
-            className="w-full md:w-fit"
-          >
-            <TabsList className="grid w-full md:w-fit grid-cols-4">
-              <TabsTrigger value="day">Harian</TabsTrigger>
-              <TabsTrigger value="week">Mingguan</TabsTrigger>
-              <TabsTrigger value="month">Bulanan</TabsTrigger>
-              <TabsTrigger value="year">Tahunan</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
           <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Pendapatan</CardDescription>
-              <CardTitle className="text-green-600">{formatCurrency(totalIncome)}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Pengeluaran</CardDescription>
-              <CardTitle className="text-red-600">{formatCurrency(totalExpense)}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Sisa Kas</CardDescription>
-              <CardTitle className={totalBalance >= 0 ? "text-blue-600" : "text-red-600"}>
-                {formatCurrency(totalBalance)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
-
-        <div className="mb-6">
-          <Card className="col-span-full lg:col-span-12 overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Grafik Aliran Kas</CardTitle>
-                <CardDescription>
-                  {getTimeframeTitle()}
-                </CardDescription>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Pemasukan</h3>
+                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.totalIncome || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-full dark:bg-green-900/20">
+                  <ArrowUpCircle className="h-8 w-8 text-green-500 dark:text-green-400" />
+                </div>
               </div>
-              <Button variant="outline" size="sm" onClick={exportToCSV} disabled={cashData.length === 0}>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-80">
-                <CashFlowChart data={cashData} isLoading={isLoading} />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Pengeluaran</h3>
+                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.totalExpenses || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                </div>
+                <div className="p-3 bg-red-50 rounded-full dark:bg-red-900/20">
+                  <ArrowDownCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Laba Bersih</h3>
+                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.netProfit || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-full dark:bg-blue-900/20">
+                  <DollarSign className="h-8 w-8 text-blue-500 dark:text-blue-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        <Card>
+        
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Tabel Kas {getTimeframeTitle()}</CardTitle>
+            <CardTitle>Grafik Arus Kas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-                <Input
-                  placeholder="Cari berdasarkan periode..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="rounded-md border overflow-hidden">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Periode</TableHead>
-                      <TableHead className="text-right">Pendapatan</TableHead>
-                      <TableHead className="text-right">Pengeluaran</TableHead>
-                      <TableHead className="text-right">Saldo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6">
-                          Memuat data...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredData.length > 0 ? (
-                      filteredData.map((item, index) => (
-                        <TableRow key={index}>
-                          <TableCell className="font-medium">{item.period}</TableCell>
-                          <TableCell className="text-right text-green-600">
-                            {formatCurrency(item.income)}
-                          </TableCell>
-                          <TableCell className="text-right text-red-600">
-                            {formatCurrency(item.expense)}
-                          </TableCell>
-                          <TableCell 
-                            className={`text-right font-medium ${
-                              item.balance >= 0 ? 'text-blue-600' : 'text-red-600'
-                            }`}
-                          >
-                            {formatCurrency(item.balance)}
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6">
-                          {searchTerm ? 'Tidak ada data yang ditemukan' : 'Belum ada data kas'}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+            <CashFlowChart data={chartData} />
           </CardContent>
         </Card>
+        
+        <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="overview">Ringkasan</TabsTrigger>
+            <TabsTrigger value="transactions">Transaksi ({cashSummary?.transactions.length || 0})</TabsTrigger>
+            <TabsTrigger value="expenses">Pengeluaran ({cashSummary?.expenses.length || 0})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ringkasan Keuangan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Transaksi bulan ini: {cashSummary?.transactions.length || 0}</p>
+                <p>Pengeluaran bulan ini: {cashSummary?.expenses.length || 0}</p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="transactions">
+            <Card>
+              <CardHeader>
+                <CardTitle>Daftar Transaksi</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {cashSummary?.transactions.length === 0 ? (
+                  <p>Tidak ada transaksi di bulan ini</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2">Tanggal</th>
+                          <th className="text-left py-2">No. Transaksi</th>
+                          <th className="text-left py-2">Pelanggan</th>
+                          <th className="text-left py-2">Produk</th>
+                          <th className="text-right py-2">Jumlah</th>
+                          <th className="text-right py-2">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashSummary?.transactions.map((transaction) => (
+                          <tr key={transaction.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <td className="py-2">{format(new Date(transaction.date), 'dd MMM yyyy')}</td>
+                            <td className="py-2">{transaction.transaction_number}</td>
+                            <td className="py-2">{transaction.customer_name || '-'}</td>
+                            <td className="py-2">{transaction.flavor} ({transaction.size})</td>
+                            <td className="py-2 text-right">{transaction.quantity}x</td>
+                            <td className="py-2 text-right">{formatCurrency(transaction.total_price)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="expenses">
+            <Card>
+              <CardHeader>
+                <CardTitle>Daftar Pengeluaran</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {cashSummary?.expenses.length === 0 ? (
+                  <p>Tidak ada pengeluaran di bulan ini</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2">Tanggal</th>
+                          <th className="text-left py-2">Kategori</th>
+                          <th className="text-left py-2">Deskripsi</th>
+                          <th className="text-right py-2">Jumlah</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashSummary?.expenses.map((expense) => (
+                          <tr key={expense.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <td className="py-2">{format(new Date(expense.date), 'dd MMM yyyy')}</td>
+                            <td className="py-2">{expense.category}</td>
+                            <td className="py-2">{expense.description || '-'}</td>
+                            <td className="py-2 text-right">{formatCurrency(expense.amount)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
