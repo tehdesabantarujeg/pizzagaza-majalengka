@@ -1,8 +1,10 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Use Supabase project details from your project
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://zaefsgelthwybfomhlfa.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InphZWZzZ2VsdGh3eWJmb21obGZhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMwMTYzNDUsImV4cCI6MjA1ODU5MjM0NX0.HdBQxSb_-jroclYCNjbcvILKIaTdYR2hKLlrqdv1CAE';
 
 if (!supabaseUrl) {
   throw new Error('Supabase URL is not defined');
