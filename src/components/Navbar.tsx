@@ -6,7 +6,6 @@ import { FadeIn } from './animations/FadeIn';
 import { 
   ShoppingBag, 
   ShoppingCart, 
-  BarChart2, 
   Pizza, 
   Home
 } from 'lucide-react';
@@ -48,7 +47,6 @@ const Navbar: React.FC = () => {
           <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Beranda" />
           <NavItem to="/stock" icon={<ShoppingBag className="h-4 w-4" />} label="Stok" />
           <NavItem to="/sales" icon={<ShoppingCart className="h-4 w-4" />} label="Penjualan" />
-          <NavItem to="/reports" icon={<BarChart2 className="h-4 w-4" />} label="Laporan" />
         </nav>
       </div>
       

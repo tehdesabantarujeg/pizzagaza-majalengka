@@ -9,7 +9,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import StockManagement from "./pages/StockManagement";
 import Sales from "./pages/Sales";
-import Reports from "./pages/Reports";
 import Expenses from "./pages/Expenses";
 import CashManagement from "./pages/CashManagement";
 import Login from "./pages/Login";
@@ -51,7 +50,6 @@ const AppRoutes = () => {
       <Route path="/" element={<ProtectedRoute element={<Index />} />} />
       <Route path="/stock" element={<ProtectedRoute element={<StockManagement />} allowedRoles={['admin']} />} />
       <Route path="/sales" element={<ProtectedRoute element={<Sales />} />} />
-      <Route path="/reports" element={<ProtectedRoute element={<Reports />} allowedRoles={['admin']} />} />
       <Route path="/expenses" element={<ProtectedRoute element={<Expenses />} allowedRoles={['admin']} />} />
       <Route path="/cash" element={<ProtectedRoute element={<CashManagement />} allowedRoles={['admin']} />} />
       <Route path="*" element={<NotFound />} />

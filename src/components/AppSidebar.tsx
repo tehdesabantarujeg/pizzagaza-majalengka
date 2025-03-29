@@ -21,7 +21,6 @@ import {
   Pizza, 
   ShoppingBag, 
   ShoppingCart, 
-  BarChart2, 
   LogOut, 
   Moon, 
   Sun, 
@@ -101,17 +100,6 @@ const AppSidebar = () => {
                     <NavLink to="/cash">
                       <Wallet className="h-5 w-5" />
                       <span>KasKu</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-              
-              {user?.role === 'admin' && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Laporan">
-                    <NavLink to="/reports">
-                      <BarChart2 className="h-5 w-5" />
-                      <span>Laporan</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
