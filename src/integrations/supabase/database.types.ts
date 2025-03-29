@@ -1,6 +1,5 @@
 
 import { Database } from './types';
-import { PizzaStockInsert, BoxStockInsert, TransactionInsert } from '@/utils/types';
 
 export type Tables = Database['public']['Tables'];
 
@@ -30,30 +29,30 @@ export const mapPizzaStockToDatabase = (item: any): PizzaStockInsert => ({
   size: item.size,
   flavor: item.flavor,
   quantity: item.quantity,
-  purchase_date: item.purchaseDate,
-  cost_price: item.costPrice
+  purchaseDate: item.purchaseDate,
+  costPrice: item.costPrice
 });
 
 export const mapBoxStockToDatabase = (item: any): BoxStockInsert => ({
   size: item.size,
   quantity: item.quantity,
-  purchase_date: item.purchaseDate,
-  cost_price: item.costPrice
+  purchaseDate: item.purchaseDate,
+  costPrice: item.costPrice
 });
 
 export const mapTransactionToDatabase = (item: any): TransactionInsert => ({
   date: item.date,
-  pizza_id: item.pizzaId,
+  pizzaId: item.pizzaId,
   size: item.size,
   flavor: item.flavor,
   quantity: item.quantity, 
   state: item.state,
-  include_box: item.includeBox,
-  selling_price: item.sellingPrice,
-  total_price: item.totalPrice,
-  customer_name: item.customerName,
+  includeBox: item.includeBox,
+  sellingPrice: item.sellingPrice,
+  totalPrice: item.totalPrice,
+  customerName: item.customerName,
   notes: item.notes,
-  transaction_number: item.transactionNumber
+  transactionNumber: item.transactionNumber
 });
 
 // Additional mapping function for expenses
@@ -68,5 +67,5 @@ export const mapExpenseToDatabase = (item: any): ExpenseInsert => ({
 export const mapCustomerToDatabase = (item: any): CustomerInsert => ({
   name: item.name,
   purchases: item.purchases,
-  last_purchase: item.lastPurchase
+  lastPurchase: item.lastPurchase
 });
