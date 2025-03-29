@@ -1,3 +1,4 @@
+
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
 import { 
   addTransaction, 
@@ -6,7 +7,8 @@ import {
   fetchStockItems, 
   updateStockItem, 
   fetchBoxStock, 
-  updateBoxStock 
+  updateBoxStock,
+  fetchTransactionCount
 } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
 import { mapDbToPizzaStock, mapDbToBoxStock } from '@/utils/dataMappers';
@@ -70,12 +72,15 @@ const useTransactionManagement = ({
     }
   };
   
-  // Generate a transaction number based on current timestamp
-  const generateTransactionNumber = (): string => {
+  // Generate a transaction number based on the format GZM-yymmxxxx
+  const generateTransactionNumber = async (): Promise<string> => {
     const now = new Date();
     const yearPart = now.getFullYear().toString().substr(2, 2); // YY
     const monthPart = (now.getMonth() + 1).toString().padStart(2, '0'); // MM
-    const sequenceNumber = now.getTime().toString().substr(-4); // Last 4 digits of timestamp
+    
+    // Get the current transaction count from the database
+    const transactionCount = await fetchTransactionCount();
+    const sequenceNumber = String(transactionCount + 1).padStart(4, '0'); // XXXX with leading zeros
     
     return `GZM-${yearPart}${monthPart}${sequenceNumber}`;
   };
@@ -98,7 +103,8 @@ const useTransactionManagement = ({
         };
       });
       
-      const transactionNumber = generateTransactionNumber();
+      // Generate transaction number with the new format
+      const transactionNumber = await generateTransactionNumber();
       
       // Create an array to hold the created transactions
       const createdTransactions: Transaction[] = [];

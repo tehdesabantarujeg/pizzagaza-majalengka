@@ -1,195 +1,43 @@
+import { createClient } from '@supabase/supabase-js';
+import { mapDbToPizzaStock, mapDbToBoxStock, mapDbToTransaction, mapDbToExpense } from './dataMappers';
+import { PizzaStock, BoxStock, Transaction, Expense } from './types';
 
-import { supabase } from '@/integrations/supabase/client';
-import { 
-  mapDbToPizzaStock, 
-  mapDbToBoxStock, 
-  mapDbToTransaction, 
-  mapDbToExpense 
-} from './dataMappers';
-import { Database } from '@/integrations/supabase/types';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const fetchCashSummary = async (start?: string, end?: string) => {
-  try {
-    let query = supabase
-      .from('transactions')
-      .select('*');
-    
-    if (start) {
-      query = query.gte('date', start);
-    }
-    
-    if (end) {
-      query = query.lte('date', end);
-    }
-    
-    const { data: transactions, error: transactionsError } = await query;
-    
-    if (transactionsError) {
-      console.error("Error fetching transactions for cash summary:", transactionsError);
-      return { 
-        income: 0,
-        expenses: 0,
-        balance: 0,
-        transactions: []
-      };
-    }
-    
-    let expensesQuery = supabase
-      .from('expenses')
-      .select('*');
-    
-    if (start) {
-      expensesQuery = expensesQuery.gte('date', start);
-    }
-    
-    if (end) {
-      expensesQuery = expensesQuery.lte('date', end);
-    }
-    
-    const { data: expenses, error: expensesError } = await expensesQuery;
-    
-    if (expensesError) {
-      console.error("Error fetching expenses for cash summary:", expensesError);
-      return { 
-        income: 0,
-        expenses: 0,
-        balance: 0,
-        transactions: []
-      };
-    }
-    
-    const income = transactions.reduce((sum, t) => sum + (t.total_price || 0), 0);
-    
-    const expensesTotal = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    
-    const balance = income - expensesTotal;
-    
-    return {
-      income,
-      expenses: expensesTotal,
-      balance,
-      transactions,
-      expensesList: expenses
-    };
-  } catch (error) {
-    console.error("Error fetching cash summary:", error);
-    return { 
-      income: 0,
-      expenses: 0,
-      balance: 0,
-      transactions: [],
-      expensesList: []
-    };
-  }
-};
-
-export const deleteExpense = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error("Error deleting expense:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error deleting expense:", error);
-    return false;
-  }
-};
-
-export const getCurrentMonthTotalExpenses = async (): Promise<number> => {
-  try {
-    const now = new Date();
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
-    
-    const { data, error } = await supabase
-      .from('expenses')
-      .select('amount')
-      .gte('date', firstDayOfMonth)
-      .lte('date', lastDayOfMonth);
-
-    if (error) {
-      console.error("Error fetching current month expenses:", error);
-      return 0;
-    }
-    
-    return data.reduce((sum, expense) => sum + (expense.amount || 0), 0);
-  } catch (error) {
-    console.error("Error fetching current month expenses:", error);
-    return 0;
-  }
-};
-
-export const updatePizzaStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('pizza_stock')
-      .update({ cost_price: newPrice, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (error) {
-      console.error("Error updating pizza stock cost price:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating pizza stock cost price:", error);
-    return false;
-  }
-};
-
-export const updateBoxStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('box_stock')
-      .update({ cost_price: newPrice, updated_at: new Date().toISOString() })
-      .eq('id', id);
-
-    if (error) {
-      console.error("Error updating box stock cost price:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating box stock cost price:", error);
-    return false;
-  }
-};
-
-export const fetchStockItems = async () => {
+/**
+ * Fetches all pizza stock items from the database.
+ */
+export const fetchStockItems = async (): Promise<PizzaStock[]> => {
   try {
     const { data, error } = await supabase
       .from('pizza_stock')
       .select('*')
       .order('created_at', { ascending: false });
-
+    
     if (error) {
-      console.error("Error fetching stock items:", error);
+      console.error("Error fetching pizza stock:", error);
       return [];
     }
     
     return data.map(mapDbToPizzaStock);
   } catch (error) {
-    console.error("Error fetching stock items:", error);
+    console.error("Error fetching pizza stock:", error);
     return [];
   }
 };
 
-export const fetchBoxStock = async () => {
+/**
+ * Fetches all box stock items from the database.
+ */
+export const fetchBoxStock = async (): Promise<BoxStock[]> => {
   try {
     const { data, error } = await supabase
       .from('box_stock')
       .select('*')
       .order('created_at', { ascending: false });
-
+    
     if (error) {
       console.error("Error fetching box stock:", error);
       return [];
@@ -202,13 +50,16 @@ export const fetchBoxStock = async () => {
   }
 };
 
-export const fetchTransactions = async () => {
+/**
+ * Fetches all transactions from the database.
+ */
+export const fetchTransactions = async (): Promise<Transaction[]> => {
   try {
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
       .order('date', { ascending: false });
-
+    
     if (error) {
       console.error("Error fetching transactions:", error);
       return [];
@@ -221,13 +72,16 @@ export const fetchTransactions = async () => {
   }
 };
 
-export const fetchExpenses = async () => {
+/**
+ * Fetches all expenses from the database.
+ */
+export const fetchExpenses = async (): Promise<Expense[]> => {
   try {
     const { data, error } = await supabase
       .from('expenses')
       .select('*')
       .order('date', { ascending: false });
-
+    
     if (error) {
       console.error("Error fetching expenses:", error);
       return [];
@@ -240,134 +94,81 @@ export const fetchExpenses = async () => {
   }
 };
 
-export const fetchCustomers = async () => {
+/**
+ * Fetches dashboard data including transactions, stock items, and customers.
+ */
+export const fetchDashboardData = async () => {
   try {
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) {
-      console.error("Error fetching customers:", error);
-      return [];
-    }
+    const [
+      { data: transactions, error: transactionsError },
+      { data: stockItems, error: stockItemsError },
+      { data: customers, error: customersError }
+    ] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false }),
+      supabase
+        .from('pizza_stock')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('users')
+        .select('*')
+    ]);
     
-    return data;
+    if (transactionsError) console.error("Error fetching transactions:", transactionsError);
+    if (stockItemsError) console.error("Error fetching stock items:", stockItemsError);
+    if (customersError) console.error("Error fetching customers:", customersError);
+    
+    return {
+      transactions: transactions ? transactions.map(mapDbToTransaction) : [],
+      stockItems: stockItems ? stockItems.map(mapDbToPizzaStock) : [],
+      customers: customers || []
+    };
   } catch (error) {
-    console.error("Error fetching customers:", error);
-    return [];
+    console.error("Error fetching dashboard data:", error);
+    return {
+      transactions: [],
+      stockItems: [],
+      customers: []
+    };
   }
 };
 
-export const addTransaction = async (transaction: any): Promise<any> => {
+/**
+ * Inserts a new pizza stock item into the database.
+ * @param stockItem The stock item to add.
+ */
+export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt'>): Promise<PizzaStock | null> => {
   try {
-    const { mapTransactionToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbTransaction = mapTransactionToDatabase(transaction);
-    
     const { data, error } = await supabase
-      .from('transactions')
-      .insert(dbTransaction)
-      .select()
+      .from('pizza_stock')
+      .insert([stockItem])
+      .select('*')
       .single();
     
     if (error) {
-      console.error("Error adding transaction:", error);
-      throw error;
+      console.error("Error adding pizza stock:", error);
+      return null;
     }
     
-    return data;
+    return mapDbToPizzaStock(data);
   } catch (error) {
-    console.error("Error adding transaction:", error);
-    throw error;
+    console.error("Error adding pizza stock:", error);
+    return null;
   }
 };
 
-export const updateTransaction = async (transaction: any): Promise<boolean> => {
+/**
+ * Inserts multiple pizza stock items into the database.
+ * @param stocks The array of stock items to add.
+ */
+export const addMultiplePizzaStock = async (stocks: Omit<PizzaStock, 'id' | 'updatedAt'>[]): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('transactions')
-      .update(transaction)
-      .eq('id', transaction.id);
-
-    if (error) {
-      console.error("Error updating transaction:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating transaction:", error);
-    return false;
-  }
-};
-
-export const deleteTransaction = async (id: string): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('transactions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error("Error deleting transaction:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error deleting transaction:", error);
-    return false;
-  }
-};
-
-export const addStockItem = async (item: any): Promise<boolean> => {
-  try {
-    const { mapPizzaStockToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbItem = mapPizzaStockToDatabase(item);
-    
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('pizza_stock')
-      .insert(dbItem);
-    
-    if (error) {
-      console.error("Error adding stock item:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error adding stock item:", error);
-    return false;
-  }
-};
-
-export const updateStockItem = async (item: any): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('pizza_stock')
-      .update(item)
-      .eq('id', item.id);
-
-    if (error) {
-      console.error("Error updating stock item:", error);
-      return false;
-    }
-    
-    return true;
-  } catch (error) {
-    console.error("Error updating stock item:", error);
-    return false;
-  }
-};
-
-export const addMultiplePizzaStock = async (items: any[]): Promise<boolean> => {
-  try {
-    const { mapPizzaStockToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbItems = items.map(item => mapPizzaStockToDatabase(item));
-    
-    const { error } = await supabase
-      .from('pizza_stock')
-      .insert(dbItems);
+      .insert(stocks);
     
     if (error) {
       console.error("Error adding multiple pizza stock:", error);
@@ -381,34 +182,64 @@ export const addMultiplePizzaStock = async (items: any[]): Promise<boolean> => {
   }
 };
 
-export const addBoxStock = async (item: any): Promise<boolean> => {
+/**
+ * Updates an existing pizza stock item in the database.
+ * @param stockItem The stock item to update.
+ */
+export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
   try {
-    const { mapBoxStockToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbItem = mapBoxStockToDatabase(item);
-    
-    const { error } = await supabase
-      .from('box_stock')
-      .insert(dbItem);
+    const { data, error } = await supabase
+      .from('pizza_stock')
+      .update(stockItem)
+      .eq('id', stockItem.id);
     
     if (error) {
-      console.error("Error adding box stock:", error);
+      console.error("Error updating pizza stock:", error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Error adding box stock:", error);
+    console.error("Error updating pizza stock:", error);
     return false;
   }
 };
 
-export const updateBoxStock = async (item: any): Promise<boolean> => {
+/**
+ * Adds a new box stock item to the database.
+ * @param stockItem The box stock item to add.
+ */
+export const addBoxStock = async (stockItem: Omit<BoxStock, 'id' | 'updatedAt'>): Promise<BoxStock | null> => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('box_stock')
-      .update(item)
-      .eq('id', item.id);
+      .insert([stockItem])
+      .select('*')
+      .single();
+    
+    if (error) {
+      console.error("Error adding box stock:", error);
+      return null;
+    }
+    
+    return mapDbToBoxStock(data);
+  } catch (error) {
+    console.error("Error adding box stock:", error);
+    return null;
+  }
+};
 
+/**
+ * Updates an existing box stock item in the database.
+ * @param stockItem The box stock item to update.
+ */
+export const updateBoxStock = async (stockItem: BoxStock): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('box_stock')
+      .update(stockItem)
+      .eq('id', stockItem.id);
+    
     if (error) {
       console.error("Error updating box stock:", error);
       return false;
@@ -421,72 +252,110 @@ export const updateBoxStock = async (item: any): Promise<boolean> => {
   }
 };
 
-export const addCustomer = async (customer: any): Promise<boolean> => {
+/**
+ * Adds a new transaction to the database.
+ * @param transaction The transaction to add.
+ */
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
   try {
-    const { mapCustomerToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbCustomer = mapCustomerToDatabase(customer);
-    const { error } = await supabase
-      .from('customers')
-      .insert(dbCustomer);
-
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert([transaction])
+      .select('*')
+      .single();
+    
     if (error) {
-      console.error("Error adding customer:", error);
+      console.error("Error adding transaction:", error);
+      return null;
+    }
+    
+    return mapDbToTransaction(data);
+  } catch (error) {
+    console.error("Error adding transaction:", error);
+    return null;
+  }
+};
+
+/**
+ * Updates an existing transaction in the database.
+ * @param transaction The transaction to update.
+ */
+export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(transaction)
+      .eq('id', transaction.id);
+    
+    if (error) {
+      console.error("Error updating transaction:", error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Error adding customer:", error);
+    console.error("Error updating transaction:", error);
     return false;
   }
 };
 
-export const updateCustomer = async (customer: any): Promise<boolean> => {
+/**
+ * Deletes a transaction from the database.
+ * @param transactionId The ID of the transaction to delete.
+ */
+export const deleteTransaction = async (transactionId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('customers')
-      .update(customer)
-      .eq('id', customer.id);
-
+    const { data, error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', transactionId);
+    
     if (error) {
-      console.error("Error updating customer:", error);
+      console.error("Error deleting transaction:", error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Error updating customer:", error);
+    console.error("Error deleting transaction:", error);
     return false;
   }
 };
 
-export const addExpense = async (expense: any): Promise<boolean> => {
+/**
+ * Adds a new expense to the database.
+ * @param expense The expense to add.
+ */
+export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
   try {
-    const { mapExpenseToDatabase } = await import('@/integrations/supabase/database.types');
-    const dbExpense = mapExpenseToDatabase(expense);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('expenses')
-      .insert(dbExpense);
-
+      .insert([expense])
+      .select('*')
+      .single();
+    
     if (error) {
       console.error("Error adding expense:", error);
-      return false;
+      return null;
     }
     
-    return true;
+    return mapDbToExpense(data);
   } catch (error) {
     console.error("Error adding expense:", error);
-    return false;
+    return null;
   }
 };
 
-export const updateExpense = async (expense: any): Promise<boolean> => {
+/**
+ * Updates an existing expense in the database.
+ */
+export const updateExpense = async (expense: Expense): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('expenses')
       .update(expense)
       .eq('id', expense.id);
-
+    
     if (error) {
       console.error("Error updating expense:", error);
       return false;
@@ -499,31 +368,44 @@ export const updateExpense = async (expense: any): Promise<boolean> => {
   }
 };
 
-export const fetchDashboardData = async () => {
+/**
+ * Deletes an expense from the database.
+ * @param expenseId The ID of the expense to delete.
+ */
+export const deleteExpense = async (expenseId: string): Promise<boolean> => {
   try {
-    const stockItemsPromise = fetchStockItems();
-    const transactionsPromise = fetchTransactions();
-    const customersPromise = fetchCustomers();
+    const { data, error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', expenseId);
     
-    const [stockItems, transactions, customers] = await Promise.all([
-      stockItemsPromise,
-      transactionsPromise,
-      customersPromise
-    ]);
+    if (error) {
+      console.error("Error deleting expense:", error);
+      return false;
+    }
     
-    return {
-      stockItems,
-      transactions,
-      customers
-    };
+    return true;
   } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    return {
-      stockItems: [],
-      transactions: [],
-      customers: []
-    };
+    console.error("Error deleting expense:", error);
+    return false;
   }
 };
 
-export default supabase;
+// Function to fetch the count of transactions for generating transaction number
+export const fetchTransactionCount = async (): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error("Error fetching transaction count:", error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error("Error fetching transaction count:", error);
+    return 0;
+  }
+};
