@@ -1,4 +1,3 @@
-
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock, TransactionInsert } from '@/utils/types';
 import { 
   addTransaction, 
@@ -41,10 +40,14 @@ const useTransactionManagement = ({
         if (matchingPizzaStock) {
           console.log(`Reducing pizza stock: ${matchingPizzaStock.flavor} ${matchingPizzaStock.size} from ${matchingPizzaStock.quantity} by ${item.quantity}`);
           
+          // Create a new stock object without costPrice (which doesn't exist in the database column)
           const updatedStock: PizzaStock = {
             ...matchingPizzaStock,
             quantity: Math.max(0, matchingPizzaStock.quantity - item.quantity)
           };
+          
+          // Make sure we're using the correct property name (cost_price not costPrice)
+          delete (updatedStock as any).costPrice;
           
           const updateResult = await updateStockItem(updatedStock);
           console.log(`Stock update result: ${updateResult ? 'Success' : 'Failed'}`);
@@ -61,10 +64,14 @@ const useTransactionManagement = ({
           if (matchingBoxStock) {
             console.log(`Reducing box stock: ${matchingBoxStock.size} from ${matchingBoxStock.quantity} by ${item.quantity}`);
             
+            // Create a new box stock object without costPrice
             const updatedBoxStock: BoxStock = {
               ...matchingBoxStock,
               quantity: Math.max(0, matchingBoxStock.quantity - item.quantity)
             };
+            
+            // Make sure we're using the correct property name
+            delete (updatedBoxStock as any).costPrice;
             
             const updateBoxResult = await updateBoxStock(updatedBoxStock);
             console.log(`Box update result: ${updateBoxResult ? 'Success' : 'Failed'}`);

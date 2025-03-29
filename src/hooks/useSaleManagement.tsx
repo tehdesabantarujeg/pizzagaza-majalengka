@@ -170,7 +170,7 @@ export const useSaleManagement = () => {
         resetForm();
         setOpen(false);
         // Reload stock data after successful transaction
-        loadStockData();
+        await loadStockData();
       }
     } else {
       if (!formNewSale.flavor) {
@@ -240,7 +240,7 @@ export const useSaleManagement = () => {
         });
         setOpen(false);
         // Reload stock data after successful transaction
-        loadStockData();
+        await loadStockData();
       }
     }
   };

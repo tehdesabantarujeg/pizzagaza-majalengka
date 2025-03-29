@@ -118,7 +118,19 @@ export const useStockItems = () => {
   const updateStockItemQuantity = async (stockItem: PizzaStock): Promise<boolean> => {
     try {
       console.log(`Updating pizza stock: ${stockItem.flavor} ${stockItem.size} to quantity ${stockItem.quantity}`);
-      const result = await updateStockItem(stockItem);
+      
+      // Create a clean copy of the stock item without any extra properties
+      const stockItemToUpdate = {
+        id: stockItem.id,
+        flavor: stockItem.flavor,
+        size: stockItem.size,
+        quantity: stockItem.quantity,
+        cost_price: stockItem.costPrice || 0,
+        purchase_date: stockItem.purchaseDate
+      };
+      
+      const result = await updateStockItem(stockItemToUpdate);
+      
       if (result) {
         // Update local state
         setStockItems(prev => 
@@ -137,7 +149,18 @@ export const useStockItems = () => {
   const updateBoxStockQuantity = async (boxStock: BoxStock): Promise<boolean> => {
     try {
       console.log(`Updating box stock: ${boxStock.size} to quantity ${boxStock.quantity}`);
-      const result = await updateBoxStock(boxStock);
+      
+      // Create a clean copy of the box stock item without any extra properties
+      const boxStockToUpdate = {
+        id: boxStock.id,
+        size: boxStock.size,
+        quantity: boxStock.quantity,
+        cost_price: boxStock.costPrice || 0,
+        purchase_date: boxStock.purchaseDate
+      };
+      
+      const result = await updateBoxStock(boxStockToUpdate);
+      
       if (result) {
         // Update local state
         setBoxItems(prev => 
