@@ -1,5 +1,7 @@
 
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCashSummary } from '@/utils/supabase';
 import { format } from 'date-fns';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
@@ -9,13 +11,27 @@ import { formatCurrency } from '@/utils/constants';
 import CashFlowChart from '@/components/cash/CashFlowChart';
 import { ArrowUpCircle, ArrowDownCircle, DollarSign } from 'lucide-react';
 import { CashSummary } from '@/utils/types';
-import { useCashSummary } from '@/hooks/useCashSummary';
+
+interface CashSummaryData {
+  totalIncome: number;
+  totalExpenses: number;
+  netProfit: number;
+  transactions: any[];
+  expenses: any[];
+}
 
 const CashManagement = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
-  
-  // Use our custom hook
-  const { cashSummary, isLoading, dateRange, setDateRange } = useCashSummary();
+  const [dateRange, setDateRange] = useState<{start: Date; end: Date}>({
+    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+  });
+
+  // Fetch cash summary data
+  const { data: cashSummary, isLoading } = useQuery<CashSummaryData>({
+    queryKey: ['cashSummary'],
+    queryFn: fetchCashSummary
+  });
 
   // Get current month and year
   const currentMonth = format(new Date(), 'MMMM yyyy');
