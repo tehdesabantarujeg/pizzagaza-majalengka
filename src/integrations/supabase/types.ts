@@ -62,7 +62,7 @@ export type Database = {
           amount: number
           category: string
           created_at: string | null
-          date: string | null
+          date: string
           description: string | null
           id: string
         }
@@ -70,7 +70,7 @@ export type Database = {
           amount?: number
           category: string
           created_at?: string | null
-          date?: string | null
+          date?: string
           description?: string | null
           id?: string
         }
@@ -78,7 +78,7 @@ export type Database = {
           amount?: number
           category?: string
           created_at?: string | null
-          date?: string | null
+          date?: string
           description?: string | null
           id?: string
         }
@@ -128,6 +128,7 @@ export type Database = {
           size: string
           state: string
           total_price: number
+          transaction_date: string | null
           transaction_number: string | null
         }
         Insert: {
@@ -143,6 +144,7 @@ export type Database = {
           size: string
           state: string
           total_price?: number
+          transaction_date?: string | null
           transaction_number?: string | null
         }
         Update: {
@@ -158,19 +160,25 @@ export type Database = {
           size?: string
           state?: string
           total_price?: number
+          transaction_date?: string | null
           transaction_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transactions_pizza_id_fkey"
+            columns: ["pizza_id"]
+            isOneToOne: false
+            referencedRelation: "pizza_stock"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      generate_transaction_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
