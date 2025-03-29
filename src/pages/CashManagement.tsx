@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/constants';
 import CashFlowChart from '@/components/cash/CashFlowChart';
 import { ArrowUpCircle, ArrowDownCircle, DollarSign } from 'lucide-react';
+import { CashSummary } from '@/utils/types';
 
 interface CashSummaryData {
   totalIncome: number;
@@ -65,18 +66,19 @@ const CashManagement = () => {
       return acc;
     }, {} as Record<string, number>);
 
-    // Create chart data
+    // Create chart data with correct CashSummary type properties
     return dates.map(date => {
       const formattedDate = format(date, 'yyyy-MM-dd');
       const displayDate = format(date, 'dd MMM');
       const income = transactionsByDate[formattedDate] || 0;
-      const expenses = expensesByDate[formattedDate] || 0;
+      const expense = expensesByDate[formattedDate] || 0;
+      
       return {
-        date: displayDate,
-        income,
-        expenses,
-        profit: income - expenses
-      };
+        period: displayDate,
+        income: income,
+        expense: expense,
+        balance: income - expense,
+      } as CashSummary;
     });
   }, [cashSummary]);
 
@@ -156,7 +158,7 @@ const CashManagement = () => {
             <CardTitle>Grafik Arus Kas</CardTitle>
           </CardHeader>
           <CardContent>
-            <CashFlowChart data={chartData} />
+            <CashFlowChart data={chartData} isLoading={isLoading} />
           </CardContent>
         </Card>
         
