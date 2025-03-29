@@ -35,7 +35,7 @@ const Expenses = () => {
 
   // Add expense mutation
   const addExpenseMutation = useMutation({
-    mutationFn: addExpense,
+    mutationFn: (expense: Omit<Expense, 'id' | 'createdAt'>) => addExpense(expense),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['currentMonthExpenses'] });

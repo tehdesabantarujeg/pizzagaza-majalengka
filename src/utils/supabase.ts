@@ -372,10 +372,10 @@ export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Prom
       id: data.id,
       date: data.date,
       pizzaId: data.pizza_id,
-      size: data.size,
+      size: data.size as 'Small' | 'Medium',
       flavor: data.flavor,
       quantity: data.quantity,
-      state: data.state,
+      state: data.state as 'Frozen Food' | 'Matang',
       includeBox: data.include_box,
       sellingPrice: data.selling_price,
       totalPrice: data.total_price,
@@ -482,12 +482,41 @@ export const fetchExpenses = async (): Promise<Expense[]> => {
   }
 };
 
+// Function to get the total expenses for the current month
+export const getCurrentMonthTotalExpenses = async (): Promise<number> => {
+  try {
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('amount')
+      .gte('date', firstDayOfMonth)
+      .lte('date', lastDayOfMonth);
+    
+    if (error) {
+      console.error("Error fetching current month expenses:", error);
+      return 0;
+    }
+    
+    // Sum up the amounts
+    return data?.reduce((total, expense) => total + Number(expense.amount), 0) || 0;
+  } catch (error) {
+    console.error("Error calculating current month expenses:", error);
+    return 0;
+  }
+};
+
 // Function to add a new expense
-export const addExpense = async (expense: Omit<Expense, 'id'>): Promise<boolean> => {
+export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('expenses')
-      .insert(expense);
+      .insert({
+        ...expense,
+        created_at: new Date().toISOString()
+      });
 
     return !error;
   } catch (error) {
@@ -531,8 +560,7 @@ export const getTransactionCount = async (): Promise<number> => {
   try {
     const { count, error } = await supabase
       .from('transactions')
-      .select('transaction_number', { count: 'exact', head: true })
-      .is('transaction_number', 'not.null');
+      .select('transaction_number', { count: 'exact', head: true });
     
     if (error) {
       console.error("Error getting transaction count:", error);
@@ -578,10 +606,10 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
       id: item.id,
       date: item.date,
       pizzaId: item.pizza_id,
-      size: item.size,
+      size: item.size as 'Small' | 'Medium',
       flavor: item.flavor,
       quantity: item.quantity,
-      state: item.state,
+      state: item.state as 'Frozen Food' | 'Matang',
       includeBox: item.include_box,
       sellingPrice: item.selling_price,
       totalPrice: item.total_price,
@@ -591,7 +619,6 @@ export const reprintTransactionReceipt = async (transactionId: string): Promise<
     }));
     
     // Call print function (imported from utils/constants.ts)
-    // Note: This assumes printReceipt is defined in constants.ts
     const { printReceipt } = await import('./constants');
     await printReceipt(transactions);
     
@@ -607,4 +634,52 @@ export const setupSupabaseTables = async (): Promise<boolean> => {
   // This function would typically create tables if they don't exist
   // For now, it's just a placeholder that returns true
   return true;
+};
+
+// Function to fetch cash summary for the cash management page
+export const fetchCashSummary = async () => {
+  try {
+    // Get current month transactions
+    const now = new Date();
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString();
+    
+    const [transactions, expenses] = await Promise.all([
+      supabase
+        .from('transactions')
+        .select('*')
+        .gte('date', firstDayOfMonth)
+        .lte('date', lastDayOfMonth),
+      supabase
+        .from('expenses')
+        .select('*')
+        .gte('date', firstDayOfMonth)
+        .lte('date', lastDayOfMonth)
+    ]);
+    
+    const totalIncome = (transactions.data || []).reduce((sum, transaction) => 
+      sum + Number(transaction.total_price), 0);
+    
+    const totalExpenses = (expenses.data || []).reduce((sum, expense) => 
+      sum + Number(expense.amount), 0);
+    
+    const netProfit = totalIncome - totalExpenses;
+    
+    return {
+      totalIncome,
+      totalExpenses,
+      netProfit,
+      transactions: transactions.data || [],
+      expenses: expenses.data || []
+    };
+  } catch (error) {
+    console.error("Error fetching cash summary:", error);
+    return {
+      totalIncome: 0,
+      totalExpenses: 0,
+      netProfit: 0,
+      transactions: [],
+      expenses: []
+    };
+  }
 };
