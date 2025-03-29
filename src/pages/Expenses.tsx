@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -20,6 +19,7 @@ import ExpenseList from '@/components/expenses/ExpenseList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowDownCircle } from 'lucide-react';
+import { transformExpenseFromDB } from '@/integrations/supabase/database.types';
 
 const Expenses = () => {
   const [showForm, setShowForm] = useState(false);
@@ -28,10 +28,13 @@ const Expenses = () => {
   const queryClient = useQueryClient();
 
   // Fetch expenses
-  const { data: expenses = [], isLoading } = useQuery({
+  const { data: expensesRaw = [], isLoading } = useQuery({
     queryKey: ['expenses'],
     queryFn: fetchExpenses
   });
+  
+  // Transform expenses data from DB format to app format
+  const expenses = expensesRaw.map(transformExpenseFromDB);
 
   // Fetch current month total expenses
   const { data: currentMonthTotal = 0, isLoading: isLoadingTotal } = useQuery({

@@ -1,5 +1,6 @@
 
 import { Database } from './types';
+import { PizzaStock, BoxStock, Transaction, Expense } from '@/utils/types';
 
 export type Tables = Database['public']['Tables'];
 
@@ -25,7 +26,7 @@ export type CustomerUpdate = Tables['customers']['Update'];
 export type ExpenseUpdate = Tables['expenses']['Update'];
 
 // Transform functions for converting between DB types and app types
-export const transformPizzaStockFromDB = (row: PizzaStockRow) => {
+export const transformPizzaStockFromDB = (row: PizzaStockRow): PizzaStock => {
   return {
     id: row.id,
     size: row.size as 'Small' | 'Medium',
@@ -37,7 +38,7 @@ export const transformPizzaStockFromDB = (row: PizzaStockRow) => {
   };
 };
 
-export const transformBoxStockFromDB = (row: BoxStockRow) => {
+export const transformBoxStockFromDB = (row: BoxStockRow): BoxStock => {
   return {
     id: row.id,
     size: row.size as 'Small' | 'Medium',
@@ -48,7 +49,7 @@ export const transformBoxStockFromDB = (row: BoxStockRow) => {
   };
 };
 
-export const transformTransactionFromDB = (row: TransactionRow) => {
+export const transformTransactionFromDB = (row: TransactionRow): Transaction => {
   return {
     id: row.id,
     date: row.date,
@@ -66,7 +67,7 @@ export const transformTransactionFromDB = (row: TransactionRow) => {
   };
 };
 
-export const transformExpenseFromDB = (row: ExpenseRow) => {
+export const transformExpenseFromDB = (row: ExpenseRow): Expense => {
   return {
     id: row.id,
     category: row.category as 'Belanja Bahan' | 'Gaji Pemilik' | 'Iuran' | 'Maintenance' | 'Marketing' | 'Upah Karyawan' | 'Lainnya',
@@ -126,7 +127,7 @@ export const columnMapping = {
 };
 
 // Functions to transform from app to DB format
-export const transformPizzaStockToDB = (stock: Omit<PizzaStock, 'id' | 'updatedAt'>) => {
+export const transformPizzaStockToDB = (stock: Omit<PizzaStock, 'id' | 'updatedAt'>): PizzaStockInsert => {
   return {
     size: stock.size,
     flavor: stock.flavor,
@@ -136,7 +137,7 @@ export const transformPizzaStockToDB = (stock: Omit<PizzaStock, 'id' | 'updatedA
   };
 };
 
-export const transformBoxStockToDB = (stock: Omit<BoxStock, 'id' | 'updatedAt'>) => {
+export const transformBoxStockToDB = (stock: Omit<BoxStock, 'id' | 'updatedAt'>): BoxStockInsert => {
   return {
     size: stock.size,
     quantity: stock.quantity,
@@ -145,7 +146,7 @@ export const transformBoxStockToDB = (stock: Omit<BoxStock, 'id' | 'updatedAt'>)
   };
 };
 
-export const transformTransactionToDB = (transaction: Omit<Transaction, 'id'>) => {
+export const transformTransactionToDB = (transaction: Omit<Transaction, 'id'>): TransactionInsert => {
   return {
     date: transaction.date,
     pizza_id: transaction.pizzaId,
@@ -162,7 +163,7 @@ export const transformTransactionToDB = (transaction: Omit<Transaction, 'id'>) =
   };
 };
 
-export const transformExpenseToDB = (expense: Omit<Expense, 'id' | 'createdAt'>) => {
+export const transformExpenseToDB = (expense: Omit<Expense, 'id' | 'createdAt'>): ExpenseInsert => {
   return {
     category: expense.category,
     date: expense.date,
