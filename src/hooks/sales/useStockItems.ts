@@ -119,17 +119,9 @@ export const useStockItems = () => {
     try {
       console.log(`Updating pizza stock: ${stockItem.flavor} ${stockItem.size} to quantity ${stockItem.quantity}`);
       
-      // Create a clean copy of the stock item without any extra properties
-      const stockItemToUpdate = {
-        id: stockItem.id,
-        flavor: stockItem.flavor,
-        size: stockItem.size,
-        quantity: stockItem.quantity,
-        cost_price: stockItem.costPrice || 0,
-        purchase_date: stockItem.purchaseDate
-      };
-      
-      const result = await updateStockItem(stockItemToUpdate);
+      // Use the original PizzaStock object for updating
+      // Make sure any database-specific transformations happen in the updateStockItem function
+      const result = await updateStockItem(stockItem);
       
       if (result) {
         // Update local state
@@ -150,16 +142,9 @@ export const useStockItems = () => {
     try {
       console.log(`Updating box stock: ${boxStock.size} to quantity ${boxStock.quantity}`);
       
-      // Create a clean copy of the box stock item without any extra properties
-      const boxStockToUpdate = {
-        id: boxStock.id,
-        size: boxStock.size,
-        quantity: boxStock.quantity,
-        cost_price: boxStock.costPrice || 0,
-        purchase_date: boxStock.purchaseDate
-      };
-      
-      const result = await updateBoxStock(boxStockToUpdate);
+      // Use the original BoxStock object for updating
+      // Make sure any database-specific transformations happen in the updateBoxStock function
+      const result = await updateBoxStock(boxStock);
       
       if (result) {
         // Update local state

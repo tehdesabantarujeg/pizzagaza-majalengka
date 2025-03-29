@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { mapDbToPizzaStock, mapDbToBoxStock, mapDbToTransaction, mapDbToExpense } from './dataMappers';
 import { PizzaStock, BoxStock, Transaction, Expense } from './types';
@@ -201,9 +202,18 @@ export const addMultiplePizzaStock = async (stocks: Omit<PizzaStock, 'id' | 'upd
  */
 export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    // Convert from frontend model to database model
+    const dbStockItem = mapPizzaStockToDatabase({
+      flavor: stockItem.flavor,
+      size: stockItem.size,
+      quantity: stockItem.quantity,
+      purchaseDate: stockItem.purchaseDate,
+      costPrice: stockItem.costPrice
+    });
+    
+    const { error } = await supabase
       .from('pizza_stock')
-      .update(stockItem)
+      .update(dbStockItem)
       .eq('id', stockItem.id);
     
     if (error) {
@@ -250,9 +260,17 @@ export const addBoxStock = async (stockItem: Omit<BoxStock, 'id' | 'updatedAt' |
  */
 export const updateBoxStock = async (stockItem: BoxStock): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    // Convert from frontend model to database model
+    const dbStockItem = mapBoxStockToDatabase({
+      size: stockItem.size,
+      quantity: stockItem.quantity,
+      purchaseDate: stockItem.purchaseDate,
+      costPrice: stockItem.costPrice
+    });
+    
+    const { error } = await supabase
       .from('box_stock')
-      .update(stockItem)
+      .update(dbStockItem)
       .eq('id', stockItem.id);
     
     if (error) {
