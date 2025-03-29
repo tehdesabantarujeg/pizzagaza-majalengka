@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { mapDbToPizzaStock, mapDbToBoxStock, mapDbToTransaction, mapDbToExpense } from './dataMappers';
-import { PizzaStock, BoxStock, Transaction, Expense, PizzaStockInsert, BoxStockInsert, TransactionInsert } from './types';
+import { PizzaStock, BoxStock, Transaction, Expense } from './types';
+import { 
+  PizzaStockInsert, 
+  BoxStockInsert, 
+  TransactionInsert,
+  mapPizzaStockToDatabase,
+  mapBoxStockToDatabase,
+  mapTransactionToDatabase,
+  mapExpenseToDatabase
+} from '@/integrations/supabase/database.types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -140,11 +149,13 @@ export const fetchDashboardData = async () => {
  * Inserts a new pizza stock item into the database.
  * @param stockItem The stock item to add.
  */
-export const addStockItem = async (stockItem: PizzaStockInsert): Promise<PizzaStock | null> => {
+export const addStockItem = async (stockItem: Omit<PizzaStock, 'id' | 'updatedAt' | 'createdAt'>): Promise<PizzaStock | null> => {
   try {
+    const dbStockItem = mapPizzaStockToDatabase(stockItem);
+    
     const { data, error } = await supabase
       .from('pizza_stock')
-      .insert([stockItem])
+      .insert([dbStockItem])
       .select('*')
       .single();
     
@@ -164,11 +175,13 @@ export const addStockItem = async (stockItem: PizzaStockInsert): Promise<PizzaSt
  * Inserts multiple pizza stock items into the database.
  * @param stocks The array of stock items to add.
  */
-export const addMultiplePizzaStock = async (stocks: PizzaStockInsert[]): Promise<boolean> => {
+export const addMultiplePizzaStock = async (stocks: Omit<PizzaStock, 'id' | 'updatedAt' | 'createdAt'>[]): Promise<boolean> => {
   try {
+    const dbStocks = stocks.map(mapPizzaStockToDatabase);
+    
     const { data, error } = await supabase
       .from('pizza_stock')
-      .insert(stocks);
+      .insert(dbStocks);
     
     if (error) {
       console.error("Error adding multiple pizza stock:", error);
@@ -209,11 +222,13 @@ export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> =
  * Adds a new box stock item to the database.
  * @param stockItem The box stock item to add.
  */
-export const addBoxStock = async (stockItem: BoxStockInsert): Promise<BoxStock | null> => {
+export const addBoxStock = async (stockItem: Omit<BoxStock, 'id' | 'updatedAt' | 'createdAt'>): Promise<BoxStock | null> => {
   try {
+    const dbStockItem = mapBoxStockToDatabase(stockItem);
+    
     const { data, error } = await supabase
       .from('box_stock')
-      .insert([stockItem])
+      .insert([dbStockItem])
       .select('*')
       .single();
     
@@ -256,23 +271,10 @@ export const updateBoxStock = async (stockItem: BoxStock): Promise<boolean> => {
  * Adds a new transaction to the database.
  * @param transaction The transaction to add.
  */
-export const addTransaction = async (transaction: TransactionInsert): Promise<Transaction | null> => {
+export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction | null> => {
   try {
-    // Map the properties to match the database column names
-    const dbTransaction = {
-      date: transaction.date,
-      pizza_id: transaction.pizzaId,
-      size: transaction.size,
-      flavor: transaction.flavor,
-      quantity: transaction.quantity,
-      state: transaction.state,
-      include_box: transaction.includeBox,
-      selling_price: transaction.sellingPrice,
-      total_price: transaction.totalPrice,
-      customer_name: transaction.customerName,
-      notes: transaction.notes,
-      transaction_number: transaction.transactionNumber
-    };
+    // Map the transaction to database format
+    const dbTransaction = mapTransactionToDatabase(transaction);
     
     const { data, error } = await supabase
       .from('transactions')
@@ -298,21 +300,8 @@ export const addTransaction = async (transaction: TransactionInsert): Promise<Tr
  */
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
-    // Map the properties to match the database column names
-    const dbTransaction = {
-      date: transaction.date,
-      pizza_id: transaction.pizzaId,
-      size: transaction.size,
-      flavor: transaction.flavor,
-      quantity: transaction.quantity,
-      state: transaction.state,
-      include_box: transaction.includeBox,
-      selling_price: transaction.sellingPrice,
-      total_price: transaction.totalPrice,
-      customer_name: transaction.customerName,
-      notes: transaction.notes,
-      transaction_number: transaction.transactionNumber
-    };
+    // Map the transaction to database format
+    const dbTransaction = mapTransactionToDatabase(transaction);
     
     const { data, error } = await supabase
       .from('transactions')
@@ -360,9 +349,11 @@ export const deleteTransaction = async (transactionId: string): Promise<boolean>
  */
 export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
   try {
+    const dbExpense = mapExpenseToDatabase(expense);
+    
     const { data, error } = await supabase
       .from('expenses')
-      .insert([expense])
+      .insert([dbExpense])
       .select('*')
       .single();
     

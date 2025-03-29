@@ -22,7 +22,7 @@ import {
   PIZZA_SIZES, 
   PRICES 
 } from '@/utils/constants';
-import { PizzaStockInsert } from '@/utils/types';
+import { PizzaStock } from '@/utils/types';
 import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -30,7 +30,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface PizzaStockFormProps {
-  onSave: (stock: PizzaStockInsert) => Promise<void>;
+  onSave: (stock: Omit<PizzaStock, 'id' | 'updatedAt' | 'createdAt'>) => Promise<void>;
   onCancel: () => void;
   isLoading: boolean;
 }
