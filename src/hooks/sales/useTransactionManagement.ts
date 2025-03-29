@@ -1,3 +1,4 @@
+
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock, TransactionInsert } from '@/utils/types';
 import { 
   addTransaction, 
@@ -10,7 +11,6 @@ import {
   fetchTransactionCount
 } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
-import { mapDbToPizzaStock, mapDbToBoxStock } from '@/utils/dataMappers';
 
 interface UseTransactionManagementProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
@@ -29,8 +29,8 @@ const useTransactionManagement = ({
   // Helper function to update stock levels after a successful transaction
   const updateStockLevels = async (items: PizzaSaleItem[]): Promise<boolean> => {
     try {
-      const pizzaStockItems = await fetchStockItems(); // These are already properly mapped
-      const boxStockItems = await fetchBoxStock();      // These are already properly mapped
+      const pizzaStockItems = await fetchStockItems();
+      const boxStockItems = await fetchBoxStock();
       
       for (const item of items) {
         // Update pizza stock
@@ -39,12 +39,17 @@ const useTransactionManagement = ({
         );
         
         if (matchingPizzaStock) {
+          console.log(`Reducing pizza stock: ${matchingPizzaStock.flavor} ${matchingPizzaStock.size} from ${matchingPizzaStock.quantity} by ${item.quantity}`);
+          
           const updatedStock: PizzaStock = {
             ...matchingPizzaStock,
             quantity: Math.max(0, matchingPizzaStock.quantity - item.quantity)
           };
           
-          await updateStockItem(updatedStock);
+          const updateResult = await updateStockItem(updatedStock);
+          console.log(`Stock update result: ${updateResult ? 'Success' : 'Failed'}`);
+        } else {
+          console.log(`No matching pizza stock found for: ${item.flavor} ${item.size}`);
         }
         
         // Update box stock if needed
@@ -54,12 +59,17 @@ const useTransactionManagement = ({
           );
           
           if (matchingBoxStock) {
+            console.log(`Reducing box stock: ${matchingBoxStock.size} from ${matchingBoxStock.quantity} by ${item.quantity}`);
+            
             const updatedBoxStock: BoxStock = {
               ...matchingBoxStock,
               quantity: Math.max(0, matchingBoxStock.quantity - item.quantity)
             };
             
-            await updateBoxStock(updatedBoxStock);
+            const updateBoxResult = await updateBoxStock(updatedBoxStock);
+            console.log(`Box update result: ${updateBoxResult ? 'Success' : 'Failed'}`);
+          } else {
+            console.log(`No matching box stock found for size: ${item.size}`);
           }
         }
       }
@@ -136,7 +146,8 @@ const useTransactionManagement = ({
       
       if (createdTransactions.length > 0) {
         // Update stock levels after successful transaction
-        await updateStockLevels(validatedItems);
+        const stockUpdateResult = await updateStockLevels(validatedItems);
+        console.log(`Stock update after transaction: ${stockUpdateResult ? 'Success' : 'Failed'}`);
         
         // Print receipt
         printReceipt(createdTransactions);
@@ -207,7 +218,8 @@ const useTransactionManagement = ({
         }));
         
         // Update stock for new items
-        await updateStockLevels(newItems);
+        const stockUpdateResult = await updateStockLevels(newItems);
+        console.log(`Stock update for new items in edited transaction: ${stockUpdateResult ? 'Success' : 'Failed'}`);
         
         await Promise.all(newTransactions.map(async (transaction) => {
           const newTransactionData: TransactionInsert = {

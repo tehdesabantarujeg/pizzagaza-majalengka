@@ -16,10 +16,13 @@ export const useStockItems = () => {
   const loadStockData = async () => {
     setLoading(true);
     try {
+      console.log("Loading stock data...");
       const [pizzaStock, boxStock] = await Promise.all([
         fetchStockItems(),
         fetchBoxStock()
       ]);
+      
+      console.log(`Loaded ${pizzaStock.length} pizza stock items and ${boxStock.length} box stock items`);
       
       // Now our data is already properly transformed by the utility functions
       setStockItems(pizzaStock);
@@ -40,9 +43,14 @@ export const useStockItems = () => {
 
   // Periksa apakah stok pizza tersedia
   const isPizzaStockAvailable = (item: PizzaSaleItem) => {
+    console.log(`Checking pizza stock for ${item.flavor} ${item.size}, quantity: ${item.quantity}`);
+    console.log("Available stock items:", stockItems);
+    
     const stockItem = stockItems.find(
       stock => stock.size === item.size && stock.flavor === item.flavor
     );
+    
+    console.log("Found stock item:", stockItem);
     
     if (!stockItem) {
       // Get available flavors for this size
@@ -81,9 +89,14 @@ export const useStockItems = () => {
   const isBoxStockAvailable = (item: PizzaSaleItem) => {
     if (!item.includeBox) return true;
     
+    console.log(`Checking box stock for size ${item.size}, quantity: ${item.quantity}`);
+    console.log("Available box items:", boxItems);
+    
     const boxStock = boxItems.find(
       stock => stock.size === item.size
     );
+    
+    console.log("Found box stock:", boxStock);
     
     if (!boxStock) {
       setError(`Tidak ada stok dus ukuran ${item.size}`);
@@ -104,6 +117,7 @@ export const useStockItems = () => {
   // Update stock levels after a transaction
   const updateStockItemQuantity = async (stockItem: PizzaStock): Promise<boolean> => {
     try {
+      console.log(`Updating pizza stock: ${stockItem.flavor} ${stockItem.size} to quantity ${stockItem.quantity}`);
       const result = await updateStockItem(stockItem);
       if (result) {
         // Update local state
@@ -122,6 +136,7 @@ export const useStockItems = () => {
 
   const updateBoxStockQuantity = async (boxStock: BoxStock): Promise<boolean> => {
     try {
+      console.log(`Updating box stock: ${boxStock.size} to quantity ${boxStock.quantity}`);
       const result = await updateBoxStock(boxStock);
       if (result) {
         // Update local state

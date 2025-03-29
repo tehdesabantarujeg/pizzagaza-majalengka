@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { 
@@ -70,6 +71,7 @@ export const useSaleManagement = () => {
 
   useEffect(() => {
     loadTransactions();
+    loadStockData(); // Load stock data when component mounts
   }, []);
   
   async function loadTransactions() {
@@ -167,6 +169,8 @@ export const useSaleManagement = () => {
       if (success) {
         resetForm();
         setOpen(false);
+        // Reload stock data after successful transaction
+        loadStockData();
       }
     } else {
       if (!formNewSale.flavor) {
@@ -235,6 +239,8 @@ export const useSaleManagement = () => {
           date: new Date().toISOString()
         });
         setOpen(false);
+        // Reload stock data after successful transaction
+        loadStockData();
       }
     }
   };
