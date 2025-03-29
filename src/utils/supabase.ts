@@ -264,11 +264,14 @@ export const getCurrentMonthTotalExpenses = async () => {
   }
 };
 
-export const updateStockItem = async (stockItem: { id: string; quantity: number }): Promise<boolean> => {
+export const updateStockItem = async (stockItem: PizzaStock): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('pizza_stock')
-      .update({ quantity: stockItem.quantity })
+      .update({ 
+        cost_price: stockItem.costPrice,
+        quantity: stockItem.quantity 
+      })
       .eq('id', stockItem.id);
 
     if (error) {
@@ -283,11 +286,14 @@ export const updateStockItem = async (stockItem: { id: string; quantity: number 
   }
 };
 
-export const updateBoxStock = async (boxStock: { id: string; quantity: number }): Promise<boolean> => {
+export const updateBoxStock = async (boxStock: BoxStock): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('box_stock')
-      .update({ quantity: boxStock.quantity })
+      .update({ 
+        cost_price: boxStock.costPrice,
+        quantity: boxStock.quantity 
+      })
       .eq('id', boxStock.id);
 
     if (error) {
