@@ -1,4 +1,3 @@
-
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
 import { 
   addTransaction, 
@@ -10,6 +9,7 @@ import {
   updateBoxStock 
 } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
+import { transformPizzaStockFromDB, transformBoxStockFromDB } from '@/integrations/supabase/database.types';
 
 interface UseTransactionManagementProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
@@ -31,9 +31,13 @@ const useTransactionManagement = ({
       const pizzaStockItems = await fetchStockItems();
       const boxStockItems = await fetchBoxStock();
       
+      // Transform data from DB format to app format
+      const transformedPizzaStock = pizzaStockItems.map(transformPizzaStockFromDB);
+      const transformedBoxStock = boxStockItems.map(transformBoxStockFromDB);
+      
       for (const item of items) {
         // Update pizza stock
-        const matchingPizzaStock = pizzaStockItems.find(
+        const matchingPizzaStock = transformedPizzaStock.find(
           stock => stock.size === item.size && stock.flavor === item.flavor
         );
         
@@ -48,7 +52,7 @@ const useTransactionManagement = ({
         
         // Update box stock if needed
         if (item.includeBox) {
-          const matchingBoxStock = boxStockItems.find(
+          const matchingBoxStock = transformedBoxStock.find(
             stock => stock.size === item.size
           );
           
@@ -204,10 +208,11 @@ const useTransactionManagement = ({
         // Update stock for new items
         await updateStockLevels(newItems);
         
-        await Promise.all(newTransactions.map(async (transaction) => {
+        // Create each new transaction
+        for (const transaction of newTransactions) {
           const newTransactionData: Omit<Transaction, 'id'> = {
-            date: transaction.date || new Date().toISOString(),
-            pizzaId: transaction.pizzaId || null,
+            date: transaction.date,
+            pizzaId: transaction.pizzaId,
             size: transaction.size,
             flavor: transaction.flavor,
             quantity: transaction.quantity,
@@ -217,55 +222,33 @@ const useTransactionManagement = ({
             totalPrice: transaction.totalPrice,
             customerName: transaction.customerName,
             notes: transaction.notes,
-            transactionNumber
+            transactionNumber: transactionNumber
           };
           
-          return addTransaction(newTransactionData);
-        }));
+          await addTransaction(newTransactionData);
+        }
       }
       
+      // Reload all transactions to update the UI
       await loadTransactions();
-      toast({
-        title: "Berhasil",
-        description: "Transaksi berhasil diperbarui",
-      });
+      
       return true;
     } catch (error) {
       console.error("Error updating transactions:", error);
-      toast({
-        title: "Error",
-        description: "Gagal memperbarui transaksi",
-        variant: "destructive"
-      });
       return false;
     }
   };
 
-  const handleDeleteTransaction = async (transactionId: string): Promise<boolean> => {
+  const handleDeleteTransaction = async (id: string): Promise<boolean> => {
     try {
-      const success = await deleteTransaction(transactionId);
+      const success = await deleteTransaction(id);
       if (success) {
-        await loadTransactions();
-        toast({
-          title: "Berhasil",
-          description: "Transaksi berhasil dihapus",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Error",
-          description: "Gagal menghapus transaksi",
-          variant: "destructive"
-        });
-        return false;
+        // Update local state by removing the deleted transaction
+        setTransactions(prev => prev.filter(t => t.id !== id));
       }
+      return success;
     } catch (error) {
       console.error("Error deleting transaction:", error);
-      toast({
-        title: "Error",
-        description: "Gagal menghapus transaksi",
-        variant: "destructive"
-      });
       return false;
     }
   };

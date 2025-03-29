@@ -28,7 +28,7 @@ export type ExpenseUpdate = Tables['expenses']['Update'];
 export const transformPizzaStockFromDB = (row: PizzaStockRow) => {
   return {
     id: row.id,
-    size: row.size,
+    size: row.size as 'Small' | 'Medium',
     flavor: row.flavor,
     quantity: row.quantity,
     costPrice: row.cost_price,
@@ -40,7 +40,7 @@ export const transformPizzaStockFromDB = (row: PizzaStockRow) => {
 export const transformBoxStockFromDB = (row: BoxStockRow) => {
   return {
     id: row.id,
-    size: row.size,
+    size: row.size as 'Small' | 'Medium',
     quantity: row.quantity,
     costPrice: row.cost_price,
     purchaseDate: row.purchase_date,
@@ -53,10 +53,10 @@ export const transformTransactionFromDB = (row: TransactionRow) => {
     id: row.id,
     date: row.date,
     pizzaId: row.pizza_id,
-    size: row.size,
+    size: row.size as 'Small' | 'Medium',
     flavor: row.flavor,
     quantity: row.quantity,
-    state: row.state,
+    state: row.state as 'Frozen Food' | 'Matang',
     includeBox: row.include_box,
     sellingPrice: row.selling_price,
     totalPrice: row.total_price,
@@ -69,7 +69,7 @@ export const transformTransactionFromDB = (row: TransactionRow) => {
 export const transformExpenseFromDB = (row: ExpenseRow) => {
   return {
     id: row.id,
-    category: row.category,
+    category: row.category as 'Belanja Bahan' | 'Gaji Pemilik' | 'Iuran' | 'Maintenance' | 'Marketing' | 'Upah Karyawan' | 'Lainnya',
     date: row.date,
     amount: row.amount,
     description: row.description,
@@ -123,4 +123,50 @@ export const columnMapping = {
     notes: 'notes',
     transactionNumber: 'transaction_number'
   }
+};
+
+// Functions to transform from app to DB format
+export const transformPizzaStockToDB = (stock: Omit<PizzaStock, 'id' | 'updatedAt'>) => {
+  return {
+    size: stock.size,
+    flavor: stock.flavor,
+    quantity: stock.quantity,
+    cost_price: stock.costPrice,
+    purchase_date: stock.purchaseDate
+  };
+};
+
+export const transformBoxStockToDB = (stock: Omit<BoxStock, 'id' | 'updatedAt'>) => {
+  return {
+    size: stock.size,
+    quantity: stock.quantity,
+    cost_price: stock.costPrice,
+    purchase_date: stock.purchaseDate
+  };
+};
+
+export const transformTransactionToDB = (transaction: Omit<Transaction, 'id'>) => {
+  return {
+    date: transaction.date,
+    pizza_id: transaction.pizzaId,
+    size: transaction.size,
+    flavor: transaction.flavor,
+    quantity: transaction.quantity,
+    state: transaction.state,
+    include_box: transaction.includeBox,
+    selling_price: transaction.sellingPrice,
+    total_price: transaction.totalPrice,
+    customer_name: transaction.customerName,
+    notes: transaction.notes,
+    transaction_number: transaction.transactionNumber
+  };
+};
+
+export const transformExpenseToDB = (expense: Omit<Expense, 'id' | 'createdAt'>) => {
+  return {
+    category: expense.category,
+    date: expense.date,
+    amount: expense.amount,
+    description: expense.description
+  };
 };

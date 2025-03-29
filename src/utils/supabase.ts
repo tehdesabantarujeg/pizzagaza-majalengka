@@ -9,7 +9,11 @@ import {
   transformBoxStockFromDB, 
   transformTransactionFromDB,
   transformExpenseFromDB,
-  transformCustomerFromDB
+  transformCustomerFromDB,
+  transformPizzaStockToDB,
+  transformBoxStockToDB,
+  transformTransactionToDB,
+  transformExpenseToDB
 } from '../integrations/supabase/database.types';
 
 const SUPABASE_URL = "https://wbnpwldfcspeoiwofbiq.supabase.co";
@@ -302,20 +306,14 @@ export const addStockItem = async (newStock: Omit<PizzaStock, 'id' | 'updatedAt'
   try {
     console.log('Adding pizza stock item:', newStock);
     
-    // Convert camelCase to snake_case for Supabase
-    const snakeCaseData = {
-      size: newStock.size,
-      flavor: newStock.flavor,
-      quantity: newStock.quantity,
-      cost_price: newStock.costPrice,
-      purchase_date: newStock.purchaseDate,
-    };
+    // Convert from app format to DB format
+    const dbData = transformPizzaStockToDB(newStock);
     
-    console.log('Converted stock data:', snakeCaseData);
+    console.log('Converted stock data:', dbData);
     
     const { error } = await supabase
       .from('pizza_stock')
-      .insert([snakeCaseData]);
+      .insert([dbData]);
 
     if (error) {
       console.error("Error adding stock item:", error);
@@ -331,20 +329,14 @@ export const addMultiplePizzaStock = async (newStocks: Omit<PizzaStock, 'id' | '
   try {
     console.log('Adding multiple pizza stock items:', newStocks);
     
-    // Convert camelCase to snake_case for Supabase
-    const snakeCaseData = newStocks.map(stock => ({
-      size: stock.size,
-      flavor: stock.flavor,
-      quantity: stock.quantity,
-      cost_price: stock.costPrice,
-      purchase_date: stock.purchaseDate,
-    }));
+    // Convert from app format to DB format
+    const dbData = newStocks.map(transformPizzaStockToDB);
     
-    console.log('Converted stock data:', snakeCaseData);
+    console.log('Converted stock data:', dbData);
     
     const { error } = await supabase
       .from('pizza_stock')
-      .insert(snakeCaseData);
+      .insert(dbData);
 
     if (error) {
       console.error("Error adding multiple pizza stock:", error);
@@ -360,19 +352,14 @@ export const addBoxStock = async (newStock: Omit<BoxStock, 'id' | 'updatedAt'>):
   try {
     console.log('Adding box stock item:', newStock);
     
-    // Convert camelCase to snake_case for Supabase
-    const snakeCaseData = {
-      size: newStock.size,
-      quantity: newStock.quantity,
-      cost_price: newStock.costPrice,
-      purchase_date: newStock.purchaseDate,
-    };
+    // Convert from app format to DB format
+    const dbData = transformBoxStockToDB(newStock);
     
-    console.log('Converted box stock data:', snakeCaseData);
+    console.log('Converted box stock data:', dbData);
     
     const { error } = await supabase
       .from('box_stock')
-      .insert([snakeCaseData]);
+      .insert([dbData]);
 
     if (error) {
       console.error("Error adding box stock:", error);
@@ -443,9 +430,12 @@ export const deleteTransaction = async (transactionId: string): Promise<boolean>
 
 export const updateTransaction = async (transaction: Transaction): Promise<boolean> => {
   try {
+    // Convert from app format to DB format
+    const dbData = transformTransactionToDB(transaction);
+    
     const { error } = await supabase
       .from('transactions')
-      .update(transaction)
+      .update(dbData)
       .eq('id', transaction.id);
 
     if (error) {
@@ -460,31 +450,18 @@ export const updateTransaction = async (transaction: Transaction): Promise<boole
   }
 };
 
-export const addTransaction = async (transaction: Omit<Transaction, 'id' | 'updatedAt'>): Promise<Transaction | null> => {
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
   try {
     console.log('Adding transaction:', transaction);
     
-    // Convert camelCase to snake_case for Supabase
-    const snakeCaseData = {
-      date: transaction.date,
-      pizza_id: transaction.pizzaId,
-      size: transaction.size,
-      flavor: transaction.flavor,
-      quantity: transaction.quantity,
-      state: transaction.state,
-      include_box: transaction.includeBox,
-      selling_price: transaction.sellingPrice,
-      total_price: transaction.totalPrice,
-      customer_name: transaction.customerName,
-      notes: transaction.notes,
-      transaction_number: transaction.transactionNumber
-    };
+    // Convert from app format to DB format
+    const dbData = transformTransactionToDB(transaction);
     
-    console.log('Converted transaction data:', snakeCaseData);
+    console.log('Converted transaction data:', dbData);
     
     const { data, error } = await supabase
       .from('transactions')
-      .insert([snakeCaseData])
+      .insert([dbData])
       .select('*')
       .single();
 
@@ -584,9 +561,12 @@ export const deleteBoxStock = async (id: string): Promise<boolean> => {
 
 export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Promise<Expense | null> => {
   try {
+    // Convert from app format to DB format
+    const dbData = transformExpenseToDB(expense);
+    
     const { data, error } = await supabase
       .from('expenses')
-      .insert([expense])
+      .insert([dbData])
       .select('*')
       .single();
 
@@ -595,7 +575,7 @@ export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Pr
       return null;
     }
 
-    return data as Expense;
+    return transformExpenseFromDB(data);
   } catch (error) {
     console.error("Error adding expense:", error);
     return null;
@@ -604,9 +584,13 @@ export const addExpense = async (expense: Omit<Expense, 'id' | 'createdAt'>): Pr
 
 export const updateExpense = async (expense: Expense): Promise<boolean> => {
   try {
+    // Exclude createdAt which should not be updated
+    const { createdAt, ...updateData } = expense;
+    const dbData = transformExpenseToDB(updateData);
+    
     const { error } = await supabase
       .from('expenses')
-      .update(expense)
+      .update(dbData)
       .eq('id', expense.id);
 
     if (error) {
