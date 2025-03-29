@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { PizzaStock, BoxStock, PizzaSaleItem } from '@/utils/types';
 import { fetchStockItems, updateStockItem, fetchBoxStock, updateBoxStock } from '@/utils/supabase';
+import { transformPizzaStockFromDB, transformBoxStockFromDB } from '@/integrations/supabase/database.types';
 
 export const useStockItems = () => {
   const [stockItems, setStockItems] = useState<PizzaStock[]>([]);
@@ -16,13 +17,17 @@ export const useStockItems = () => {
   const loadStockData = async () => {
     setLoading(true);
     try {
-      const [pizzaStock, boxStock] = await Promise.all([
+      const [pizzaStockData, boxStockData] = await Promise.all([
         fetchStockItems(),
         fetchBoxStock()
       ]);
       
-      setStockItems(pizzaStock);
-      setBoxItems(boxStock);
+      // Transform data from DB format to app format
+      const transformedPizzaStock = pizzaStockData.map(transformPizzaStockFromDB);
+      const transformedBoxStock = boxStockData.map(transformBoxStockFromDB);
+      
+      setStockItems(transformedPizzaStock);
+      setBoxItems(transformedBoxStock);
     } catch (error) {
       console.error("Error loading stock data:", error);
     } finally {

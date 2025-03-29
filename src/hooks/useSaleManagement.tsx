@@ -9,6 +9,7 @@ import {
 import { PRICES } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
 import useStockItems from './sales/useStockItems';
+import { transformTransactionFromDB } from '@/integrations/supabase/database.types';
 
 import useTransactionForm from './sales/useTransactionForm';
 import useTransactionManagement from './sales/useTransactionManagement';
@@ -77,7 +78,9 @@ export const useSaleManagement = () => {
     try {
       const data = await fetchTransactions();
       
-      const updatedData = data.map(transaction => {
+      const transformedData = data.map(item => {
+        const transaction = transformTransactionFromDB(item);
+        
         let safeState: 'Frozen Food' | 'Matang';
         
         if (typeof transaction.state === 'string') {
@@ -93,27 +96,13 @@ export const useSaleManagement = () => {
           safeState = 'Frozen Food';
         }
         
-        const safeTotalPrice = typeof transaction.totalPrice === 'number' && !isNaN(transaction.totalPrice) 
-          ? transaction.totalPrice 
-          : typeof transaction.totalPrice === 'string' 
-            ? parseFloat(transaction.totalPrice) || 0
-            : 0;
-        
-        const safeSellingPrice = typeof transaction.sellingPrice === 'number' && !isNaN(transaction.sellingPrice)
-          ? transaction.sellingPrice
-          : typeof transaction.sellingPrice === 'string'
-            ? parseFloat(transaction.sellingPrice) || 0
-            : 0;
-        
         return {
           ...transaction,
-          state: safeState,
-          totalPrice: safeTotalPrice,
-          sellingPrice: safeSellingPrice
+          state: safeState
         };
       });
       
-      setTransactions(updatedData);
+      setTransactions(transformedData);
     } catch (error) {
       console.error("Error loading transactions:", error);
       toast({
