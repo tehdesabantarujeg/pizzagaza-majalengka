@@ -3,18 +3,10 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, formatDateShort } from '@/utils/constants';
-
-interface RecentTransaction {
-  id: string;
-  date: string;
-  product: string;
-  quantity: number;
-  amount: number;
-  customer: string;
-}
+import { TransactionRow } from '@/integrations/supabase/database.types';
 
 interface RecentTransactionsProps {
-  transactions: RecentTransaction[];
+  transactions: TransactionRow[];
 }
 
 const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions }) => {
@@ -40,13 +32,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
             <TableBody>
               {transactions.map((tx) => (
                 <TableRow key={tx.id}>
-                  <TableCell className="font-medium">{formatDateShort(tx.date)}</TableCell>
-                  <TableCell>{tx.product}</TableCell>
+                  <TableCell className="font-medium">{formatDateShort(tx.date || '')}</TableCell>
+                  <TableCell>{tx.flavor}</TableCell>
                   <TableCell className="text-right">{tx.quantity}</TableCell>
                   <TableCell className="text-right">
                     {/* Ensure amount is a valid number before formatting */}
-                    {typeof tx.amount === 'number' && !isNaN(tx.amount) 
-                      ? formatCurrency(tx.amount) 
+                    {typeof tx.total_price === 'number' && !isNaN(tx.total_price) 
+                      ? formatCurrency(tx.total_price) 
                       : formatCurrency(0)}
                   </TableCell>
                 </TableRow>
