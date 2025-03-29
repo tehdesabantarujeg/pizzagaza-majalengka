@@ -67,12 +67,16 @@ const useTransactionManagement = ({
     try {
       const transactionNumber = await generateTransactionNumber();
       
-      const transactions = await Promise.all(items.map(async (item) => {
+      // Create an array to hold the created transactions
+      const createdTransactions: Transaction[] = [];
+      
+      // Process each item and create a transaction
+      for (const item of items) {
         // Ensure pizzaId is null if undefined or empty string
         const pizzaId = item.pizzaStockId && item.pizzaStockId.trim() !== '' ? item.pizzaStockId : null;
         
         const transaction: Omit<Transaction, 'id'> = {
-          date: item.date || new Date().toISOString(), // Use provided date or default to now
+          date: item.date || new Date().toISOString(),
           pizzaId: pizzaId,
           size: item.size,
           flavor: item.flavor,
@@ -86,17 +90,22 @@ const useTransactionManagement = ({
           transactionNumber
         };
         
-        return addTransaction(transaction);
-      }));
+        const savedTransaction = await addTransaction(transaction);
+        if (savedTransaction) {
+          createdTransactions.push(savedTransaction);
+        }
+      }
       
-      const successfulTransactions = transactions.filter((t): t is Transaction => t !== null);
-      
-      if (successfulTransactions.length > 0) {
+      if (createdTransactions.length > 0) {
         // Update stock levels after successful transaction
         await updateStockLevels(items);
         
-        printReceipt(successfulTransactions);
+        // Print receipt
+        printReceipt(createdTransactions);
+        
+        // Reload transactions
         await loadTransactions();
+        
         toast({
           title: "Berhasil",
           description: "Transaksi berhasil disimpan",

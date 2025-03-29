@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { PizzaStock, BoxStock, Transaction, Expense } from "./types";
 
@@ -274,42 +273,48 @@ export const deleteBoxStock = async (id: string): Promise<boolean> => {
 
 // Function to update pizza stock cost price
 export const updatePizzaStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
-    try {
-        const { error } = await supabase
-            .from('pizza_stock')
-            .update({ costPrice: newPrice, updatedAt: new Date().toISOString() })
-            .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('pizza_stock')
+      .update({ 
+        cost_price: newPrice, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id);
 
-        if (error) {
-            console.error("Error updating pizza stock cost price:", error);
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error("Error updating pizza stock cost price:", error);
-        return false;
+    if (error) {
+      console.error("Error updating pizza stock cost price:", error);
+      return false;
     }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating pizza stock cost price:", error);
+    return false;
+  }
 };
 
 // Function to update box stock cost price
 export const updateBoxStockCostPrice = async (id: string, newPrice: number): Promise<boolean> => {
-    try {
-        const { error } = await supabase
-            .from('box_stock')
-            .update({ costPrice: newPrice, updatedAt: new Date().toISOString() })
-            .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('box_stock')
+      .update({ 
+        cost_price: newPrice, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id);
 
-        if (error) {
-            console.error("Error updating box stock cost price:", error);
-            return false;
-        }
-
-        return true;
-    } catch (error) {
-        console.error("Error updating box stock cost price:", error);
-        return false;
+    if (error) {
+      console.error("Error updating box stock cost price:", error);
+      return false;
     }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating box stock cost price:", error);
+    return false;
+  }
 };
 
 // Function to generate a new transaction number
@@ -349,16 +354,38 @@ export const generateTransactionNumber = async (): Promise<string> => {
 };
 
 // Function to add a new transaction
-export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<boolean> => {
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<Transaction | null> => {
   try {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('transactions')
-      .insert(transaction);
+      .insert(transaction)
+      .select('*')
+      .single();
 
-    return !error;
+    if (error) {
+      console.error('Error adding transaction:', error);
+      return null;
+    }
+
+    // Transform data to match Transaction type
+    return data ? {
+      id: data.id,
+      date: data.date,
+      pizzaId: data.pizza_id,
+      size: data.size,
+      flavor: data.flavor,
+      quantity: data.quantity,
+      state: data.state,
+      includeBox: data.include_box,
+      sellingPrice: data.selling_price,
+      totalPrice: data.total_price,
+      customerName: data.customer_name,
+      notes: data.notes,
+      transactionNumber: data.transaction_number
+    } : null;
   } catch (error) {
     console.error('Error adding transaction:', error);
-    return false;
+    return null;
   }
 };
 
@@ -497,4 +524,87 @@ export const deleteExpense = async (id: string): Promise<boolean> => {
     console.error('Error deleting expense:', error);
     return false;
   }
+};
+
+// Function to get transaction count for generating sequential transaction numbers
+export const getTransactionCount = async (): Promise<number> => {
+  try {
+    const { count, error } = await supabase
+      .from('transactions')
+      .select('transaction_number', { count: 'exact', head: true })
+      .is('transaction_number', 'not.null');
+    
+    if (error) {
+      console.error("Error getting transaction count:", error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error("Error getting transaction count:", error);
+    return 0;
+  }
+};
+
+// Function to reprint a transaction receipt
+export const reprintTransactionReceipt = async (transactionId: string): Promise<boolean> => {
+  try {
+    // First, fetch the transaction details
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', transactionId)
+      .single();
+    
+    if (error || !data) {
+      console.error("Error fetching transaction for receipt:", error);
+      return false;
+    }
+    
+    // Fetch all related transactions with the same transaction number
+    const transactionNumber = data.transaction_number;
+    const { data: relatedTransactions, error: relatedError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('transaction_number', transactionNumber);
+    
+    if (relatedError) {
+      console.error("Error fetching related transactions:", relatedError);
+      return false;
+    }
+    
+    // Transform the data to match the Transaction type
+    const transactions: Transaction[] = (relatedTransactions || []).map(item => ({
+      id: item.id,
+      date: item.date,
+      pizzaId: item.pizza_id,
+      size: item.size,
+      flavor: item.flavor,
+      quantity: item.quantity,
+      state: item.state,
+      includeBox: item.include_box,
+      sellingPrice: item.selling_price,
+      totalPrice: item.total_price,
+      customerName: item.customer_name,
+      notes: item.notes,
+      transactionNumber: item.transaction_number
+    }));
+    
+    // Call print function (imported from utils/constants.ts)
+    // Note: This assumes printReceipt is defined in constants.ts
+    const { printReceipt } = await import('./constants');
+    await printReceipt(transactions);
+    
+    return true;
+  } catch (error) {
+    console.error("Error reprinting transaction receipt:", error);
+    return false;
+  }
+};
+
+// Function for setting up initial Supabase tables if needed
+export const setupSupabaseTables = async (): Promise<boolean> => {
+  // This function would typically create tables if they don't exist
+  // For now, it's just a placeholder that returns true
+  return true;
 };

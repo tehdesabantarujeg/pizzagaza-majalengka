@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Transaction } from '@/utils/types';
-import { fetchTransactions, addTransaction, getTransactionCount, deleteTransaction, updateTransaction } from '@/utils/supabase';
+import { fetchTransactions, addTransaction, generateTransactionNumber, deleteTransaction, updateTransaction, getTransactionCount } from '@/utils/supabase';
 import { setupSupabaseTables } from '@/utils/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatTransactionNumber } from '@/utils/constants';
