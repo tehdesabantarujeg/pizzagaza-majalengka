@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BoxStock } from '@/utils/types';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import {
 } from '@/components/ui/table';
 import { formatCurrency, formatDateShort } from '@/utils/constants';
 import { useToast } from '@/hooks/use-toast';
-import { deleteBoxStock, updateBoxStock } from '@/utils/supabase';
+import { updateBoxStock } from '@/utils/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -33,12 +32,10 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
   const [deleteItem, setDeleteItem] = useState<BoxStock | null>(null);
   const [quantity, setQuantity] = useState(0);
   
-  // Handle search input
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
   
-  // Handle column sorting
   const handleSort = (field: keyof BoxStock) => {
     if (field === sortField) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -48,7 +45,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
     }
   };
   
-  // Filter and sort boxItems
   const filteredItems = boxItems
     .filter(box => box.size.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
@@ -57,7 +53,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
       return 0;
     });
   
-  // Handle edit quantity save
   const handleSaveEdit = async () => {
     if (!editItem) return;
     
@@ -75,7 +70,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
           description: `Dus ${updatedStock.size} berhasil diperbarui.`
         });
         
-        // Refresh stock data
         if (loadStockData) loadStockData();
       } else {
         toast({
@@ -96,12 +90,16 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
     setEditItem(null);
   };
   
-  // Handle delete confirmation
   const handleConfirmDelete = async () => {
     if (!deleteItem) return;
     
     try {
-      const success = await deleteBoxStock(deleteItem.id);
+      const updatedStock = {
+        ...deleteItem,
+        quantity: 0
+      };
+      
+      const success = await updateBoxStock(updatedStock);
       
       if (success) {
         toast({
@@ -109,7 +107,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
           description: `Dus ${deleteItem.size} berhasil dihapus dari stok.`
         });
         
-        // Refresh stock data
         if (loadStockData) loadStockData();
       } else {
         toast({
@@ -236,7 +233,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
         </div>
       )}
       
-      {/* Edit Dialog */}
       {editItem && (
         <Dialog open={!!editItem} onOpenChange={(open) => !open && setEditItem(null)}>
           <DialogContent>
@@ -268,7 +264,6 @@ const BoxStockList: React.FC<BoxStockListProps> = ({ boxItems, setOpenBox, loadS
         </Dialog>
       )}
       
-      {/* Delete Confirmation Dialog */}
       {deleteItem && (
         <Dialog open={!!deleteItem} onOpenChange={(open) => !open && setDeleteItem(null)}>
           <DialogContent>

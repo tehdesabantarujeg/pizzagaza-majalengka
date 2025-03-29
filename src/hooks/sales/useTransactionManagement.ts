@@ -1,6 +1,15 @@
 
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
-import { addTransaction, updateTransaction, deleteTransaction, generateTransactionNumber, fetchStockItems, updateStockItem, fetchBoxStock, updateBoxStock } from '@/utils/supabase';
+import { 
+  addTransaction, 
+  updateTransaction, 
+  deleteTransaction, 
+  generateTransactionNumber, 
+  fetchStockItems, 
+  updateStockItem, 
+  fetchBoxStock, 
+  updateBoxStock 
+} from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
 
 interface UseTransactionManagementProps {

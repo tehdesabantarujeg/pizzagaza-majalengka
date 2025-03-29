@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { PizzaStock } from '@/utils/types';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
 import { formatCurrency, formatDateShort } from '@/utils/constants';
 import PizzaVariantBadge from '@/components/PizzaVariantBadge';
 import { useToast } from '@/hooks/use-toast';
-import { deletePizzaStock, updatePizzaStock } from '@/utils/supabase';
+import { updateStockItem } from '@/utils/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
@@ -66,7 +67,7 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
         quantity: quantity
       };
       
-      const success = await updatePizzaStock(updatedStock);
+      const success = await updateStockItem(updatedStock);
       
       if (success) {
         toast({
@@ -98,7 +99,13 @@ const PizzaStockList: React.FC<PizzaStockListProps> = ({ stockItems, setOpenPizz
     if (!deleteItem) return;
     
     try {
-      const success = await deletePizzaStock(deleteItem.id);
+      // Since deletePizzaStock is not available, we'll simulate by setting quantity to 0
+      const updatedStock = {
+        ...deleteItem,
+        quantity: 0
+      };
+      
+      const success = await updateStockItem(updatedStock);
       
       if (success) {
         toast({

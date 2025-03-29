@@ -3,7 +3,6 @@ import { Transaction, PizzaSaleItem } from '@/utils/types';
 import { 
   addTransaction, 
   fetchTransactions, 
-  generateTransactionNumber, 
   updateTransaction, 
   deleteTransaction 
 } from '@/utils/supabase';

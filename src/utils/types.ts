@@ -1,4 +1,3 @@
-
 export interface Pizza {
   id?: string;
   size: 'Small' | 'Medium';
@@ -110,3 +109,35 @@ export interface CashSummary {
   expense: number;
   balance: number;
 }
+
+export type Database = {
+  public: {
+    Tables: {
+      pizza_stock: {
+        Row: PizzaStock;
+        Insert: Omit<PizzaStock, 'id' | 'updatedAt'>;
+        Update: Partial<PizzaStock>;
+      };
+      box_stock: {
+        Row: BoxStock;
+        Insert: Omit<BoxStock, 'id' | 'updatedAt'>;
+        Update: Partial<BoxStock>;
+      };
+      transactions: {
+        Row: Transaction;
+        Insert: Omit<Transaction, 'id'>;
+        Update: Partial<Transaction>;
+      };
+      expenses: {
+        Row: Expense;
+        Insert: Omit<Expense, 'id' | 'createdAt'>;
+        Update: Partial<Expense>;
+      };
+      customers: {
+        Row: Customer;
+        Insert: Omit<Customer, 'id'>;
+        Update: Partial<Customer>;
+      };
+    };
+  };
+};

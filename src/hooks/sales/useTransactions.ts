@@ -1,8 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { Transaction } from '@/utils/types';
-import { fetchTransactions, addTransaction, generateTransactionNumber, deleteTransaction, updateTransaction, getTransactionCount } from '@/utils/supabase';
-import { setupSupabaseTables } from '@/utils/supabase';
+import { 
+  fetchTransactions, 
+  addTransaction, 
+  generateTransactionNumber, 
+  deleteTransaction, 
+  updateTransaction, 
+  getTransactionCount, 
+  setupSupabaseTables 
+} from '@/utils/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatTransactionNumber } from '@/utils/constants';
 
@@ -45,8 +52,9 @@ export const useTransactions = () => {
         setTransactions(prev => [savedTransaction, ...prev]);
         // Invalidate dashboard data to ensure it refreshes
         queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+        return savedTransaction;
       }
-      return savedTransaction;
+      return null;
     } catch (error) {
       console.error("Error adding transaction:", error);
       return null;

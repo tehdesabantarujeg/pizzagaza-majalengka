@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { Transaction } from '@/utils/types';
-import { formatDateShort, formatCurrency } from '@/utils/constants';
+import { formatDateShort, formatCurrency, printReceipt } from '@/utils/constants';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import PizzaVariantBadge from '@/components/PizzaVariantBadge';
 import { Package, Search, ArrowUpDown, Printer, Edit, Trash } from 'lucide-react';
-import { reprintTransactionReceipt } from '@/utils/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 interface TransactionListProps {
@@ -53,7 +51,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
   
   const handleReprintReceipt = async (transactionId: string) => {
     try {
-      await reprintTransactionReceipt(transactionId);
+      const transaction = transactions.find(t => t.id === transactionId);
+      
+      if (!transaction) {
+        throw new Error("Transaction not found");
+      }
+      
+      const transactionNumber = transaction.transactionNumber;
+      
+      let transactionsToReprint = [transaction];
+      
+      if (transactionNumber) {
+        transactionsToReprint = transactions.filter(t => t.transactionNumber === transactionNumber);
+      }
+      
+      printReceipt(transactionsToReprint);
+      
       toast({
         title: "Mencetak Nota",
         description: "Nota berhasil dicetak ulang",

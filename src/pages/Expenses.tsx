@@ -1,7 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchExpenses, addExpense, updateExpense, deleteExpense, getCurrentMonthTotalExpenses } from '@/utils/supabase';
+import { 
+  fetchExpenses, 
+  addExpense, 
+  updateExpense, 
+  deleteExpense, 
+  getCurrentMonthTotalExpenses 
+} from '@/utils/supabase';
 import { format } from 'date-fns';
 import { Expense, ExpenseCategory } from '@/utils/types';
 import { EXPENSE_CATEGORIES } from '@/utils/constants';
@@ -35,7 +41,9 @@ const Expenses = () => {
 
   // Add expense mutation
   const addExpenseMutation = useMutation({
-    mutationFn: (expense: Omit<Expense, 'id' | 'createdAt'>) => addExpense(expense),
+    mutationFn: (expense: Omit<Expense, 'id' | 'createdAt'>) => {
+      return addExpense(expense);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['currentMonthExpenses'] });
@@ -57,7 +65,9 @@ const Expenses = () => {
 
   // Update expense mutation
   const updateExpenseMutation = useMutation({
-    mutationFn: updateExpense,
+    mutationFn: (expense: Expense) => {
+      return updateExpense(expense);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['currentMonthExpenses'] });
@@ -80,7 +90,9 @@ const Expenses = () => {
 
   // Delete expense mutation
   const deleteExpenseMutation = useMutation({
-    mutationFn: deleteExpense,
+    mutationFn: (id: string) => {
+      return deleteExpense(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
       queryClient.invalidateQueries({ queryKey: ['currentMonthExpenses'] });
