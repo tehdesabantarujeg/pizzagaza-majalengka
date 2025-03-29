@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import StockManagement from "./pages/StockManagement";
 import Sales from "./pages/Sales";
 import Expenses from "./pages/Expenses";
@@ -48,6 +49,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<PublicRoute element={<Login />} />} />
       <Route path="/" element={<ProtectedRoute element={<Index />} />} />
+      <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
       <Route path="/stock" element={<ProtectedRoute element={<StockManagement />} allowedRoles={['admin']} />} />
       <Route path="/sales" element={<ProtectedRoute element={<Sales />} />} />
       <Route path="/expenses" element={<ProtectedRoute element={<Expenses />} allowedRoles={['admin']} />} />

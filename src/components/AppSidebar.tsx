@@ -27,7 +27,8 @@ import {
   User, 
   Home, 
   DollarSign, 
-  Wallet 
+  Wallet,
+  LayoutDashboard
 } from 'lucide-react';
 
 const AppSidebar = () => {
@@ -59,6 +60,15 @@ const AppSidebar = () => {
                   <NavLink to="/">
                     <Home className="h-5 w-5" />
                     <span>Beranda</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Dashboard">
+                  <NavLink to="/dashboard">
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span>Dashboard</span>
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

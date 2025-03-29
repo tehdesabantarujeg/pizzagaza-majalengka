@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -27,6 +28,11 @@ const StockManagement = () => {
   const [isOpenPizzaForm, setIsOpenPizzaForm] = useState(false);
   const [isOpenMultiPizzaForm, setIsOpenMultiPizzaForm] = useState(false);
   const [isOpenBoxForm, setIsOpenBoxForm] = useState(false);
+  const [newBoxStock, setNewBoxStock] = useState({
+    size: 'Small' as 'Small' | 'Medium',
+    quantity: 1,
+    costPrice: PRICES.COST_SMALL_BOX
+  });
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -127,10 +133,19 @@ const StockManagement = () => {
     );
   };
 
-  const handleAddBoxStock = async (newStock: Omit<BoxStock, 'id' | 'updatedAt'>) => {
+  const handleAddBoxStock = async (e: React.FormEvent) => {
+    e.preventDefault();
     addBoxStockMutation.mutate({
-      ...newStock,
+      ...newBoxStock,
       purchaseDate: new Date().toISOString()
+    });
+  };
+
+  const handleBoxSizeChange = (value: string) => {
+    setNewBoxStock({
+      ...newBoxStock,
+      size: value as 'Small' | 'Medium',
+      costPrice: value === 'Small' ? PRICES.COST_SMALL_BOX : PRICES.COST_MEDIUM_BOX
     });
   };
 
@@ -177,22 +192,10 @@ const StockManagement = () => {
               </Button>
             </DialogTrigger>
             <BoxStockForm
-              newBoxStock={{
-                size: 'Small',
-                quantity: 1,
-                costPrice: PRICES.COST_SMALL_BOX
-              }}
-              setNewBoxStock={() => {}}
-              handleBoxSubmit={async (e) => {
-                e.preventDefault();
-                await handleAddBoxStock({
-                  size: 'Small',
-                  quantity: 1,
-                  costPrice: PRICES.COST_SMALL_BOX,
-                  purchaseDate: new Date().toISOString()
-                });
-              }}
-              handleBoxSizeChange={() => {}}
+              newBoxStock={newBoxStock}
+              setNewBoxStock={setNewBoxStock}
+              handleBoxSubmit={handleBoxStock}
+              handleBoxSizeChange={handleBoxSizeChange}
             />
           </Dialog>
         </div>

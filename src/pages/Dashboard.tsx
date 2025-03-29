@@ -13,6 +13,9 @@ import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import { useToast } from '@/hooks/use-toast';
 import useDashboardData from '@/hooks/dashboard/useDashboardData';
 import StockAvailabilityTable from '@/components/dashboard/StockAvailabilityTable';
+import { useQuery } from '@tanstack/react-query';
+import { fetchBoxStock } from '@/utils/supabase';
+import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
@@ -26,6 +29,13 @@ const Dashboard = () => {
     isLoading,
     summarySales,
   } = useDashboardData();
+
+  const { 
+    data: boxItems = []
+  } = useQuery({
+    queryKey: ['boxStocks'],
+    queryFn: fetchBoxStock
+  });
 
   return (
     <Layout>
@@ -82,7 +92,15 @@ const Dashboard = () => {
           </div>
           
           <div className="md:col-span-1">
-            <BoxStockStatusChart boxItems={stockItems} />
+            <BoxAvailabilityBox boxItems={boxItems} />
+          </div>
+          
+          <div className="lg:col-span-2">
+            <StockStatusChart stockItems={stockItems} />
+          </div>
+          
+          <div className="lg:col-span-1">
+            <BoxStockStatusChart boxItems={boxItems} />
           </div>
           
           <div className="md:col-span-3">

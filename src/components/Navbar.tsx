@@ -7,7 +7,8 @@ import {
   ShoppingBag, 
   ShoppingCart, 
   Pizza, 
-  Home
+  Home,
+  LayoutDashboard
 } from 'lucide-react';
 
 interface NavItemProps {
@@ -45,6 +46,7 @@ const Navbar: React.FC = () => {
         
         <nav className="hidden md:flex items-center gap-1">
           <NavItem to="/" icon={<Home className="h-4 w-4" />} label="Beranda" />
+          <NavItem to="/dashboard" icon={<LayoutDashboard className="h-4 w-4" />} label="Dashboard" />
           <NavItem to="/stock" icon={<ShoppingBag className="h-4 w-4" />} label="Stok" />
           <NavItem to="/sales" icon={<ShoppingCart className="h-4 w-4" />} label="Penjualan" />
         </nav>
