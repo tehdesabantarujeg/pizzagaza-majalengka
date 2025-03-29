@@ -21,6 +21,7 @@ export const useStockItems = () => {
         fetchBoxStock()
       ]);
       
+      // Now our data is already properly transformed by the utility functions
       setStockItems(pizzaStock);
       setBoxItems(boxStock);
     } catch (error) {

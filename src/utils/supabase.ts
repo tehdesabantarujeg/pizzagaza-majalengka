@@ -1,4 +1,11 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  mapDbToPizzaStock, 
+  mapDbToBoxStock, 
+  mapDbToTransaction, 
+  mapDbToExpense 
+} from './dataMappers';
 import { Database } from '@/integrations/supabase/types';
 
 export const fetchCashSummary = async (start?: string, end?: string) => {
@@ -169,7 +176,7 @@ export const fetchStockItems = async () => {
       return [];
     }
     
-    return data;
+    return data.map(mapDbToPizzaStock);
   } catch (error) {
     console.error("Error fetching stock items:", error);
     return [];
@@ -188,7 +195,7 @@ export const fetchBoxStock = async () => {
       return [];
     }
     
-    return data;
+    return data.map(mapDbToBoxStock);
   } catch (error) {
     console.error("Error fetching box stock:", error);
     return [];
@@ -207,7 +214,7 @@ export const fetchTransactions = async () => {
       return [];
     }
     
-    return data;
+    return data.map(mapDbToTransaction);
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return [];
@@ -226,7 +233,7 @@ export const fetchExpenses = async () => {
       return [];
     }
     
-    return data;
+    return data.map(mapDbToExpense);
   } catch (error) {
     console.error("Error fetching expenses:", error);
     return [];

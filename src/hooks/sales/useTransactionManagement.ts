@@ -1,4 +1,3 @@
-
 import { Transaction, PizzaSaleItem, PizzaStock, BoxStock } from '@/utils/types';
 import { 
   addTransaction, 
@@ -10,6 +9,7 @@ import {
   updateBoxStock 
 } from '@/utils/supabase';
 import { printReceipt } from '@/utils/constants';
+import { mapDbToPizzaStock, mapDbToBoxStock } from '@/utils/dataMappers';
 
 interface UseTransactionManagementProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
@@ -28,8 +28,8 @@ const useTransactionManagement = ({
   // Helper function to update stock levels after a successful transaction
   const updateStockLevels = async (items: PizzaSaleItem[]): Promise<boolean> => {
     try {
-      const pizzaStockItems = await fetchStockItems();
-      const boxStockItems = await fetchBoxStock();
+      const pizzaStockItems = await fetchStockItems(); // These are already properly mapped
+      const boxStockItems = await fetchBoxStock();      // These are already properly mapped
       
       for (const item of items) {
         // Update pizza stock

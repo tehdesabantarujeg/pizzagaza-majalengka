@@ -75,45 +75,9 @@ export const useSaleManagement = () => {
   async function loadTransactions() {
     setIsLoading(true);
     try {
+      // Data is already properly mapped in fetchTransactions
       const data = await fetchTransactions();
-      
-      const updatedData = data.map(transaction => {
-        let safeState: 'Frozen Food' | 'Matang';
-        
-        if (typeof transaction.state === 'string') {
-          const stateStr = transaction.state.toLowerCase();
-          if (stateStr === 'mentah') {
-            safeState = 'Frozen Food';
-          } else if (stateStr === 'matang') {
-            safeState = 'Matang';
-          } else {
-            safeState = 'Frozen Food';
-          }
-        } else {
-          safeState = 'Frozen Food';
-        }
-        
-        const safeTotalPrice = typeof transaction.totalPrice === 'number' && !isNaN(transaction.totalPrice) 
-          ? transaction.totalPrice 
-          : typeof transaction.totalPrice === 'string' 
-            ? parseFloat(transaction.totalPrice) || 0
-            : 0;
-        
-        const safeSellingPrice = typeof transaction.sellingPrice === 'number' && !isNaN(transaction.sellingPrice)
-          ? transaction.sellingPrice
-          : typeof transaction.sellingPrice === 'string'
-            ? parseFloat(transaction.sellingPrice) || 0
-            : 0;
-        
-        return {
-          ...transaction,
-          state: safeState,
-          totalPrice: safeTotalPrice,
-          sellingPrice: safeSellingPrice
-        };
-      });
-      
-      setTransactions(updatedData);
+      setTransactions(data);
     } catch (error) {
       console.error("Error loading transactions:", error);
       toast({
