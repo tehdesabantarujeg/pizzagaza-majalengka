@@ -60,21 +60,27 @@ const Dashboard = () => {
           </div>
           
           <TabsContent value="week" className="mt-6">
-            <SummaryCards 
-              data={summarySales}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <SummaryCards 
+                data={summarySales}
+              />
+            </div>
           </TabsContent>
           
           <TabsContent value="month" className="mt-6">
-            <SummaryCards 
-              data={summarySales}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <SummaryCards 
+                data={summarySales}
+              />
+            </div>
           </TabsContent>
           
           <TabsContent value="year" className="mt-6">
-            <SummaryCards 
-              data={summarySales}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <SummaryCards 
+                data={summarySales}
+              />
+            </div>
           </TabsContent>
         </Tabs>
         
