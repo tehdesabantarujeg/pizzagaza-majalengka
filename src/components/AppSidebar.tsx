@@ -41,21 +41,25 @@ const AppSidebar = () => {
   };
 
   return (
-    <Sidebar variant="sidebar" collapsible="icon">
+    <Sidebar 
+      variant="sidebar" 
+      collapsible="icon"
+      className="bg-gradient-to-b from-gray-800 via-gray-850 to-gray-900 border-r-0"
+    >
       <SidebarHeader className="py-4">
         <div className="flex items-center justify-center">
           <Pizza className="h-8 w-8 text-pizza-red" />
-          <span className="ml-2 text-lg font-semibold">Pizza Gaza Majalengka</span>
+          <span className="ml-2 text-lg font-semibold text-white">Pizza Gaza Majalengka</span>
         </div>
       </SidebarHeader>
       
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Utama</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-gray-400">Menu Utama</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Beranda">
+                <SidebarMenuButton asChild tooltip="Beranda" className="text-gray-300 hover:bg-white/10 data-[active=true]:bg-white/10">
                   <NavLink to="/">
                     <Home className="h-5 w-5" />
                     <span>Beranda</span>
@@ -64,7 +68,7 @@ const AppSidebar = () => {
               </SidebarMenuItem>
             
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Penjualan">
+                <SidebarMenuButton asChild tooltip="Penjualan" className="text-gray-300 hover:bg-white/10 data-[active=true]:bg-white/10">
                   <NavLink to="/sales">
                     <ShoppingCart className="h-5 w-5" />
                     <span>Penjualan</span>
@@ -74,7 +78,7 @@ const AppSidebar = () => {
               
               {user?.role === 'admin' && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Manajemen Stok">
+                  <SidebarMenuButton asChild tooltip="Manajemen Stok" className="text-gray-300 hover:bg-white/10 data-[active=true]:bg-white/10">
                     <NavLink to="/stock">
                       <ShoppingBag className="h-5 w-5" />
                       <span>Manajemen Stok</span>
@@ -85,7 +89,7 @@ const AppSidebar = () => {
               
               {user?.role === 'admin' && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Pengeluaran">
+                  <SidebarMenuButton asChild tooltip="Pengeluaran" className="text-gray-300 hover:bg-white/10 data-[active=true]:bg-white/10">
                     <NavLink to="/expenses">
                       <DollarSign className="h-5 w-5" />
                       <span>Pengeluaran</span>
@@ -96,7 +100,7 @@ const AppSidebar = () => {
               
               {user?.role === 'admin' && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="KasKu">
+                  <SidebarMenuButton asChild tooltip="KasKu" className="text-gray-300 hover:bg-white/10 data-[active=true]:bg-white/10">
                     <NavLink to="/cash">
                       <Wallet className="h-5 w-5" />
                       <span>KasKu</span>
@@ -111,13 +115,13 @@ const AppSidebar = () => {
       
       <SidebarFooter className="p-4">
         <div className="flex flex-col space-y-2">
-          <SidebarSeparator />
+          <SidebarSeparator className="bg-gray-700" />
           
-          <div className="flex items-center px-3 py-2">
-            <User className="h-5 w-5 mr-2" />
+          <div className="flex items-center px-3 py-2 bg-white/5 rounded-md">
+            <User className="h-5 w-5 mr-2 text-gray-300" />
             <div className="flex flex-col">
-              <span className="text-sm font-medium">{user?.name}</span>
-              <span className="text-xs text-muted-foreground capitalize">{user?.role}</span>
+              <span className="text-sm font-medium text-gray-200">{user?.name}</span>
+              <span className="text-xs text-gray-400 capitalize">{user?.role}</span>
             </div>
           </div>
           
@@ -126,7 +130,7 @@ const AppSidebar = () => {
               variant="outline"
               size="sm"
               onClick={toggleTheme}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center bg-white/5 text-gray-300 border-gray-700 hover:bg-white/10"
             >
               {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
               <span className="ml-2">{theme === 'light' ? 'Gelap' : 'Terang'}</span>
