@@ -44,7 +44,7 @@ const AppSidebar = () => {
     <Sidebar 
       variant="sidebar" 
       collapsible="icon"
-      className="bg-gradient-to-b from-gray-800 via-gray-850 to-gray-900 border-r-0"
+      className="bg-gradient-to-b from-gray-900 via-gray-850 to-gray-800 border-r-0"
     >
       <SidebarHeader className="py-4">
         <div className="flex items-center justify-center">
