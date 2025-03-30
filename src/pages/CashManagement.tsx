@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import Layout from '@/components/Layout';
@@ -340,7 +339,7 @@ const CashManagement = () => {
                             onClick={() => handleTransactionsSort('transaction_number')}
                           >
                             <div className="flex items-center">
-                              No. Transaksi
+                              ID Transaksi
                               {transactionsSort.field === 'transaction_number' && (
                                 <ArrowUpDown className={`ml-1 h-4 w-4 ${transactionsSort.direction === 'desc' ? 'rotate-180' : ''}`} />
                               )}
@@ -369,17 +368,6 @@ const CashManagement = () => {
                             </div>
                           </TableHead>
                           <TableHead>Jumlah</TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted"
-                            onClick={() => handleTransactionsSort('total_price')}
-                          >
-                            <div className="flex items-center justify-end">
-                              Total
-                              {transactionsSort.field === 'total_price' && (
-                                <ArrowUpDown className={`ml-1 h-4 w-4 ${transactionsSort.direction === 'desc' ? 'rotate-180' : ''}`} />
-                              )}
-                            </div>
-                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -390,7 +378,6 @@ const CashManagement = () => {
                             <TableCell>{transaction.customer_name || '-'}</TableCell>
                             <TableCell>{transaction.flavor} ({transaction.size})</TableCell>
                             <TableCell>{transaction.quantity}x</TableCell>
-                            <TableCell className="text-right">{formatCurrency(Number(transaction.total_price))}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
