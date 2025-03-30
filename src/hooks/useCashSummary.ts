@@ -29,18 +29,11 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
         formatDateForAPI(dateRange.end)
       );
       
-      // Ensure transaction amounts are numbers, not strings
-      const transactions = result.transactions || [];
-      const processedTransactions = transactions.map(tx => ({
-        ...tx,
-        totalPrice: typeof tx.totalPrice === 'string' ? parseFloat(tx.totalPrice) : (tx.totalPrice || 0)
-      }));
-      
       return {
         income: result.income || 0,
         expenses: result.expenses || 0,
         balance: result.balance || 0,
-        transactions: processedTransactions,
+        transactions: result.transactions || [],
         expensesList: result.expensesList || []
       };
     }
