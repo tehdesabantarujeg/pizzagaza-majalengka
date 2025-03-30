@@ -44,119 +44,124 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data, isLoading }) => {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center">
-        Memuat data...
+      <div className="h-[300px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+          <p>Memuat data...</p>
+        </div>
       </div>
     );
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
-      <div className="h-full flex items-center justify-center">
-        Belum ada data keuangan
+      <div className="h-[300px] flex items-center justify-center">
+        <p className="text-center text-gray-500">Belum ada data keuangan</p>
       </div>
     );
   }
 
   // Use a composed chart for desktop and line chart for mobile
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      {isMobile ? (
-        <LineChart
-          data={data}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 50,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-          <XAxis 
-            dataKey="period" 
-            angle={-45}
-            textAnchor="end"
-            height={70}
-            tick={{ fontSize: 12 }}
-          />
-          <YAxis tickFormatter={(value) => `Rp${value/1000}k`} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Line 
-            type="monotone" 
-            dataKey="income" 
-            name="Pendapatan" 
-            stroke="#22c55e" 
-            activeDot={{ r: 8 }}
-            strokeWidth={2}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="expense" 
-            name="Pengeluaran" 
-            stroke="#ef4444" 
-            activeDot={{ r: 8 }}
-            strokeWidth={2}
-          />
-          <Line 
-            type="monotone" 
-            dataKey="balance" 
-            name="Saldo" 
-            stroke="#3b82f6" 
-            activeDot={{ r: 8 }}
-            strokeWidth={2}
-          />
-        </LineChart>
-      ) : (
-        <ComposedChart
-          data={data}
-          margin={{
-            top: 20,
-            right: 30,
-            left: 20,
-            bottom: 50,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-          <XAxis 
-            dataKey="period" 
-            angle={-45}
-            textAnchor="end"
-            height={70}
-          />
-          <YAxis yAxisId="left" orientation="left" tickFormatter={(value) => `Rp${value/1000}k`} />
-          <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `Rp${value/1000}k`} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar 
-            yAxisId="left" 
-            dataKey="income" 
-            name="Pendapatan" 
-            fill="#22c55e" 
-            barSize={20}
-            radius={[2, 2, 0, 0]}
-          />
-          <Bar 
-            yAxisId="left" 
-            dataKey="expense" 
-            name="Pengeluaran" 
-            fill="#ef4444" 
-            barSize={20}
-            radius={[2, 2, 0, 0]}
-          />
-          <Line 
-            yAxisId="right" 
-            type="monotone" 
-            dataKey="balance" 
-            name="Saldo" 
-            stroke="#3b82f6" 
-            strokeWidth={3}
-            dot={{ fill: '#3b82f6', r: 5 }}
-            activeDot={{ r: 7 }}
-          />
-        </ComposedChart>
-      )}
-    </ResponsiveContainer>
+    <div className="h-[400px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        {isMobile ? (
+          <LineChart
+            data={data}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 20,
+              bottom: 50,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis 
+              dataKey="period" 
+              angle={-45}
+              textAnchor="end"
+              height={70}
+              tick={{ fontSize: 12 }}
+            />
+            <YAxis tickFormatter={(value) => `Rp${value/1000}k`} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="income" 
+              name="Pendapatan" 
+              stroke="#22c55e" 
+              activeDot={{ r: 8 }}
+              strokeWidth={2}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="expense" 
+              name="Pengeluaran" 
+              stroke="#ef4444" 
+              activeDot={{ r: 8 }}
+              strokeWidth={2}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="balance" 
+              name="Saldo" 
+              stroke="#3b82f6" 
+              activeDot={{ r: 8 }}
+              strokeWidth={2}
+            />
+          </LineChart>
+        ) : (
+          <ComposedChart
+            data={data}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 20,
+              bottom: 50,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+            <XAxis 
+              dataKey="period" 
+              angle={-45}
+              textAnchor="end"
+              height={70}
+            />
+            <YAxis yAxisId="left" orientation="left" tickFormatter={(value) => `Rp${value/1000}k`} />
+            <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `Rp${value/1000}k`} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Bar 
+              yAxisId="left" 
+              dataKey="income" 
+              name="Pendapatan" 
+              fill="#22c55e" 
+              barSize={20}
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar 
+              yAxisId="left" 
+              dataKey="expense" 
+              name="Pengeluaran" 
+              fill="#ef4444" 
+              barSize={20}
+              radius={[2, 2, 0, 0]}
+            />
+            <Line 
+              yAxisId="right" 
+              type="monotone" 
+              dataKey="balance" 
+              name="Saldo" 
+              stroke="#3b82f6" 
+              strokeWidth={3}
+              dot={{ fill: '#3b82f6', r: 5 }}
+              activeDot={{ r: 7 }}
+            />
+          </ComposedChart>
+        )}
+      </ResponsiveContainer>
+    </div>
   );
 };
 
