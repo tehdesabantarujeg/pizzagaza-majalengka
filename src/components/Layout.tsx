@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
-        <SidebarInset className={cn("pb-16 md:pb-0", className)}>
+        <SidebarInset className={cn("pb-16 md:pb-0 w-full", className)}>
           {children}
         </SidebarInset>
         <BottomNav />

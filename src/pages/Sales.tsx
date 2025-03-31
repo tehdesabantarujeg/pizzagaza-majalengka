@@ -19,8 +19,10 @@ import StockAvailabilityBox from '@/components/sales/StockAvailabilityBox';
 import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
 import useStockItems from '@/hooks/sales/useStockItems';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Sales = () => {
+  const isMobile = useIsMobile();
   const {
     transactions,
     open,
@@ -72,7 +74,7 @@ const Sales = () => {
       >
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" onClick={() => { setIsMultiItem(true); setOpen(true); }}>
+            <Button size={isMobile ? "sm" : "default"} onClick={() => { setIsMultiItem(true); setOpen(true); }}>
               <Plus className="mr-2 h-4 w-4" />
               <span className="md:inline hidden">Penjualan Baru</span>
               <span className="md:hidden inline">Baru</span>
@@ -116,7 +118,7 @@ const Sales = () => {
         </Dialog>
       </Header>
 
-      <div className="container px-4 py-4">
+      <div className={cn("px-4 py-4", isMobile ? "container-fluid" : "container")}>
         <Tabs defaultValue="transactions" className="w-full">
           <TabsList className="w-full mb-4 grid grid-cols-2">
             <TabsTrigger value="transactions">Transaksi</TabsTrigger>

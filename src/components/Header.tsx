@@ -19,7 +19,10 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <>
-      <MobilePageHeader title={title} />
+      <MobilePageHeader 
+        title={title} 
+        actions={children}
+      />
       
       <div className={cn("hidden md:flex flex-col space-y-1.5 px-8 py-6", className)}>
         <div className="flex items-center justify-between">
@@ -41,17 +44,6 @@ const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
-      
-      {/* Mobile Action Buttons */}
-      {children && (
-        <div className="md:hidden fixed bottom-20 right-4 z-40">
-          <FadeIn>
-            <div className="flex flex-col gap-2">
-              {children}
-            </div>
-          </FadeIn>
-        </div>
-      )}
     </>
   );
 };
