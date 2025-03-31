@@ -7,14 +7,30 @@ interface MobilePageHeaderProps {
   title: string;
   className?: string;
   actions?: ReactNode;
+  verticalTitle?: boolean; // New prop to enable vertical title
 }
 
-const MobilePageHeader = ({ title, className, actions }: MobilePageHeaderProps) => {
+const MobilePageHeader = ({ 
+  title, 
+  className, 
+  actions,
+  verticalTitle = false // Default to false
+}: MobilePageHeaderProps) => {
   return (
     <div className={cn("md:hidden sticky top-0 z-10 px-4 py-3 bg-background border-b", className)}>
       <FadeIn>
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-medium">{title}</h1>
+          <h1 className={cn(
+            "text-lg font-medium", 
+            verticalTitle && "flex flex-col items-start text-[0.95rem] h-auto space-y-0.5 tracking-widest"
+          )}>
+            {verticalTitle 
+              ? title.split('').map((char, index) => (
+                  <span key={index}>{char}</span>
+                ))
+              : title
+            }
+          </h1>
           {actions && (
             <div className="flex items-center space-x-2">
               {actions}

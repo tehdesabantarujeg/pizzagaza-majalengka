@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -152,6 +153,7 @@ const StockManagement = () => {
       <Header
         title="Manajemen Stok"
         description="Kelola stok pizza dan dus"
+        verticalTitle // Add this prop
       >
         <div className="flex gap-2">
           <Dialog open={isOpenPizzaForm} onOpenChange={setIsOpenPizzaForm}>
