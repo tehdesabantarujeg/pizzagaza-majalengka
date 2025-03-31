@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, parseISO } from 'date-fns';
 import Layout from '@/components/Layout';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/constants';
 import CashFlowChart from '@/components/cash/CashFlowChart';
-import { ArrowUpCircle, ArrowDownCircle, DollarSign, Search, ArrowUpDown } from 'lucide-react';
+import TopProductsChart from '@/components/cash/TopProductsChart';
+import { ArrowUpCircle, ArrowDownCircle, DollarSign, Search, ArrowUpDown, Calendar } from 'lucide-react';
 import { CashSummary } from '@/utils/types';
 import { useCashSummary } from '@/hooks/useCashSummary';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Pagination,
   PaginationContent,
@@ -26,14 +29,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 const ITEMS_PER_PAGE = 10;
 
+type DateFilterType = 'month' | 'year' | 'custom';
+
 const CashManagement = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
+  const [dateFilterType, setDateFilterType] = useState<DateFilterType>('month');
+  
+  // Initialize date range with current month
+  const currentDate = new Date();
+  const initialStartDate = startOfMonth(currentDate);
+  const initialEndDate = endOfMonth(currentDate);
   
   // Use our custom hook
-  const { cashSummary, isLoading, dateRange, setDateRange } = useCashSummary();
+  const { cashSummary, isLoading, dateRange, setDateRange } = useCashSummary(initialStartDate, initialEndDate);
 
   // Pagination state
   const [transactionsPage, setTransactionsPage] = useState(1);
@@ -51,44 +68,74 @@ const CashManagement = () => {
     field: 'date', direction: 'desc' 
   });
 
-  // Get current month and year
-  const currentMonth = format(new Date(), 'MMMM yyyy');
+  // Date range state for custom filter
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
+
+  // Handle date filter change
+  const handleDateFilterChange = (type: DateFilterType) => {
+    setDateFilterType(type);
+    
+    let start, end;
+    
+    switch (type) {
+      case 'month':
+        start = startOfMonth(currentDate);
+        end = endOfMonth(currentDate);
+        break;
+      case 'year':
+        start = startOfYear(currentDate);
+        end = endOfYear(currentDate);
+        break;
+      case 'custom':
+        // Keep current range when switching to custom
+        return;
+      default:
+        start = startOfMonth(currentDate);
+        end = endOfMonth(currentDate);
+    }
+    
+    setDateRange({ start, end });
+  };
 
   // Prepare data for the chart
   const chartData = React.useMemo(() => {
     if (!cashSummary) return [];
 
-    // Get a list of all dates in the current month
-    const dates = [];
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    
-    for (let i = 1; i <= daysInMonth; i++) {
-      dates.push(new Date(year, month, i));
-    }
-
     // Group transactions and expenses by date
-    const transactionsByDate = cashSummary.transactions.reduce((acc, transaction) => {
+    const transactionsByDate: Record<string, { income: number, count: Record<string, number> }> = {};
+    cashSummary.transactions.forEach(transaction => {
       const date = format(new Date(transaction.date), 'yyyy-MM-dd');
-      if (!acc[date]) acc[date] = 0;
-      acc[date] += Number(transaction.total_price);
-      return acc;
-    }, {} as Record<string, number>);
+      if (!transactionsByDate[date]) {
+        transactionsByDate[date] = { income: 0, count: {} };
+      }
+      transactionsByDate[date].income += Number(transaction.total_price);
+      
+      // Count products for top products chart
+      const productKey = `${transaction.flavor} (${transaction.size})`;
+      if (!transactionsByDate[date].count[productKey]) {
+        transactionsByDate[date].count[productKey] = 0;
+      }
+      transactionsByDate[date].count[productKey] += transaction.quantity;
+    });
 
-    const expensesByDate = cashSummary.expenses.reduce((acc, expense) => {
+    const expensesByDate: Record<string, number> = {};
+    cashSummary.expenses.forEach(expense => {
       const date = format(new Date(expense.date), 'yyyy-MM-dd');
-      if (!acc[date]) acc[date] = 0;
-      acc[date] += Number(expense.amount);
+      if (!expensesByDate[date]) expensesByDate[date] = 0;
+      expensesByDate[date] += Number(expense.amount);
+    });
+
+    // Get all dates in range
+    const allDates = Object.keys([...Object.keys(transactionsByDate), ...Object.keys(expensesByDate)].reduce((acc, date) => {
+      acc[date] = true;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, boolean>)).sort();
 
     // Create chart data with correct CashSummary type properties
-    return dates.map(date => {
-      const formattedDate = format(date, 'yyyy-MM-dd');
-      const displayDate = format(date, 'dd MMM');
-      const income = transactionsByDate[formattedDate] || 0;
+    return allDates.map(formattedDate => {
+      const displayDate = format(parseISO(formattedDate), 'dd MMM');
+      const income = transactionsByDate[formattedDate]?.income || 0;
       const expense = expensesByDate[formattedDate] || 0;
       
       return {
@@ -98,6 +145,27 @@ const CashManagement = () => {
         balance: income - expense,
       } as CashSummary;
     });
+  }, [cashSummary]);
+
+  // Prepare data for top products chart
+  const topProductsData = React.useMemo(() => {
+    if (!cashSummary?.transactions.length) return [];
+    
+    const productSales: Record<string, { value: number, count: number }> = {};
+    
+    cashSummary.transactions.forEach(transaction => {
+      const productKey = `${transaction.flavor} (${transaction.size})`;
+      if (!productSales[productKey]) {
+        productSales[productKey] = { value: 0, count: 0 };
+      }
+      productSales[productKey].value += Number(transaction.total_price);
+      productSales[productKey].count += transaction.quantity;
+    });
+    
+    return Object.entries(productSales)
+      .map(([name, { value, count }]) => ({ name, value, count }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8); // Limit to top 8 for better visualization
   }, [cashSummary]);
 
   // Filter and sort transactions
@@ -199,6 +267,17 @@ const CashManagement = () => {
     }));
   };
 
+  // Format date range for display
+  const formatDateRange = () => {
+    if (dateFilterType === 'month') {
+      return format(dateRange.start, 'MMMM yyyy');
+    } else if (dateFilterType === 'year') {
+      return format(dateRange.start, 'yyyy');
+    } else {
+      return `${format(dateRange.start, 'dd MMM yyyy')} - ${format(dateRange.end, 'dd MMM yyyy')}`;
+    }
+  };
+
   if (isLoading) {
     return (
       <Layout>
@@ -222,45 +301,109 @@ const CashManagement = () => {
         description="Ringkasan keuangan dan laporan arus kas"
       />
       
-      <div className="container px-4 py-6">
+      <div className="container px-4 py-6 bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
+        {/* Date Filter */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-white rounded-lg shadow-sm dark:bg-slate-800">
+          <div className="flex items-center">
+            <Calendar className="mr-2 h-5 w-5 text-blue-500" />
+            <span className="font-medium">{formatDateRange()}</span>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Select value={dateFilterType} onValueChange={(value) => handleDateFilterChange(value as DateFilterType)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Pilih Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Bulanan</SelectItem>
+                <SelectItem value="year">Tahunan</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {dateFilterType === 'custom' && (
+              <div className="flex gap-2">
+                <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline">{format(dateRange.start, 'dd MMM yyyy')}</Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateRange.start}
+                      onSelect={(date) => {
+                        if (date) {
+                          setDateRange({ start: date, end: dateRange.end });
+                          setStartDateOpen(false);
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline">{format(dateRange.end, 'dd MMM yyyy')}</Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateRange.end}
+                      onSelect={(date) => {
+                        if (date) {
+                          setDateRange({ start: dateRange.start, end: date });
+                          setEndDateOpen(false);
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
+          <Card className="bg-white border-none shadow-md hover:shadow-lg transition-shadow dark:bg-slate-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Pemasukan</h3>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.totalIncome || 0)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                  <p className="text-3xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">{formatCurrency(cashSummary?.totalIncome || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{formatDateRange()}</p>
                 </div>
-                <div className="p-3 bg-green-50 rounded-full dark:bg-green-900/20">
-                  <ArrowUpCircle className="h-8 w-8 text-green-500 dark:text-green-400" />
+                <div className="p-3 bg-emerald-50 rounded-full dark:bg-emerald-900/20">
+                  <ArrowUpCircle className="h-8 w-8 text-emerald-500 dark:text-emerald-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-white border-none shadow-md hover:shadow-lg transition-shadow dark:bg-slate-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Total Pengeluaran</h3>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.totalExpenses || 0)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                  <p className="text-3xl font-bold mt-1 text-rose-600 dark:text-rose-400">{formatCurrency(cashSummary?.totalExpenses || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{formatDateRange()}</p>
                 </div>
-                <div className="p-3 bg-red-50 rounded-full dark:bg-red-900/20">
-                  <ArrowDownCircle className="h-8 w-8 text-red-500 dark:text-red-400" />
+                <div className="p-3 bg-rose-50 rounded-full dark:bg-rose-900/20">
+                  <ArrowDownCircle className="h-8 w-8 text-rose-500 dark:text-rose-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="bg-white border-none shadow-md hover:shadow-lg transition-shadow dark:bg-slate-800">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-medium text-gray-500 dark:text-gray-400">Laba Bersih</h3>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(cashSummary?.netProfit || 0)}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{currentMonth}</p>
+                  <p className="text-3xl font-bold mt-1 text-blue-600 dark:text-blue-400">{formatCurrency(cashSummary?.netProfit || 0)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{formatDateRange()}</p>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-full dark:bg-blue-900/20">
                   <DollarSign className="h-8 w-8 text-blue-500 dark:text-blue-400" />
@@ -270,24 +413,29 @@ const CashManagement = () => {
           </Card>
         </div>
         
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Grafik Arus Kas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CashFlowChart data={chartData} isLoading={isLoading} />
-          </CardContent>
-        </Card>
+        {/* Charts (1 chart per row) */}
+        <div className="grid gap-6 mb-6">
+          <Card className="bg-white border-none shadow-md dark:bg-slate-800">
+            <CardHeader>
+              <CardTitle>Grafik Arus Kas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CashFlowChart data={chartData} isLoading={isLoading} />
+            </CardContent>
+          </Card>
+          
+          <TopProductsChart data={topProductsData} isLoading={isLoading} />
+        </div>
         
-        <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab}>
-          <TabsList className="mb-4">
+        <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab} className="bg-white rounded-lg shadow-md p-4 dark:bg-slate-800">
+          <TabsList className="mb-4 bg-gray-100 dark:bg-slate-700">
             <TabsTrigger value="overview">Ringkasan</TabsTrigger>
             <TabsTrigger value="transactions">Transaksi ({cashSummary?.transactions.length || 0})</TabsTrigger>
             <TabsTrigger value="expenses">Pengeluaran ({cashSummary?.expenses.length || 0})</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
-            <Card>
+            <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle>Ringkasan Keuangan</CardTitle>
               </CardHeader>
@@ -299,7 +447,7 @@ const CashManagement = () => {
           </TabsContent>
           
           <TabsContent value="transactions">
-            <Card>
+            <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle>Daftar Transaksi</CardTitle>
               </CardHeader>
@@ -368,17 +516,6 @@ const CashManagement = () => {
                             </div>
                           </TableHead>
                           <TableHead>Jumlah</TableHead>
-                          <TableHead 
-                            className="text-right cursor-pointer hover:bg-muted"
-                            onClick={() => handleTransactionsSort('total_price')}
-                          >
-                            <div className="flex items-center justify-end">
-                              Total
-                              {transactionsSort.field === 'total_price' && (
-                                <ArrowUpDown className={`ml-1 h-4 w-4 ${transactionsSort.direction === 'desc' ? 'rotate-180' : ''}`} />
-                              )}
-                            </div>
-                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -389,7 +526,6 @@ const CashManagement = () => {
                             <TableCell>{transaction.customer_name || '-'}</TableCell>
                             <TableCell>{transaction.flavor} ({transaction.size})</TableCell>
                             <TableCell>{transaction.quantity}x</TableCell>
-                            <TableCell className="text-right">{formatCurrency(Number(transaction.total_price))}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -450,7 +586,7 @@ const CashManagement = () => {
           </TabsContent>
           
           <TabsContent value="expenses">
-            <Card>
+            <Card className="border-none shadow-sm">
               <CardHeader>
                 <CardTitle>Daftar Pengeluaran</CardTitle>
               </CardHeader>
