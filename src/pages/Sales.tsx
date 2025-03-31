@@ -18,6 +18,7 @@ import { Transaction } from '@/utils/types';
 import StockAvailabilityBox from '@/components/sales/StockAvailabilityBox';
 import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
 import useStockItems from '@/hooks/sales/useStockItems';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Sales = () => {
   const {
@@ -71,9 +72,10 @@ const Sales = () => {
       >
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setIsMultiItem(true); setOpen(true); }}>
+            <Button size="sm" onClick={() => { setIsMultiItem(true); setOpen(true); }}>
               <Plus className="mr-2 h-4 w-4" />
-              Penjualan Baru
+              <span className="md:inline hidden">Penjualan Baru</span>
+              <span className="md:hidden inline">Baru</span>
             </Button>
           </DialogTrigger>
           
@@ -114,22 +116,29 @@ const Sales = () => {
         </Dialog>
       </Header>
 
-      <div className="container px-4 py-6">
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-3">
-            <StockAvailabilityBox stockItems={stockItems} />
-          </div>
-          <div className="md:col-span-1">
-            <BoxAvailabilityBox boxItems={boxItems} />
-          </div>
-        </div>
-        
-        <TransactionList 
-          transactions={transactions} 
-          setOpen={setOpen}
-          onEdit={handleEditTransaction}
-          onDelete={handleDeleteTransaction}
-        />
+      <div className="container px-4 py-4">
+        <Tabs defaultValue="transactions" className="w-full">
+          <TabsList className="w-full mb-4 grid grid-cols-2">
+            <TabsTrigger value="transactions">Transaksi</TabsTrigger>
+            <TabsTrigger value="stock">Ketersediaan Stok</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="transactions">
+            <TransactionList 
+              transactions={transactions} 
+              setOpen={setOpen}
+              onEdit={handleEditTransaction}
+              onDelete={handleDeleteTransaction}
+            />
+          </TabsContent>
+          
+          <TabsContent value="stock">
+            <div className="grid grid-cols-1 gap-4">
+              <StockAvailabilityBox stockItems={stockItems} />
+              <BoxAvailabilityBox boxItems={boxItems} />
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Edit Transaction Dialog */}

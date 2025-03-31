@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/constants';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TopProductProps {
   name: string;
@@ -39,13 +40,15 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, isLoading }) => {
+  const isMobile = useIsMobile();
+  
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Produk Terlaris</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Produk Terlaris</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
+        <CardContent className={isMobile ? "h-[300px]" : "h-[400px]"} className="flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
             <p>Memuat data...</p>
@@ -58,10 +61,10 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, isLoading }) 
   if (!data || data.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Produk Terlaris</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Produk Terlaris</CardTitle>
         </CardHeader>
-        <CardContent className="h-[400px] flex items-center justify-center">
+        <CardContent className={isMobile ? "h-[300px]" : "h-[400px]"} className="flex items-center justify-center">
           <p className="text-center text-gray-500">Belum ada data penjualan</p>
         </CardContent>
       </Card>
@@ -70,11 +73,11 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, isLoading }) 
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Produk Terlaris</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Produk Terlaris</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div className={isMobile ? "h-[300px]" : "h-[400px]"}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -83,7 +86,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, isLoading }) 
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={120}
+                outerRadius={isMobile ? 90 : 120}
                 fill="#8884d8"
                 dataKey="value"
               >
