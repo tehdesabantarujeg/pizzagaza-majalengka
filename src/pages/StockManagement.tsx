@@ -153,7 +153,7 @@ const StockManagement = () => {
       <Header
         title="Manajemen Stok"
         description="Kelola stok pizza dan dus"
-        verticalTitle // Add this prop
+        // Removed the verticalTitle prop to make the title horizontal
       >
         <div className="flex gap-2">
           <Dialog open={isOpenPizzaForm} onOpenChange={setIsOpenPizzaForm}>
