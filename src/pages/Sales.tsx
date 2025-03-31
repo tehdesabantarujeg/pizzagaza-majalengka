@@ -20,6 +20,7 @@ import BoxAvailabilityBox from '@/components/sales/BoxAvailabilityBox';
 import useStockItems from '@/hooks/sales/useStockItems';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils'; // Add this import from lib/utils
 
 const Sales = () => {
   const isMobile = useIsMobile();
