@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
@@ -12,6 +11,8 @@ import PizzaStockForm from '@/components/stock/PizzaStockForm';
 import MultiPizzaStockForm from '@/components/stock/MultiPizzaStockForm';
 import BoxStockList from '@/components/stock/BoxStockList';
 import BoxStockForm from '@/components/stock/BoxStockForm';
+import MobileStockActionButtons from '@/components/stock/MobileStockActionButtons';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   fetchStockItems, 
   fetchBoxStock, 
@@ -35,6 +36,7 @@ const StockManagement = () => {
   });
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const { 
     data: pizzaStocks = [], 
@@ -153,53 +155,86 @@ const StockManagement = () => {
       <Header
         title="Manajemen Stok"
         description="Kelola stok pizza dan dus"
-        // Removed the verticalTitle prop to make the title horizontal
       >
-        <div className="flex gap-2">
-          <Dialog open={isOpenPizzaForm} onOpenChange={setIsOpenPizzaForm}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Tambah Stok Pizza
-              </Button>
-            </DialogTrigger>
-            <PizzaStockForm
-              onSave={handleAddPizzaStock}
-              onCancel={() => setIsOpenPizzaForm(false)}
-              isLoading={addPizzaStockMutation.isPending}
-            />
-          </Dialog>
+        {!isMobile && (
+          <div className="flex gap-2">
+            <Dialog open={isOpenPizzaForm} onOpenChange={setIsOpenPizzaForm}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Tambah Stok Pizza
+                </Button>
+              </DialogTrigger>
+              <PizzaStockForm
+                onSave={handleAddPizzaStock}
+                onCancel={() => setIsOpenPizzaForm(false)}
+                isLoading={addPizzaStockMutation.isPending}
+              />
+            </Dialog>
 
-          <Dialog open={isOpenMultiPizzaForm} onOpenChange={setIsOpenMultiPizzaForm}>
-            <DialogTrigger asChild>
-              <Button>
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Tambah Stok Pizza (Multiple)
-              </Button>
-            </DialogTrigger>
-            <MultiPizzaStockForm
-              onSave={handleAddMultiplePizzaStock}
-              onCancel={() => setIsOpenMultiPizzaForm(false)}
-              isLoading={addMultiplePizzaStockMutation.isPending}
-            />
-          </Dialog>
+            <Dialog open={isOpenMultiPizzaForm} onOpenChange={setIsOpenMultiPizzaForm}>
+              <DialogTrigger asChild>
+                <Button>
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Tambah Stok Pizza (Multiple)
+                </Button>
+              </DialogTrigger>
+              <MultiPizzaStockForm
+                onSave={handleAddMultiplePizzaStock}
+                onCancel={() => setIsOpenMultiPizzaForm(false)}
+                isLoading={addMultiplePizzaStockMutation.isPending}
+              />
+            </Dialog>
 
-          <Dialog open={isOpenBoxForm} onOpenChange={setIsOpenBoxForm}>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <PlusIcon className="mr-2 h-4 w-4" />
-                Tambah Stok Dus
-              </Button>
-            </DialogTrigger>
-            <BoxStockForm
-              newBoxStock={newBoxStock}
-              setNewBoxStock={setNewBoxStock}
-              handleBoxSubmit={handleAddBoxStock}
-              handleBoxSizeChange={handleBoxSizeChange}
-            />
-          </Dialog>
-        </div>
+            <Dialog open={isOpenBoxForm} onOpenChange={setIsOpenBoxForm}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <PlusIcon className="mr-2 h-4 w-4" />
+                  Tambah Stok Dus
+                </Button>
+              </DialogTrigger>
+              <BoxStockForm
+                newBoxStock={newBoxStock}
+                setNewBoxStock={setNewBoxStock}
+                handleBoxSubmit={handleAddBoxStock}
+                handleBoxSizeChange={handleBoxSizeChange}
+              />
+            </Dialog>
+          </div>
+        )}
       </Header>
+
+      {/* Dialog components for floating buttons */}
+      <Dialog open={isOpenPizzaForm} onOpenChange={setIsOpenPizzaForm}>
+        <PizzaStockForm
+          onSave={handleAddPizzaStock}
+          onCancel={() => setIsOpenPizzaForm(false)}
+          isLoading={addPizzaStockMutation.isPending}
+        />
+      </Dialog>
+
+      <Dialog open={isOpenMultiPizzaForm} onOpenChange={setIsOpenMultiPizzaForm}>
+        <MultiPizzaStockForm
+          onSave={handleAddMultiplePizzaStock}
+          onCancel={() => setIsOpenMultiPizzaForm(false)}
+          isLoading={addMultiplePizzaStockMutation.isPending}
+        />
+      </Dialog>
+
+      <Dialog open={isOpenBoxForm} onOpenChange={setIsOpenBoxForm}>
+        <BoxStockForm
+          newBoxStock={newBoxStock}
+          setNewBoxStock={setNewBoxStock}
+          handleBoxSubmit={handleAddBoxStock}
+          handleBoxSizeChange={handleBoxSizeChange}
+        />
+      </Dialog>
+
+      <MobileStockActionButtons 
+        openPizzaForm={() => setIsOpenPizzaForm(true)} 
+        openMultiPizzaForm={() => setIsOpenMultiPizzaForm(true)} 
+        openBoxForm={() => setIsOpenBoxForm(true)} 
+      />
 
       <div className="container px-4 py-6">
         <div className="mb-8">
