@@ -33,10 +33,10 @@ const MobileStockActionButtons: React.FC<MobileStockActionButtonsProps> = ({
       <Button 
         className="rounded-full shadow-lg" 
         size="icon"
-        onClick={openPizzaForm}
+        onClick={openMultiPizzaForm}
       >
         <PlusIcon className="h-5 w-5" />
-        <span className="sr-only">Tambah Stok Pizza</span>
+        <span className="sr-only">Tambah Stok Pizza Multiple</span>
       </Button>
     </div>
   );
