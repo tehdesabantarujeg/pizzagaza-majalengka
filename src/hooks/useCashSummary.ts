@@ -77,8 +77,10 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
     (data.transactions || []).forEach(transaction => {
       if (!transaction.date) return;
       
+      // Parse the date string to a Date object
       const date = new Date(transaction.date);
       const monthKey = format(date, 'yyyy-MM');
+      
       if (!monthlyAggregation[monthKey]) {
         monthlyAggregation[monthKey] = { income: 0, expense: 0, balance: 0 };
       }
@@ -92,8 +94,10 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
     (data.expensesList || []).forEach(expense => {
       if (!expense.date) return;
       
+      // Parse the date string to a Date object
       const date = new Date(expense.date);
       const monthKey = format(date, 'yyyy-MM');
+      
       if (!monthlyAggregation[monthKey]) {
         monthlyAggregation[monthKey] = { income: 0, expense: 0, balance: 0 };
       }
