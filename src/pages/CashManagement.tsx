@@ -5,8 +5,6 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '@/utils/constants';
-import CashFlowChart from '@/components/cash/CashFlowChart';
-import TopProductsChart from '@/components/cash/TopProductsChart';
 import { ArrowUpCircle, ArrowDownCircle, DollarSign, Search, ArrowUpDown, Calendar } from 'lucide-react';
 import { CashSummary } from '@/utils/types';
 import { useCashSummary } from '@/hooks/useCashSummary';
@@ -55,8 +53,6 @@ const CashManagement = () => {
     isLoading, 
     dateRange, 
     setDateRange,
-    monthlyData,
-    topProductsData 
   } = useCashSummary(initialStartDate, initialEndDate);
 
   // Pagination state
@@ -348,20 +344,6 @@ const CashManagement = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
-        
-        {/* Charts (1 chart per row) */}
-        <div className="grid gap-6 mb-6">
-          <Card className="bg-white border-none shadow-md dark:bg-slate-800">
-            <CardHeader>
-              <CardTitle>Grafik Arus Kas</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CashFlowChart data={monthlyData} isLoading={isLoading} />
-            </CardContent>
-          </Card>
-          
-          <TopProductsChart data={topProductsData} isLoading={isLoading} />
         </div>
         
         <Tabs defaultValue="overview" value={selectedTab} onValueChange={setSelectedTab} className="bg-white rounded-lg shadow-md p-4 dark:bg-slate-800">
