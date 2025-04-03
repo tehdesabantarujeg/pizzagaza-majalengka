@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCashSummary } from '@/utils/supabase';
@@ -74,41 +75,53 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
     
     // Process transactions (income)
     (data.transactions || []).forEach(transaction => {
+      if (!transaction.date) return;
+      
       const date = new Date(transaction.date);
       const monthKey = format(date, 'yyyy-MM');
       if (!monthlyAggregation[monthKey]) {
         monthlyAggregation[monthKey] = { income: 0, expense: 0, balance: 0 };
       }
-      monthlyAggregation[monthKey].income += Number(transaction.total_price || 0);
+      
+      // Ensure the value is a number before adding
+      const transactionValue = parseFloat(transaction.total_price) || 0;
+      monthlyAggregation[monthKey].income += transactionValue;
     });
     
     // Process expenses
     (data.expensesList || []).forEach(expense => {
+      if (!expense.date) return;
+      
       const date = new Date(expense.date);
       const monthKey = format(date, 'yyyy-MM');
       if (!monthlyAggregation[monthKey]) {
         monthlyAggregation[monthKey] = { income: 0, expense: 0, balance: 0 };
       }
-      monthlyAggregation[monthKey].expense += Number(expense.amount || 0);
+      
+      // Ensure the value is a number before adding
+      const expenseValue = parseFloat(expense.amount) || 0;
+      monthlyAggregation[monthKey].expense += expenseValue;
     });
     
     // Calculate balance and format for chart
-    return Object.entries(monthlyAggregation).map(([monthKey, data]) => {
-      const balance = data.income - data.expense;
-      const displayDate = format(parseISO(`${monthKey}-01`), 'MMM yyyy');
-      
-      return {
-        period: displayDate,
-        income: data.income,
-        expense: data.expense,
-        balance: balance
-      };
-    }).sort((a, b) => {
-      // Sort by month/year chronologically
-      const [aMonth, aYear] = a.period.split(' ');
-      const [bMonth, bYear] = b.period.split(' ');
-      return new Date(`${aYear} ${aMonth}`).getTime() - new Date(`${bYear} ${bMonth}`).getTime();
-    });
+    return Object.entries(monthlyAggregation)
+      .map(([monthKey, data]) => {
+        const balance = data.income - data.expense;
+        const displayDate = format(parseISO(`${monthKey}-01`), 'MMM yyyy');
+        
+        return {
+          period: displayDate,
+          income: data.income,
+          expense: data.expense,
+          balance: balance
+        };
+      })
+      .sort((a, b) => {
+        // Sort by month/year chronologically
+        const [aMonth, aYear] = a.period.split(' ');
+        const [bMonth, bYear] = b.period.split(' ');
+        return new Date(`${aYear} ${aMonth}`).getTime() - new Date(`${bYear} ${bMonth}`).getTime();
+      });
   }, [data]);
 
   // Process top product data
@@ -118,12 +131,20 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
     const productSales: Record<string, { value: number, count: number }> = {};
     
     data.transactions.forEach(transaction => {
+      // Skip invalid transactions
+      if (!transaction.flavor || !transaction.size) return;
+      
       const productKey = `${transaction.flavor} (${transaction.size})`;
       if (!productSales[productKey]) {
         productSales[productKey] = { value: 0, count: 0 };
       }
-      productSales[productKey].value += Number(transaction.total_price || 0);
-      productSales[productKey].count += transaction.quantity || 1;
+      
+      // Ensure values are numbers
+      const price = parseFloat(transaction.total_price) || 0;
+      const quantity = parseInt(transaction.quantity) || 1;
+      
+      productSales[productKey].value += price;
+      productSales[productKey].count += quantity;
     });
     
     return Object.entries(productSales)

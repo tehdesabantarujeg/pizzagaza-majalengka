@@ -43,6 +43,8 @@ const CustomTooltip = ({ active, payload }: any) => {
 const TopProductsChart: React.FC<TopProductsChartProps> = ({ data, isLoading }) => {
   const isMobile = useIsMobile();
   
+  console.log('Top Products Chart data:', data);
+  
   if (isLoading) {
     return (
       <Card>

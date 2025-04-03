@@ -37,6 +37,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 const CashFlowChart: React.FC<CashFlowChartProps> = ({ data, isLoading }) => {
   const isMobile = useIsMobile();
+  
+  console.log('Cash Flow Chart data:', data);
 
   if (isLoading) {
     return (
