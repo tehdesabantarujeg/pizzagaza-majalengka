@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCashSummary } from '@/utils/supabase';
 import { useState } from 'react';
+import { startOfYear, endOfYear } from 'date-fns';
 
 export interface CashSummaryData {
   income: number;
@@ -12,9 +13,13 @@ export interface CashSummaryData {
 }
 
 export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) => {
+  const currentDate = new Date();
+  const defaultStartDate = startOfYear(currentDate);
+  const defaultEndDate = endOfYear(currentDate);
+
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date }>({
-    start: initialStartDate || new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    end: initialEndDate || new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+    start: initialStartDate || defaultStartDate,
+    end: initialEndDate || defaultEndDate
   });
 
   const formatDateForAPI = (date: Date) => {

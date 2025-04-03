@@ -27,7 +27,8 @@ import {
   User, 
   Home, 
   DollarSign, 
-  Wallet
+  Wallet,
+  Receipt
 } from 'lucide-react';
 
 const AppSidebar = () => {
@@ -87,7 +88,7 @@ const AppSidebar = () => {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Pengeluaran">
                     <NavLink to="/expenses">
-                      <DollarSign className="h-5 w-5" />
+                      <Receipt className="h-5 w-5" />
                       <span>Pengeluaran</span>
                     </NavLink>
                   </SidebarMenuButton>

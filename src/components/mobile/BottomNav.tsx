@@ -2,7 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/utils/animations';
-import { Home, ShoppingBag, ShoppingCart, DollarSign, LayoutDashboard } from 'lucide-react';
+import { Home, ShoppingBag, ShoppingCart, DollarSign, LayoutDashboard, Receipt } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const BottomNav = () => {
@@ -44,6 +44,19 @@ const BottomNav = () => {
           >
             <ShoppingBag size={20} />
             <span className="text-xs mt-1">Stok</span>
+          </NavLink>
+        )}
+        
+        {isAdmin && (
+          <NavLink 
+            to="/expenses" 
+            className={({ isActive }) => cn(
+              "flex flex-col items-center justify-center w-full py-2",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <Receipt size={20} />
+            <span className="text-xs mt-1">Pengeluaran</span>
           </NavLink>
         )}
         

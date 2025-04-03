@@ -42,12 +42,12 @@ type DateFilterType = 'month' | 'year' | 'custom';
 
 const CashManagement = () => {
   const [selectedTab, setSelectedTab] = useState('overview');
-  const [dateFilterType, setDateFilterType] = useState<DateFilterType>('month');
+  const [dateFilterType, setDateFilterType] = useState<DateFilterType>('year');
   
-  // Initialize date range with current month
+  // Initialize date range with current year instead of month
   const currentDate = new Date();
-  const initialStartDate = startOfMonth(currentDate);
-  const initialEndDate = endOfMonth(currentDate);
+  const initialStartDate = startOfYear(currentDate);
+  const initialEndDate = endOfYear(currentDate);
   
   // Use our custom hook
   const { cashSummary, isLoading, dateRange, setDateRange } = useCashSummary(initialStartDate, initialEndDate);
@@ -91,8 +91,8 @@ const CashManagement = () => {
         // Keep current range when switching to custom
         return;
       default:
-        start = startOfMonth(currentDate);
-        end = endOfMonth(currentDate);
+        start = startOfYear(currentDate);
+        end = endOfYear(currentDate);
     }
     
     setDateRange({ start, end });
