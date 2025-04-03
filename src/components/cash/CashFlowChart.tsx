@@ -1,16 +1,14 @@
 
 import React from 'react';
 import { 
-  LineChart, 
-  Line, 
+  BarChart, 
+  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   Legend,
-  ResponsiveContainer,
-  Bar,
-  BarChart
+  ResponsiveContainer
 } from 'recharts';
 import { formatCurrency } from '@/utils/constants';
 import { CashSummary } from '@/utils/types';
@@ -24,7 +22,7 @@ interface CashFlowChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border rounded-md shadow-md">
+      <div className="bg-white p-3 border rounded-md shadow-md dark:bg-slate-800 dark:border-slate-700">
         <p className="font-medium">{`${label}`}</p>
         {payload.map((entry: any, index: number) => (
           <p key={`item-${index}`} style={{ color: entry.color }}>
@@ -59,7 +57,6 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data, isLoading }) => {
     );
   }
 
-  // Use a bar chart for both desktop and mobile, with adjustments for mobile
   return (
     <div className="h-[400px] w-full">
       <ResponsiveContainer width="100%" height="100%">
@@ -82,7 +79,9 @@ const CashFlowChart: React.FC<CashFlowChartProps> = ({ data, isLoading }) => {
             height={70}
             tick={{ fontSize: isMobile ? 10 : 12 }}
           />
-          <YAxis tickFormatter={(value) => `${value/1000}k`} />
+          <YAxis 
+            tickFormatter={(value) => `${value/1000}k`} 
+          />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ paddingTop: 10 }} />
           <Bar 

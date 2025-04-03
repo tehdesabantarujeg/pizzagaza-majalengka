@@ -49,8 +49,15 @@ const CashManagement = () => {
   const initialStartDate = startOfYear(currentDate);
   const initialEndDate = endOfYear(currentDate);
   
-  // Use our custom hook
-  const { cashSummary, isLoading, dateRange, setDateRange } = useCashSummary(initialStartDate, initialEndDate);
+  // Use our custom hook with the enhanced functionality
+  const { 
+    cashSummary, 
+    isLoading, 
+    dateRange, 
+    setDateRange,
+    monthlyData,
+    topProductsData 
+  } = useCashSummary(initialStartDate, initialEndDate);
 
   // Pagination state
   const [transactionsPage, setTransactionsPage] = useState(1);
@@ -97,76 +104,6 @@ const CashManagement = () => {
     
     setDateRange({ start, end });
   };
-
-  // Prepare data for the chart
-  const chartData = React.useMemo(() => {
-    if (!cashSummary) return [];
-
-    // Group transactions and expenses by date
-    const transactionsByDate: Record<string, { income: number, count: Record<string, number> }> = {};
-    cashSummary.transactions.forEach(transaction => {
-      const date = format(new Date(transaction.date), 'yyyy-MM-dd');
-      if (!transactionsByDate[date]) {
-        transactionsByDate[date] = { income: 0, count: {} };
-      }
-      transactionsByDate[date].income += Number(transaction.total_price);
-      
-      // Count products for top products chart
-      const productKey = `${transaction.flavor} (${transaction.size})`;
-      if (!transactionsByDate[date].count[productKey]) {
-        transactionsByDate[date].count[productKey] = 0;
-      }
-      transactionsByDate[date].count[productKey] += transaction.quantity;
-    });
-
-    const expensesByDate: Record<string, number> = {};
-    cashSummary.expenses.forEach(expense => {
-      const date = format(new Date(expense.date), 'yyyy-MM-dd');
-      if (!expensesByDate[date]) expensesByDate[date] = 0;
-      expensesByDate[date] += Number(expense.amount);
-    });
-
-    // Get all dates in range
-    const allDates = Object.keys([...Object.keys(transactionsByDate), ...Object.keys(expensesByDate)].reduce((acc, date) => {
-      acc[date] = true;
-      return acc;
-    }, {} as Record<string, boolean>)).sort();
-
-    // Create chart data with correct CashSummary type properties
-    return allDates.map(formattedDate => {
-      const displayDate = format(parseISO(formattedDate), 'dd MMM');
-      const income = transactionsByDate[formattedDate]?.income || 0;
-      const expense = expensesByDate[formattedDate] || 0;
-      
-      return {
-        period: displayDate,
-        income: income,
-        expense: expense,
-        balance: income - expense,
-      } as CashSummary;
-    });
-  }, [cashSummary]);
-
-  // Prepare data for top products chart
-  const topProductsData = React.useMemo(() => {
-    if (!cashSummary?.transactions.length) return [];
-    
-    const productSales: Record<string, { value: number, count: number }> = {};
-    
-    cashSummary.transactions.forEach(transaction => {
-      const productKey = `${transaction.flavor} (${transaction.size})`;
-      if (!productSales[productKey]) {
-        productSales[productKey] = { value: 0, count: 0 };
-      }
-      productSales[productKey].value += Number(transaction.total_price);
-      productSales[productKey].count += transaction.quantity;
-    });
-    
-    return Object.entries(productSales)
-      .map(([name, { value, count }]) => ({ name, value, count }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8); // Limit to top 8 for better visualization
-  }, [cashSummary]);
 
   // Filter and sort transactions
   const filteredTransactions = cashSummary?.transactions.filter(transaction => {
@@ -420,7 +357,7 @@ const CashManagement = () => {
               <CardTitle>Grafik Arus Kas</CardTitle>
             </CardHeader>
             <CardContent>
-              <CashFlowChart data={chartData} isLoading={isLoading} />
+              <CashFlowChart data={monthlyData} isLoading={isLoading} />
             </CardContent>
           </Card>
           

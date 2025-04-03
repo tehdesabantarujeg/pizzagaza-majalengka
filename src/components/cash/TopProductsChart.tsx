@@ -30,10 +30,10 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border rounded-md shadow-md">
+      <div className="bg-white p-3 border rounded-md shadow-md dark:bg-slate-800 dark:border-slate-700">
         <p className="font-medium">{data.name}</p>
-        <p>{`Penjualan: ${data.count}x`}</p>
-        <p>{`Total: ${formatCurrency(data.value)}`}</p>
+        <p>{`Penjualan: ${data.count || 0}x`}</p>
+        <p>{`Total: ${formatCurrency(data.value || 0)}`}</p>
       </div>
     );
   }
