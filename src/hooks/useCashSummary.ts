@@ -1,7 +1,6 @@
-
+import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCashSummary } from '@/utils/supabase';
-import { useState } from 'react';
 import { startOfYear, endOfYear, format, parseISO } from 'date-fns';
 
 export interface CashSummaryData {
@@ -68,7 +67,7 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
   };
 
   // Group transactions and expenses by month for chart display
-  const monthlyData = React.useMemo(() => {
+  const monthlyData = useMemo(() => {
     if (!data) return [];
 
     const monthlyAggregation: Record<string, { income: number; expense: number; balance: number }> = {};
@@ -113,7 +112,7 @@ export const useCashSummary = (initialStartDate?: Date, initialEndDate?: Date) =
   }, [data]);
 
   // Process top product data
-  const topProductsData = React.useMemo(() => {
+  const topProductsData = useMemo(() => {
     if (!data?.transactions || data.transactions.length === 0) return [];
     
     const productSales: Record<string, { value: number, count: number }> = {};
