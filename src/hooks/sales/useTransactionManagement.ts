@@ -32,25 +32,43 @@ const useTransactionManagement = ({
       const boxStockItems = await fetchBoxStock();
       
       for (const item of items) {
-        // Update pizza stock
-        const matchingPizzaStock = pizzaStockItems.find(
+        // Get all matching pizza stock items with the same flavor and size
+        const matchingPizzaStocks = pizzaStockItems.filter(
           stock => stock.size === item.size && stock.flavor === item.flavor
-        );
+        ).sort((a, b) => {
+          // Sort by purchase date (oldest first to use FIFO method)
+          // In our data mapper, database purchase_date is mapped to purchaseDate in TypeScript
+          return new Date(a.purchaseDate).getTime() - new Date(b.purchaseDate).getTime();
+        });
         
-        if (matchingPizzaStock) {
-          console.log(`Reducing pizza stock: ${matchingPizzaStock.flavor} ${matchingPizzaStock.size} from ${matchingPizzaStock.quantity} by ${item.quantity}`);
+        if (matchingPizzaStocks.length > 0) {
+          console.log(`Found ${matchingPizzaStocks.length} matching stock entries for ${item.flavor} ${item.size}`);
           
-          // Create a new stock object without costPrice (which doesn't exist in the database column)
-          const updatedStock: PizzaStock = {
-            ...matchingPizzaStock,
-            quantity: Math.max(0, matchingPizzaStock.quantity - item.quantity)
-          };
+          // Keep track of how much quantity to reduce
+          let remainingQuantityToReduce = item.quantity;
           
-          // Make sure we're using the correct property name (cost_price not costPrice)
-          delete (updatedStock as any).costPrice;
-          
-          const updateResult = await updateStockItem(updatedStock);
-          console.log(`Stock update result: ${updateResult ? 'Success' : 'Failed'}`);
+          // Iterate through each matching stock and reduce quantity as needed
+          for (const stockItem of matchingPizzaStocks) {
+            if (remainingQuantityToReduce <= 0) break;
+            
+            const quantityToReduceFromThisItem = Math.min(stockItem.quantity, remainingQuantityToReduce);
+            console.log(`Reducing pizza stock ID ${stockItem.id}: ${stockItem.flavor} ${stockItem.size} from ${stockItem.quantity} by ${quantityToReduceFromThisItem}`);
+            
+            // Create a new stock object without costPrice
+            const updatedStock: PizzaStock = {
+              ...stockItem,
+              quantity: Math.max(0, stockItem.quantity - quantityToReduceFromThisItem)
+            };
+            
+            // Make sure we're using the correct property name
+            delete (updatedStock as any).costPrice;
+            
+            const updateResult = await updateStockItem(updatedStock);
+            console.log(`Stock update result for ID ${updatedStock.id}: ${updateResult ? 'Success' : 'Failed'}`);
+            
+            // Reduce the remaining quantity to be deducted
+            remainingQuantityToReduce -= quantityToReduceFromThisItem;
+          }
         } else {
           console.log(`No matching pizza stock found for: ${item.flavor} ${item.size}`);
         }

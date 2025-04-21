@@ -36,9 +36,15 @@ export const useStockItems = () => {
 
   // Get available pizza flavors for a given size
   const getAvailablePizzaFlavors = (size: 'Small' | 'Medium'): string[] => {
-    return stockItems
-      .filter(item => item.size === size && item.quantity > 0)
-      .map(item => item.flavor);
+    // Get all items for this size with quantity > 0
+    const availableItems = stockItems.filter(item => item.size === size && item.quantity > 0);
+    
+    // Use a Set to get unique flavors
+    const uniqueFlavors = new Set<string>();
+    availableItems.forEach(item => uniqueFlavors.add(item.flavor));
+    
+    // Convert Set back to array
+    return Array.from(uniqueFlavors);
   };
 
   // Periksa apakah stok pizza tersedia
@@ -46,13 +52,15 @@ export const useStockItems = () => {
     console.log(`Checking pizza stock for ${item.flavor} ${item.size}, quantity: ${item.quantity}`);
     console.log("Available stock items:", stockItems);
     
-    const stockItem = stockItems.find(
+    // Combine all stock items with the same flavor and size
+    // This is needed because there might be multiple entries for the same flavor and size
+    const matchingStocks = stockItems.filter(
       stock => stock.size === item.size && stock.flavor === item.flavor
     );
     
-    console.log("Found stock item:", stockItem);
+    console.log("Found matching stock items:", matchingStocks);
     
-    if (!stockItem) {
+    if (matchingStocks.length === 0) {
       // Get available flavors for this size
       const availableFlavors = getAvailablePizzaFlavors(item.size);
       
@@ -66,23 +74,31 @@ export const useStockItems = () => {
       return false;
     }
     
-    if (stockItem.quantity < item.quantity) {
+    // Calculate total quantity across all matching stock items
+    const totalQuantity = matchingStocks.reduce((sum, stock) => sum + stock.quantity, 0);
+    console.log(`Total quantity for ${item.flavor} ${item.size}: ${totalQuantity}`);
+    
+    if (totalQuantity < item.quantity) {
       // Get available flavors for this size as alternatives
       const availableFlavors = getAvailablePizzaFlavors(item.size);
       
       if (availableFlavors.length > 0) {
-        const message = `Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok\nStock Pizza ukuran ${item.size.toLowerCase()} yang tersedia adalah:\n${availableFlavors.join(', ')}`;
+        const message = `Hanya tersisa ${totalQuantity} pizza ${item.flavor} ${item.size} dalam stok\nStock Pizza ukuran ${item.size.toLowerCase()} yang tersedia adalah:\n${availableFlavors.join(', ')}`;
         setError(message);
       } else {
-        setError(`Hanya tersisa ${stockItem.quantity} pizza ${item.flavor} ${item.size} dalam stok`);
+        setError(`Hanya tersisa ${totalQuantity} pizza ${item.flavor} ${item.size} dalam stok`);
       }
       return false;
     }
     
-    return {
-      ...stockItem,
-      remainingQuantity: stockItem.quantity - item.quantity
+    // Return the first stock item with the total quantity for simplicity
+    const stockItem = {
+      ...matchingStocks[0],
+      quantity: totalQuantity,
+      remainingQuantity: totalQuantity - item.quantity
     };
+    
+    return stockItem;
   };
 
   // Periksa apakah stok dus tersedia jika diperlukan
